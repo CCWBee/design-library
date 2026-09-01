@@ -12,7 +12,11 @@ substance is.
 
 ## Browse it
 
-Run the gallery to see and curate the whole library in one place:
+Hosted (public subset): https://ccwbee.github.io/design-library/ · source:
+https://github.com/CCWBee/design-library
+
+Or run the gallery locally to see and curate the whole library, including the local-only Apple
+reference code that is kept out of the public repository:
 
 ```
 python E:\claude-projects\design\gallery\serve.py
