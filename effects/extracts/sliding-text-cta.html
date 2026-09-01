@@ -1,0 +1,126 @@
+<!--
+  Sliding Text CTA
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN + utility classes (rewritten as plain CSS), the auto-centering
+  measurement script, wrapper/preview scaffolding, and product-specific copy.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sliding Text CTA</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    padding: 12px 28px;
+    overflow: hidden;
+    cursor: pointer;
+    color: #a3a3a3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    background: #262626;
+    border: 1px solid #525252;
+    border-radius: 9999px;
+    box-shadow:
+      0 2.8px 2.2px rgba(0, 0, 0, 0.3),
+      0 6.7px 5.3px rgba(0, 0, 0, 0.35),
+      0 12.5px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 1000ms cubic-bezier(0.15, 0.83, 0.66, 1),
+                color 1000ms cubic-bezier(0.15, 0.83, 0.66, 1);
+  }
+  .cta:hover {
+    transform: translateY(-3px);
+    color: #ffffff;
+  }
+
+  .cta .label {
+    position: relative;
+    z-index: 1;
+    font-weight: 500;
+    transition: transform 500ms ease-out, opacity 500ms ease-out, filter 500ms ease-out;
+  }
+  .cta:hover .label.primary {
+    transform: translateY(2rem);
+    opacity: 0;
+    filter: blur(6px);
+  }
+
+  .cta .label.clone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(-2rem);
+    filter: blur(6px);
+    transition: transform 300ms ease-in-out, opacity 300ms ease-in-out, filter 300ms ease-in-out;
+  }
+  .cta:hover .label.clone {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  .cta .underline {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 70%;
+    height: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(to right, transparent, #e5e5e5, transparent);
+    border-radius: 9999px;
+    filter: blur(2px);
+    opacity: 0;
+    transition: opacity 1000ms cubic-bezier(0.15, 0.83, 0.66, 1);
+  }
+  .cta:hover .underline {
+    opacity: 0.8;
+  }
+
+  .cta .glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top, rgba(255,255,255,0.2), rgba(255,255,255,0.1), transparent);
+    border-radius: 9999px;
+    opacity: 0;
+    transition: opacity 1000ms cubic-bezier(0.15, 0.83, 0.66, 1);
+  }
+  .cta:hover .glow {
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+  <button class="cta">
+    <span class="label primary">Download app</span>
+    <span class="label clone" aria-hidden="true">Download app</span>
+    <span class="underline" aria-hidden="true"></span>
+    <span class="glow" aria-hidden="true"></span>
+  </button>
+</body>
+</html>

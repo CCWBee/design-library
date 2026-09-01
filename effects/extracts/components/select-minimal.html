@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Select · minimal</title>
+<style>
+  /* ---- Tokens: light (alpha-black rungs on white) ---- */
+  :root {
+    --canvas: #ffffff;
+    --surface-raised: #ffffff;      /* opaque menu surface, sits above content */
+    --surface-sunk: rgb(0 0 0 / 3%); /* neutral chapter fill */
+    --ink-1: rgb(0 0 0 / 92%);      /* primary text */
+    --ink-2: rgb(0 0 0 / 64%);      /* supporting text */
+    --ink-3: rgb(0 0 0 / 44%);      /* metadata, placeholder, caret */
+    --border: rgb(0 0 0 / 14%);
+    --border-strong: rgb(0 0 0 / 28%);
+    --fill-hover: rgb(0 0 0 / 5%);
+    --fill-pressed: rgb(0 0 0 / 9%);
+    --fill-selected: rgb(0 0 0 / 8%);
+    --ring: rgb(0 0 0 / 72%);        /* focus ring, high contrast */
+    --shadow: 0 6px 20px rgb(0 0 0 / 12%);
+
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+    --r-sm: 6px; --r-md: 8px; --r-lg: 12px;
+
+    color-scheme: light;
+  }
+
+  /* ---- Tokens: dark (alpha-white rungs on near-black) ---- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #121316;
+      --surface-raised: #1c1e22;
+      --surface-sunk: rgb(255 255 255 / 4%);
+      --ink-1: rgb(255 255 255 / 92%);
+      --ink-2: rgb(255 255 255 / 70%);
+      --ink-3: rgb(255 255 255 / 56%);   /* bumped for contrast on near-black */
+      --border: rgb(255 255 255 / 16%);
+      --border-strong: rgb(255 255 255 / 34%);
+      --fill-hover: rgb(255 255 255 / 7%);
+      --fill-pressed: rgb(255 255 255 / 12%);
+      --fill-selected: rgb(255 255 255 / 10%);
+      --ring: rgb(255 255 255 / 82%);
+      --shadow: 0 8px 24px rgb(0 0 0 / 48%);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas: #121316;
+    --surface-raised: #1c1e22;
+    --surface-sunk: rgb(255 255 255 / 4%);
+    --ink-1: rgb(255 255 255 / 92%);
+    --ink-2: rgb(255 255 255 / 70%);
+    --ink-3: rgb(255 255 255 / 56%);
+    --border: rgb(255 255 255 / 16%);
+    --border-strong: rgb(255 255 255 / 34%);
+    --fill-hover: rgb(255 255 255 / 7%);
+    --fill-pressed: rgb(255 255 255 / 12%);
+    --fill-selected: rgb(255 255 255 / 10%);
+    --ring: rgb(255 255 255 / 82%);
+    --shadow: 0 8px 24px rgb(0 0 0 / 48%);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { background: var(--canvas); }
+
+  body {
+    margin: 0;
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: var(--s-8) var(--s-6) var(--s-8);
+  }
+  @media (max-width: 640px) {
+    .page { padding: var(--s-6) var(--s-4); }
+  }
+
+  /* ---- Masthead ---- */
+  .masthead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-8);
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 var(--s-3);
+  }
+  .lede {
+    color: var(--ink-2);
+    max-width: 38rem;
+    margin: 0;
+    font-size: 1.0625rem;
+  }
+  .cell {
+    color: var(--ink-3);
+    font-size: 0.8125rem;
+    margin-top: var(--s-3);
+  }
+  .cell code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+
+  /* ---- Theme toggle (plain button) ---- */
+  .toggle {
+    flex: none;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-1);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    cursor: pointer;
+    transition: background-color 140ms ease, border-color 140ms ease;
+  }
+  .toggle:hover { background: var(--fill-hover); }
+  .toggle:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* ---- Section chapters ---- */
+  section { margin-top: var(--s-8); }
+  h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--s-2);
+  }
+  .note {
+    color: var(--ink-2);
+    max-width: 40rem;
+    margin: 0 0 var(--s-5);
+    font-size: 0.9375rem;
+  }
+
+  /* =========================================================
+     The select control
+     ========================================================= */
+  .field { max-width: 22rem; }
+
+  .field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    margin-bottom: var(--s-2);
+  }
+
+  .select { position: relative; }
+
+  .select-trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    width: 100%;
+    font: inherit;
+    font-weight: 500;
+    color: var(--ink-1);
+    text-align: left;
+    background: var(--canvas);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 0 var(--s-3);
+    height: 44px;               /* medium, comfortable touch target */
+    cursor: pointer;
+    transition: background-color 140ms ease, border-color 140ms ease;
+  }
+  .select-trigger .value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .select-trigger.placeholder .value { color: var(--ink-3); font-weight: 400; }
+
+  .select-trigger .caret {
+    flex: none;
+    width: 16px; height: 16px;
+    color: var(--ink-3);
+    transition: transform 160ms ease;
+  }
+
+  /* hover */
+  .select-trigger:hover,
+  .select-trigger.is-hover { background: var(--fill-hover); border-color: var(--border-strong); }
+
+  /* focus-visible: thickened ring, one shared declaration reused by the frozen specimen */
+  .select-trigger:focus-visible,
+  .select-trigger.is-focus {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  /* active / pressed */
+  .select-trigger:active,
+  .select-trigger.is-active { background: var(--fill-pressed); border-color: var(--border-strong); }
+
+  /* open: caret flips */
+  .select-trigger[aria-expanded="true"] .caret,
+  .select-trigger.is-open .caret { transform: rotate(180deg); }
+
+  /* disabled */
+  .select-trigger:disabled,
+  .select-trigger.is-disabled {
+    cursor: not-allowed;
+    color: var(--ink-3);
+    background: var(--surface-sunk);
+    border-color: var(--border);
+  }
+  .select-trigger:disabled .value,
+  .select-trigger.is-disabled .value { color: var(--ink-3); }
+
+  /* loading */
+  .select-trigger.is-loading { cursor: progress; }
+  .spinner {
+    flex: none;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--ink-2);
+    border-radius: 50%;
+    animation: spin 720ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* skeleton pulse via background-color between alpha rungs, never the opacity property */
+  .skeleton {
+    height: 44px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    animation: pulse 1600ms ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { background-color: rgb(0 0 0 / 4%); }
+    50%      { background-color: rgb(0 0 0 / 9%); }
+  }
+  :root[data-theme="dark"] .skeleton,
+  :root:not([data-theme="light"]) .skeleton { }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .skeleton { animation-name: pulse-dark; }
+  }
+  :root[data-theme="dark"] .skeleton { animation-name: pulse-dark; }
+  @keyframes pulse-dark {
+    0%, 100% { background-color: rgb(255 255 255 / 5%); }
+    50%      { background-color: rgb(255 255 255 / 11%); }
+  }
+
+  /* size variants */
+  .select-trigger.sm { height: 36px; padding: 0 var(--s-2) 0 var(--s-3); font-size: 0.875rem; border-radius: var(--r-sm); }
+  .select-trigger.lg { height: 52px; padding: 0 var(--s-4); font-size: 1.0625rem; }
+
+  /* ---- Menu (opaque elevated surface) ---- */
+  .menu {
+    position: absolute;
+    top: calc(100% + var(--s-1));
+    left: 0;
+    width: 100%;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow);
+    padding: var(--s-1);
+    margin: 0;
+    list-style: none;
+    z-index: 20;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .menu[hidden] { display: none; }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+    border-radius: var(--r-sm);
+    font-size: 0.9375rem;
+    color: var(--ink-1);
+    cursor: pointer;
+    user-select: none;
+  }
+  .option .tick {
+    flex: none;
+    width: 16px; height: 16px;
+    margin-left: auto;
+    color: var(--ink-1);
+    visibility: hidden;
+  }
+  .option[aria-selected="true"] { background: var(--fill-selected); }
+  .option[aria-selected="true"] .tick { visibility: visible; }
+  /* active descendant (keyboard) and pointer hover share one highlight */
+  .option:hover,
+  .option.is-active,
+  .option.is-hover { background: var(--fill-hover); }
+  .option[aria-disabled="true"] {
+    color: var(--ink-3);
+    cursor: not-allowed;
+  }
+  .option[aria-disabled="true"]:hover { background: transparent; }
+
+  /* ---- Spec grid ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--s-5) var(--s-4);
+    align-items: start;
+  }
+  .specimen { min-width: 0; }
+  .specimen-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    margin-bottom: var(--s-2);
+  }
+  .specimen-hint {
+    font-size: 0.75rem;
+    color: var(--ink-3);
+    margin-top: var(--s-2);
+  }
+
+  /* room for the statically open menu specimen not to clip neighbours */
+  .specimen.tall { min-height: 220px; }
+
+  .row-variants {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    max-width: 22rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+    .spinner { animation: none; border-top-color: var(--ink-2); }
+    .skeleton { animation: none; background-color: var(--surface-sunk); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <h1>Select · minimal</h1>
+      <p class="lede">A single-select dropdown in the minimal register. Hairline trigger on the canvas, an opaque menu that keeps page content readable behind it, hierarchy from size and space rather than lines.</p>
+      <p class="cell">Ontology cell: <code>inputs / select / minimal</code></p>
+    </div>
+    <button class="toggle" id="themeToggle" type="button" aria-pressed="false">Theme: system</button>
+  </header>
+
+  <!-- Live, working instance -->
+  <section aria-labelledby="live-h">
+    <h2 id="live-h">Live control</h2>
+    <p class="note">Fully interactive. Open with click, or with Enter, Space, or the down arrow when focused. Move with the arrow keys, choose with Enter, dismiss with Escape. Focus returns to the trigger on close.</p>
+
+    <div class="field">
+      <span class="field-label" id="live-label">Region</span>
+      <div class="select" id="liveSelect">
+        <button type="button" class="select-trigger placeholder" id="liveTrigger"
+                aria-haspopup="listbox" aria-expanded="false" aria-labelledby="live-label liveTrigger">
+          <span class="value">Choose a region</span>
+          <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <ul class="menu" id="liveMenu" role="listbox" aria-labelledby="live-label" tabindex="-1" hidden>
+          <li class="option" role="option" data-value="jsy" aria-selected="false">
+            <span>Jersey</span>
+            <svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </li>
+          <li class="option" role="option" data-value="ggy" aria-selected="false">
+            <span>Guernsey</span>
+            <svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </li>
+          <li class="option" role="option" data-value="iom" aria-selected="false">
+            <span>Isle of Man</span>
+            <svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </li>
+          <li class="option" role="option" data-value="gib" aria-selected="false">
+            <span>Gibraltar</span>
+            <svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </li>
+          <li class="option" role="option" data-value="mlt" aria-selected="false" aria-disabled="true">
+            <span>Malta</span>
+            <svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trigger state checklist -->
+  <section aria-labelledby="states-h">
+    <h2 id="states-h">Trigger states</h2>
+    <p class="note">Each specimen is frozen and inert so keyboard users are not caught by decorative controls. The focus specimen reuses the same ring declaration as the live control.</p>
+
+    <div class="grid">
+      <div class="specimen">
+        <div class="specimen-name">Default</div>
+        <div class="select">
+          <button type="button" class="select-trigger" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Placeholder</div>
+        <div class="select">
+          <button type="button" class="select-trigger placeholder" tabindex="-1" aria-hidden="true">
+            <span class="value">Choose a region</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Hover</div>
+        <div class="select">
+          <button type="button" class="select-trigger is-hover" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Focus visible</div>
+        <div class="select">
+          <button type="button" class="select-trigger is-focus" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Active</div>
+        <div class="select">
+          <button type="button" class="select-trigger is-active" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Open</div>
+        <div class="select">
+          <button type="button" class="select-trigger is-open" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Disabled</div>
+        <div class="select">
+          <button type="button" class="select-trigger" disabled tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Loading</div>
+        <div class="select">
+          <button type="button" class="select-trigger is-loading" tabindex="-1" aria-hidden="true">
+            <span class="value placeholder-text" style="color:var(--ink-3);font-weight:400">Loading regions</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="specimen-hint">Fetching options. The spinner rotates by transform and stops under reduced motion.</div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-name">Skeleton</div>
+        <div class="skeleton" aria-hidden="true"></div>
+        <div class="specimen-hint">First paint before options exist. Pulse animates background-colour between alpha rungs, not the opacity property.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open menu, documented -->
+  <section aria-labelledby="menu-h">
+    <h2 id="menu-h">Menu and option states</h2>
+    <p class="note">The open listbox is the defining surface of the control. Its background is an opaque elevated token so page content never ghosts through, which is also the answer for reduced transparency. One soft single-layer shadow earns its place here because the menu genuinely floats above the page.</p>
+
+    <div class="specimen tall">
+      <div class="specimen-name">Open, one option selected</div>
+      <div class="field">
+        <div class="select">
+          <button type="button" class="select-trigger is-open" tabindex="-1" aria-hidden="true">
+            <span class="value">Guernsey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <ul class="menu" role="listbox" aria-hidden="true" style="position:static;margin-top:var(--s-1)">
+            <li class="option" role="option" aria-selected="false"><span>Jersey</span><svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+            <li class="option" role="option" aria-selected="true"><span>Guernsey</span><svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+            <li class="option is-hover" role="option" aria-selected="false"><span>Isle of Man</span><svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+            <li class="option" role="option" aria-selected="false"><span>Gibraltar</span><svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+            <li class="option" role="option" aria-selected="false" aria-disabled="true"><span>Malta</span><svg class="tick" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.5 8.5l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+          </ul>
+        </div>
+      </div>
+      <div class="specimen-hint">Rows top to bottom: default, selected (tick, 8% fill), hover or keyboard-active (5% fill), default, disabled.</div>
+    </div>
+  </section>
+
+  <!-- Size variants -->
+  <section aria-labelledby="sizes-h">
+    <h2 id="sizes-h">Size variants</h2>
+    <p class="note">Small for dense toolbars, medium as the default with a comfortable 44px touch target, large for prominent forms. Radius steps down slightly on small to keep the corner in proportion.</p>
+
+    <div class="row-variants">
+      <div class="field">
+        <span class="specimen-name">Small · 36px</span>
+        <div class="select">
+          <button type="button" class="select-trigger sm" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="specimen-name">Medium · 44px</span>
+        <div class="select">
+          <button type="button" class="select-trigger" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="specimen-name">Large · 52px</span>
+        <div class="select">
+          <button type="button" class="select-trigger lg" tabindex="-1" aria-hidden="true">
+            <span class="value">Jersey</span>
+            <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---- Theme toggle: system -> light -> dark -> system ---- */
+  var root = document.documentElement;
+  var toggle = document.getElementById("themeToggle");
+  var order = ["system", "light", "dark"];
+  var labels = { system: "Theme: system", light: "Theme: light", dark: "Theme: dark" };
+  var state = "system";
+  function applyTheme() {
+    if (state === "system") { root.removeAttribute("data-theme"); }
+    else { root.setAttribute("data-theme", state); }
+    toggle.textContent = labels[state];
+    toggle.setAttribute("aria-pressed", state === "dark" ? "true" : "false");
+  }
+  toggle.addEventListener("click", function () {
+    state = order[(order.indexOf(state) + 1) % order.length];
+    applyTheme();
+  });
+
+  /* ---- Live select (listbox pattern) ---- */
+  var sel = document.getElementById("liveSelect");
+  var trigger = document.getElementById("liveTrigger");
+  var menu = document.getElementById("liveMenu");
+  var valueEl = trigger.querySelector(".value");
+  var options = Array.prototype.slice.call(menu.querySelectorAll('[role="option"]'));
+  var activeIndex = -1;
+
+  function isDisabled(opt) { return opt.getAttribute("aria-disabled") === "true"; }
+
+  function open() {
+    if (trigger.getAttribute("aria-expanded") === "true") return;
+    trigger.setAttribute("aria-expanded", "true");
+    menu.hidden = false;
+    var selected = options.findIndex(function (o) { return o.getAttribute("aria-selected") === "true"; });
+    setActive(selected >= 0 ? selected : firstEnabled());
+    document.addEventListener("mousedown", onOutside, true);
+  }
+
+  function close(returnFocus) {
+    if (trigger.getAttribute("aria-expanded") !== "true") return;
+    trigger.setAttribute("aria-expanded", "false");
+    menu.hidden = true;
+    clearActive();
+    document.removeEventListener("mousedown", onOutside, true);
+    if (returnFocus) trigger.focus();
+  }
+
+  function firstEnabled() {
+    for (var i = 0; i < options.length; i++) { if (!isDisabled(options[i])) return i; }
+    return -1;
+  }
+
+  function clearActive() {
+    options.forEach(function (o) { o.classList.remove("is-active"); });
+    menu.removeAttribute("aria-activedescendant");
+    activeIndex = -1;
+  }
+
+  function setActive(i) {
+    if (i < 0 || i >= options.length) return;
+    options.forEach(function (o) { o.classList.remove("is-active"); });
+    var opt = options[i];
+    if (!opt.id) opt.id = "opt-" + i;
+    opt.classList.add("is-active");
+    opt.scrollIntoView({ block: "nearest" });
+    menu.setAttribute("aria-activedescendant", opt.id);
+    activeIndex = i;
+  }
+
+  function move(step) {
+    var i = activeIndex;
+    for (var n = 0; n < options.length; n++) {
+      i = (i + step + options.length) % options.length;
+      if (!isDisabled(options[i])) { setActive(i); return; }
+    }
+  }
+
+  function choose(i) {
+    var opt = options[i];
+    if (!opt || isDisabled(opt)) return;
+    options.forEach(function (o) { o.setAttribute("aria-selected", "false"); });
+    opt.setAttribute("aria-selected", "true");
+    valueEl.textContent = opt.querySelector("span").textContent;
+    trigger.classList.remove("placeholder");
+    close(true);
+  }
+
+  function onOutside(e) { if (!sel.contains(e.target)) close(false); }
+
+  trigger.addEventListener("click", function () {
+    if (trigger.getAttribute("aria-expanded") === "true") close(true); else open();
+  });
+
+  trigger.addEventListener("keydown", function (e) {
+    var openNow = trigger.getAttribute("aria-expanded") === "true";
+    switch (e.key) {
+      case "ArrowDown":
+      case "ArrowUp":
+        e.preventDefault();
+        if (!openNow) { open(); } else { move(e.key === "ArrowDown" ? 1 : -1); }
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        if (!openNow) { open(); } else { choose(activeIndex); }
+        break;
+      case "Home":
+        if (openNow) { e.preventDefault(); setActive(firstEnabled()); }
+        break;
+      case "End":
+        if (openNow) { e.preventDefault(); for (var j = options.length - 1; j >= 0; j--) { if (!isDisabled(options[j])) { setActive(j); break; } } }
+        break;
+      case "Escape":
+        if (openNow) { e.preventDefault(); close(true); }
+        break;
+      case "Tab":
+        if (openNow) close(false);
+        break;
+    }
+  });
+
+  options.forEach(function (opt, i) {
+    opt.addEventListener("mouseenter", function () { if (!isDisabled(opt)) setActive(i); });
+    opt.addEventListener("click", function () { choose(i); });
+  });
+
+  applyTheme();
+})();
+</script>
+</body>
+</html>

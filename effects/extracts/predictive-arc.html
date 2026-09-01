@@ -1,0 +1,233 @@
+<!--
+  Predictive Arc — sweeping gauge-arc field rendered on Canvas2D.
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped: React component wrapper, ResizeObserver/IntersectionObserver plumbing,
+  the data-pixel/signal-particles/override-grid variant switch, and Tailwind scaffolding —
+  kept only the canvas render loop and a plain control panel in hand-written CSS.
+-->
+<title>Predictive Arc</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #030303;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  .stage {
+    position: fixed;
+    inset: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .panel {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(10, 10, 14, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+    min-width: 200px;
+  }
+  .panel .title {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 2px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .row label {
+    flex: 0 0 auto;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .row input[type="range"] {
+    flex: 1 1 auto;
+    accent-color: #7c6bff;
+  }
+  .row .val {
+    width: 34px;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.5);
+    font-variant-numeric: tabular-nums;
+  }
+  .row button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: inherit;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .row button:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+</style>
+
+<div class="stage">
+  <canvas id="c"></canvas>
+</div>
+
+<div class="panel">
+  <div class="title">Predictive Arc</div>
+  <div class="row">
+    <label for="mode">Mode</label>
+    <button id="modeBtn" type="button">Dark</button>
+  </div>
+  <div class="row">
+    <label for="speed">Speed</label>
+    <input id="speed" type="range" min="0.1" max="3" step="0.05" value="1" />
+    <span class="val" id="speedVal">1.0</span>
+  </div>
+  <div class="row">
+    <label for="spacing">Spacing</label>
+    <input id="spacing" type="range" min="2" max="14" step="1" value="5" />
+    <span class="val" id="spacingVal">5</span>
+  </div>
+  <div class="row">
+    <label for="archHeight">Arc height</label>
+    <input id="archHeight" type="range" min="0.2" max="1.4" step="0.05" value="0.7" />
+    <span class="val" id="archHeightVal">0.7</span>
+  </div>
+  <div class="row">
+    <label for="brightness">Brightness</label>
+    <input id="brightness" type="range" min="0.3" max="2" step="0.05" value="1" />
+    <span class="val" id="brightnessVal">1.0</span>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var canvas = document.getElementById('c');
+    var context = canvas.getContext('2d', { alpha: false });
+
+    var options = {
+      mode: 'dark',
+      speed: 1,
+      spacing: 5,
+      dotSize: 6,
+      archHeight: 0.7,
+      thickness: 1,
+      brightness: 1,
+    };
+
+    var width = 1, height = 1, time = 0;
+
+    function resize() {
+      width = Math.max(1, window.innerWidth);
+      height = Math.max(1, window.innerHeight);
+      var pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+
+    function render() {
+      var isLight = options.mode === 'light';
+      context.fillStyle = isLight ? '#eef1f6' : '#030303';
+      context.fillRect(0, 0, width, height);
+      time += 0.015 * options.speed;
+
+      var centerX = width / 2;
+      var archPeakY = height * 0.35;
+      var archWidth = width * 1.5;
+      var archHeight = height * options.archHeight;
+      context.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
+
+      for (var x = 0; x < width; x += options.spacing) {
+        var normX = (x - centerX) / (archWidth / 2);
+        var curveY = archPeakY + normX * normX * archHeight;
+        for (var y = 0; y < height; y += options.spacing) {
+          var distanceToCurve = Math.abs(y - curveY);
+          var thickness = (140 + (1 - Math.abs(normX)) * 80) * options.thickness;
+          if (distanceToCurve >= thickness) continue;
+          var intensity = 1 - distanceToCurve / thickness;
+          var waveX = Math.sin(x * 0.015 + time);
+          var waveY = Math.cos(y * 0.02 + time);
+          intensity = intensity * 0.7 + waveX * waveY * 0.3 * intensity;
+          intensity *= Math.max(0, 1 - Math.pow(Math.abs(normX), 2.5));
+          if (intensity <= 0.02) continue;
+
+          var r, g, b;
+          if (isLight) {
+            r = Math.min(255, 48 * intensity + 70 * Math.pow(intensity, 3));
+            g = Math.min(255, 28 * intensity + 45 * Math.pow(intensity, 4));
+            b = Math.min(255, 120 * intensity + 110 * Math.pow(intensity, 2));
+            if (intensity > 0.7) {
+              var coreBoostL = (intensity - 0.7) * 3.3;
+              r = Math.min(255, r + 90 * coreBoostL);
+              g = Math.min(255, g + 70 * coreBoostL);
+              b = Math.min(255, b + 110 * coreBoostL);
+            }
+          } else {
+            r = Math.min(255, 60 * intensity + 100 * Math.pow(intensity, 3));
+            g = Math.min(255, 20 * intensity + 60 * Math.pow(intensity, 4));
+            b = Math.min(255, 120 * intensity + 135 * Math.pow(intensity, 2));
+            if (intensity > 0.7) {
+              var coreBoostD = (intensity - 0.7) * 3.3;
+              r = Math.min(255, r + 150 * coreBoostD);
+              g = Math.min(255, g + 150 * coreBoostD);
+              b = Math.min(255, b + 150 * coreBoostD);
+            }
+          }
+          context.fillStyle = 'rgb(' + Math.floor(r * options.brightness) + ', ' + Math.floor(g * options.brightness) + ', ' + Math.floor(b * options.brightness) + ')';
+          context.fillRect(x, y, options.dotSize * intensity, options.dotSize * intensity);
+        }
+      }
+      context.globalCompositeOperation = 'source-over';
+    }
+
+    function tick() {
+      render();
+      requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(tick);
+
+    // Controls
+    var modeBtn = document.getElementById('modeBtn');
+    modeBtn.addEventListener('click', function () {
+      options.mode = options.mode === 'dark' ? 'light' : 'dark';
+      modeBtn.textContent = options.mode === 'dark' ? 'Dark' : 'Light';
+      document.documentElement.style.colorScheme = options.mode;
+    });
+
+    function bindRange(id, key, valId, decimals) {
+      var input = document.getElementById(id);
+      var out = document.getElementById(valId);
+      input.addEventListener('input', function () {
+        var v = parseFloat(input.value);
+        options[key] = v;
+        out.textContent = v.toFixed(decimals);
+      });
+    }
+    bindRange('speed', 'speed', 'speedVal', 2);
+    bindRange('spacing', 'spacing', 'spacingVal', 0);
+    bindRange('archHeight', 'archHeight', 'archHeightVal', 2);
+    bindRange('brightness', 'brightness', 'brightnessVal', 2);
+  })();
+</script>

@@ -1,0 +1,573 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Switch · Minimal</title>
+<style>
+  /* ---- Tokens: light ---- */
+  :root {
+    --canvas: #ffffff;
+    --panel: rgb(0 0 0 / 2.5%);
+    --ink-1: rgb(0 0 0 / 92%);
+    --ink-2: rgb(0 0 0 / 64%);
+    --ink-3: rgb(0 0 0 / 44%);
+    --border: rgb(0 0 0 / 12%);
+    --hover-fill: rgb(0 0 0 / 5%);
+
+    /* switch surfaces */
+    --track-off: rgb(0 0 0 / 9%);
+    --track-off-hover: rgb(0 0 0 / 14%);
+    --track-off-border: rgb(0 0 0 / 14%);
+    --track-on: rgb(0 0 0 / 88%);
+    --track-on-hover: rgb(0 0 0 / 100%);
+    --knob: #ffffff;
+    --knob-shadow: 0 1px 2px rgb(0 0 0 / 22%);
+    --knob-on-mark: rgb(0 0 0 / 88%);
+    --focus-ring: rgb(0 0 0 / 62%);
+
+    /* disabled */
+    --track-off-disabled: rgb(0 0 0 / 5%);
+    --track-on-disabled: rgb(0 0 0 / 24%);
+    --knob-disabled: rgb(255 255 255 / 78%);
+
+    --s-1: 4px; --s-2: 8px; --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+    --r-md: 8px; --r-lg: 12px;
+  }
+
+  /* ---- Tokens: dark (system default) ---- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #0e0e10;
+      --panel: rgb(255 255 255 / 3.5%);
+      --ink-1: rgb(255 255 255 / 92%);
+      --ink-2: rgb(255 255 255 / 66%);
+      --ink-3: rgb(255 255 255 / 46%);
+      --border: rgb(255 255 255 / 16%);
+      --hover-fill: rgb(255 255 255 / 7%);
+
+      --track-off: rgb(255 255 255 / 14%);
+      --track-off-hover: rgb(255 255 255 / 20%);
+      --track-off-border: rgb(255 255 255 / 20%);
+      --track-on: rgb(255 255 255 / 90%);
+      --track-on-hover: rgb(255 255 255 / 100%);
+      --knob: #14141a;
+      --knob-shadow: 0 1px 2px rgb(0 0 0 / 55%);
+      --knob-on-mark: rgb(255 255 255 / 90%);
+      --focus-ring: rgb(255 255 255 / 70%);
+
+      --track-off-disabled: rgb(255 255 255 / 7%);
+      --track-on-disabled: rgb(255 255 255 / 30%);
+      --knob-disabled: rgb(20 20 26 / 72%);
+    }
+  }
+
+  /* ---- Tokens: dark (explicit toggle) ---- */
+  :root[data-theme="dark"] {
+    --canvas: #0e0e10;
+    --panel: rgb(255 255 255 / 3.5%);
+    --ink-1: rgb(255 255 255 / 92%);
+    --ink-2: rgb(255 255 255 / 66%);
+    --ink-3: rgb(255 255 255 / 46%);
+    --border: rgb(255 255 255 / 16%);
+    --hover-fill: rgb(255 255 255 / 7%);
+
+    --track-off: rgb(255 255 255 / 14%);
+    --track-off-hover: rgb(255 255 255 / 20%);
+    --track-off-border: rgb(255 255 255 / 20%);
+    --track-on: rgb(255 255 255 / 90%);
+    --track-on-hover: rgb(255 255 255 / 100%);
+    --knob: #14141a;
+    --knob-shadow: 0 1px 2px rgb(0 0 0 / 55%);
+    --knob-on-mark: rgb(255 255 255 / 90%);
+    --focus-ring: rgb(255 255 255 / 70%);
+
+    --track-off-disabled: rgb(255 255 255 / 7%);
+    --track-on-disabled: rgb(255 255 255 / 30%);
+    --knob-disabled: rgb(20 20 26 / 72%);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--s-8) var(--s-5) var(--s-8);
+  }
+
+  @media (max-width: 640px) {
+    .wrap { padding: var(--s-6) var(--s-4) var(--s-7); }
+  }
+
+  /* ---- Page header ---- */
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-7);
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 var(--s-2);
+  }
+
+  .eyebrow {
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    font-variant: small-caps;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-2);
+  }
+
+  .lede {
+    color: var(--ink-2);
+    max-width: 38rem;
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .theme-toggle {
+    flex: none;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    cursor: pointer;
+    transition: background-color 160ms ease, color 160ms ease;
+  }
+  .theme-toggle:hover { background: var(--hover-fill); color: var(--ink-1); }
+  .theme-toggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* ---- Sections ---- */
+  section { margin-top: var(--s-8); }
+  section:first-of-type { margin-top: var(--s-7); }
+
+  h2 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--s-2);
+  }
+  .section-note {
+    color: var(--ink-3);
+    font-size: 0.9375rem;
+    margin: 0 0 var(--s-5);
+    max-width: 40rem;
+  }
+
+  /* ---- The switch ---- */
+  .switch {
+    --w: 44px;
+    --h: 24px;
+    --pad: 3px;
+    --knob-d: calc(var(--h) - (var(--pad) * 2));
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    width: var(--w);
+    height: var(--h);
+    padding: 0;
+    border: 1px solid var(--track-off-border);
+    border-radius: 999px;
+    background: var(--track-off);
+    cursor: pointer;
+    vertical-align: middle;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .switch.sm { --w: 36px; --h: 20px; --pad: 2.5px; }
+  .switch.lg { --w: 54px; --h: 30px; --pad: 3.5px; }
+
+  .switch .knob {
+    position: absolute;
+    top: 50%;
+    left: var(--pad);
+    width: var(--knob-d);
+    height: var(--knob-d);
+    border-radius: 999px;
+    background: var(--knob);
+    box-shadow: var(--knob-shadow);
+    transform: translate(0, -50%);
+    transition:
+      transform 170ms cubic-bezier(0.34, 1.2, 0.64, 1),
+      width 130ms ease;
+    display: grid;
+    place-items: center;
+  }
+
+  /* the on-tick, drawn as a small stroke inside the knob */
+  .switch .knob::after {
+    content: "";
+    width: 45%;
+    height: 45%;
+    border-radius: inherit;
+    background: transparent;
+    transition: background-color 160ms ease;
+  }
+
+  /* ON */
+  .switch[aria-checked="true"] {
+    background: var(--track-on);
+    border-color: transparent;
+  }
+  .switch[aria-checked="true"] .knob {
+    transform: translate(calc(var(--w) - var(--knob-d) - (var(--pad) * 2) - 2px), -50%);
+  }
+  .switch[aria-checked="true"] .knob::after {
+    background: var(--knob-on-mark);
+  }
+
+  /* HOVER */
+  .switch:hover:not([disabled]):not([aria-checked="true"]) {
+    background: var(--track-off-hover);
+    border-color: var(--track-off-hover);
+  }
+  .switch[aria-checked="true"]:hover:not([disabled]) {
+    background: var(--track-on-hover);
+  }
+
+  /* FOCUS-VISIBLE */
+  .switch:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  /* ACTIVE / PRESSED: knob squishes wider */
+  .switch:active:not([disabled]) .knob {
+    width: calc(var(--knob-d) * 1.18);
+  }
+  .switch[aria-checked="true"]:active:not([disabled]) .knob {
+    transform: translate(calc(var(--w) - (var(--knob-d) * 1.18) - (var(--pad) * 2) - 2px), -50%);
+  }
+
+  /* DISABLED */
+  .switch[disabled] {
+    cursor: not-allowed;
+    background: var(--track-off-disabled);
+    border-color: transparent;
+  }
+  .switch[disabled][aria-checked="true"] {
+    background: var(--track-on-disabled);
+  }
+  .switch[disabled] .knob {
+    background: var(--knob-disabled);
+    box-shadow: none;
+  }
+  .switch[disabled][aria-checked="true"] .knob::after {
+    background: transparent;
+  }
+
+  /* LOADING: knob carries a small spinner, interaction blocked */
+  .switch[aria-busy="true"] {
+    cursor: progress;
+  }
+  .switch[aria-busy="true"] .knob::after {
+    content: "";
+    width: 52%;
+    height: 52%;
+    border-radius: 999px;
+    background: transparent;
+    border: 2px solid var(--ink-3);
+    border-top-color: transparent;
+    animation: spin 700ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Field row: switch bound to its label ---- */
+  .field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .field .label {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--ink-1);
+  }
+  .field.is-disabled .label { color: var(--ink-3); }
+
+  /* ---- State grid ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--s-2);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-4);
+    padding: var(--s-5) var(--s-4);
+    min-height: 118px;
+    justify-content: space-between;
+  }
+  .cell .state-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+  .cell .state-sub {
+    display: block;
+    font-weight: 400;
+    color: var(--ink-3);
+    margin-top: 2px;
+  }
+
+  /* size row */
+  .sizes {
+    display: flex;
+    align-items: center;
+    gap: var(--s-6);
+    flex-wrap: wrap;
+    padding: var(--s-5) var(--s-4);
+    background: var(--panel);
+    border-radius: var(--r-lg);
+  }
+  .size-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .size-item .size-name {
+    font-size: 0.8125rem;
+    color: var(--ink-3);
+  }
+
+  /* live demo */
+  .demo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    padding: var(--s-5);
+    background: var(--panel);
+    border-radius: var(--r-lg);
+    max-width: 24rem;
+  }
+  .demo-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-4);
+  }
+  .demo-row .copy { max-width: 16rem; }
+  .demo-row .copy .t { font-size: 0.9375rem; font-weight: 500; }
+  .demo-row .copy .d { font-size: 0.8125rem; color: var(--ink-3); }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0);
+    white-space: nowrap; border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .switch, .switch .knob, .theme-toggle { transition: none; }
+    .switch[aria-busy="true"] .knob::after { animation: none; }
+  }
+
+  footer {
+    margin-top: var(--s-8);
+    color: var(--ink-3);
+    font-size: 0.8125rem;
+  }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <p class="eyebrow">Selection · minimal register</p>
+      <h1>Switch</h1>
+      <p class="lede">A binary toggle: a pill track and a travelling knob in neutral alpha-black. On carries a solid ink track; off is a light neutral fill with a hairline edge. One reference, every state it can hold.</p>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">Dark theme</button>
+  </div>
+
+  <section>
+    <h2>States</h2>
+    <p class="section-note">Each control shown in its off and on position where the state has both. Ink and fills are set with alpha colours, so a disabled control reads as muted without fading its label out of contrast.</p>
+    <div class="grid">
+      <div class="cell">
+        <span class="state-name">Default<span class="state-sub">off / on, resting</span></span>
+        <div style="display:flex; gap:var(--s-4); align-items:center;">
+          <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Default, off"><span class="knob"></span></button>
+          <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Default, on"><span class="knob"></span></button>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="state-name">Hover<span class="state-sub">track lifts one rung</span></span>
+        <div style="display:flex; gap:var(--s-4); align-items:center;">
+          <button class="switch force-hover" type="button" role="switch" aria-checked="false" aria-label="Hover, off"><span class="knob"></span></button>
+          <button class="switch force-hover" type="button" role="switch" aria-checked="true" aria-label="Hover, on"><span class="knob"></span></button>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="state-name">Focus-visible<span class="state-sub">keyboard ring</span></span>
+        <div style="display:flex; gap:var(--s-4); align-items:center;">
+          <button class="switch force-focus" type="button" role="switch" aria-checked="false" aria-label="Focus, off"><span class="knob"></span></button>
+          <button class="switch force-focus" type="button" role="switch" aria-checked="true" aria-label="Focus, on"><span class="knob"></span></button>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="state-name">Pressed<span class="state-sub">knob squishes</span></span>
+        <div style="display:flex; gap:var(--s-4); align-items:center;">
+          <button class="switch force-active" type="button" role="switch" aria-checked="false" aria-label="Pressed, off"><span class="knob"></span></button>
+          <button class="switch force-active" type="button" role="switch" aria-checked="true" aria-label="Pressed, on"><span class="knob"></span></button>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="state-name">Disabled<span class="state-sub">not interactive</span></span>
+        <div style="display:flex; gap:var(--s-4); align-items:center;">
+          <button class="switch" type="button" role="switch" aria-checked="false" disabled aria-label="Disabled, off"><span class="knob"></span></button>
+          <button class="switch" type="button" role="switch" aria-checked="true" disabled aria-label="Disabled, on"><span class="knob"></span></button>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="state-name">Loading<span class="state-sub">awaiting a result</span></span>
+        <div style="display:flex; gap:var(--s-4); align-items:center;">
+          <button class="switch" type="button" role="switch" aria-checked="false" aria-busy="true" disabled aria-label="Loading, off"><span class="knob"></span></button>
+          <button class="switch" type="button" role="switch" aria-checked="true" aria-busy="true" disabled aria-label="Loading, on"><span class="knob"></span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sizes</h2>
+    <p class="section-note">Three heights on a 4px rhythm. Small for dense rows, medium as the default, large where the control is a primary affordance or the touch target must be generous.</p>
+    <div class="sizes">
+      <div class="size-item">
+        <button class="switch sm" type="button" role="switch" aria-checked="true" aria-label="Small, on"><span class="knob"></span></button>
+        <span class="size-name">Small · 36px</span>
+      </div>
+      <div class="size-item">
+        <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Medium, on"><span class="knob"></span></button>
+        <span class="size-name">Medium · 44px</span>
+      </div>
+      <div class="size-item">
+        <button class="switch lg" type="button" role="switch" aria-checked="true" aria-label="Large, on"><span class="knob"></span></button>
+        <span class="size-name">Large · 54px</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>In use</h2>
+    <p class="section-note">Live and keyboard-operable: focus a switch and press space or enter. Each control is named by its label for assistive tech. Toggle one to see the resting motion under 200ms, or honour reduced motion where set.</p>
+    <div class="demo">
+      <div class="demo-row">
+        <div class="copy">
+          <div class="t"><label id="lbl-a">Notifications</label></div>
+          <div class="d">Alerts for replies and mentions.</div>
+        </div>
+        <button class="switch" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-a"><span class="knob"></span></button>
+      </div>
+      <div class="demo-row">
+        <div class="copy">
+          <div class="t"><label id="lbl-b">Weekly digest</label></div>
+          <div class="d">A Monday summary by email.</div>
+        </div>
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="lbl-b"><span class="knob"></span></button>
+      </div>
+      <div class="demo-row">
+        <div class="copy">
+          <div class="t"><label id="lbl-c">Read receipts</label></div>
+          <div class="d">Locked by your workspace policy.</div>
+        </div>
+        <button class="switch" type="button" role="switch" aria-checked="false" disabled aria-labelledby="lbl-c"><span class="knob"></span></button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Family: selection · Type: switch / toggle · Register: minimal. Neutral alpha-black on canvas, hairline off track, solid-ink on track, motion under 200ms.
+  </footer>
+</div>
+
+<style>
+  /* forced-state helpers, so the spec sheet documents itself */
+  .switch.force-hover:not([aria-checked="true"]) {
+    background: var(--track-off-hover);
+    border-color: var(--track-off-hover);
+  }
+  .switch.force-hover[aria-checked="true"] { background: var(--track-on-hover); }
+  .switch.force-focus { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+  .switch.force-active .knob { width: calc(var(--knob-d) * 1.18); }
+  .switch.force-active[aria-checked="true"] .knob {
+    transform: translate(calc(var(--w) - (var(--knob-d) * 1.18) - (var(--pad) * 2) - 2px), -50%);
+  }
+</style>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var toggle = document.getElementById("themeToggle");
+
+    function resolvedIsDark() {
+      var t = root.getAttribute("data-theme");
+      if (t === "dark") return true;
+      if (t === "light") return false;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    function syncToggle() {
+      var dark = resolvedIsDark();
+      toggle.textContent = dark ? "Light theme" : "Dark theme";
+      toggle.setAttribute("aria-pressed", String(dark));
+    }
+    toggle.addEventListener("click", function () {
+      root.setAttribute("data-theme", resolvedIsDark() ? "light" : "dark");
+      syncToggle();
+    });
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncToggle);
+    syncToggle();
+
+    // Live switches: only those not disabled and not forced-state
+    var live = document.querySelectorAll('.switch:not([disabled]):not(.force-hover):not(.force-focus):not(.force-active)');
+    live.forEach(function (sw) {
+      function flip() {
+        var on = sw.getAttribute("aria-checked") === "true";
+        sw.setAttribute("aria-checked", String(!on));
+      }
+      sw.addEventListener("click", flip);
+      sw.addEventListener("keydown", function (e) {
+        if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); }
+      });
+    });
+  })();
+</script>

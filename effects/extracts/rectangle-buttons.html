@@ -1,0 +1,558 @@
+<!--
+  Rectangle Buttons — a collection of rectangular/pill button hover effects
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN + utility classes (rewritten as plain CSS), React/lazy-import
+  composition wrapper, remote headshot image, analytics/data-locator attributes,
+  and the component-preview iframe scaffolding. Ten independent button styles kept,
+  each with its original CSS-only hover/animation behaviour.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rectangle Buttons</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --bg: #0a0a0c;
+    --panel: #131316;
+    --border: rgba(255,255,255,0.08);
+    --text: #e8e8ea;
+    --muted: #8a8a92;
+  }
+  *{ box-sizing: border-box; }
+  html, body{
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  body{
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1.25rem 4rem;
+  }
+  header{
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  h1{
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.4rem;
+  }
+  header p{
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  .grid{
+    width: 100%;
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.4rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card .label{
+    position: absolute;
+    top: 0.8rem;
+    left: 1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ============ 1. Dot Border Button ============ */
+  .btn-wrapper{
+    --dot-size: 8px;
+    --line-weight: 1px;
+    --line-distance: 0.8rem 1rem;
+    --animation-speed: 0.35s;
+    --dot-color: #fffa;
+    --line-color: #fffa;
+    --grid-color: #fff3;
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--line-distance);
+    user-select: none;
+  }
+  .btn-wrapper::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(45deg, var(--grid-color) 0 1px, transparent 2px 5px);
+    opacity: 0;
+    z-index: -1;
+  }
+  .btn-wrapper:has(.dot-btn:hover)::after{
+    animation: dot-opacity-anim calc(var(--animation-speed) * 4) ease-in-out forwards;
+  }
+  @keyframes dot-opacity-anim{ 80%{ opacity: 0; } 100%{ opacity: 1; } }
+  .btn-wrapper .dot-btn{
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.25rem;
+    background-color: transparent;
+    border: 1px solid var(--grid-color);
+    color: #fffd;
+    letter-spacing: -0.01em;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform .2s ease-in-out, letter-spacing .2s ease-in-out;
+  }
+  .btn-wrapper .dot-btn:hover{
+    background-color: #25358b;
+    color: #fff;
+    transform: scale(1.05);
+    letter-spacing: .06em;
+  }
+  .btn-wrapper .dot-btn:active{ background-color: #25358b; transform: scale(.98); letter-spacing: .02em; }
+  .btn-wrapper .btn-svg{ height: 20px; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; stroke: #fff4; fill: #fff2; transition: all .2s ease-in-out; }
+  .btn-wrapper .dot-btn:hover .btn-svg{ stroke: #fffa; fill: #fff3; }
+  .btn-wrapper .dot{ position: absolute; width: var(--dot-size); aspect-ratio: 1; border-radius: 2px; background-color: var(--dot-color); transition: all .3s ease-in-out; opacity: 0; }
+  .btn-wrapper:has(.dot-btn:hover) .dot.top.left{ top: 50%; left: 20%; animation: move-top-left var(--animation-speed) ease-in-out forwards; }
+  @keyframes move-top-left{ 90%{ opacity: .6; } 100%{ top: calc(var(--dot-size) * -0.5); left: calc(var(--dot-size) * -0.5); opacity: 1; } }
+  .btn-wrapper:has(.dot-btn:hover) .dot.top.right{ top: 50%; right: 20%; animation: move-top-right var(--animation-speed) ease-in-out forwards; animation-delay: calc(var(--animation-speed)*.6); }
+  @keyframes move-top-right{ 80%{ opacity: .6; } 100%{ top: calc(var(--dot-size) * -0.5); right: calc(var(--dot-size) * -0.5); opacity: 1; } }
+  .btn-wrapper:has(.dot-btn:hover) .dot.bottom.right{ bottom: 50%; right: 20%; animation: move-bottom-right var(--animation-speed) ease-in-out forwards; animation-delay: calc(var(--animation-speed)*1.2); }
+  @keyframes move-bottom-right{ 80%{ opacity: .6; } 100%{ bottom: calc(var(--dot-size) * -0.5); right: calc(var(--dot-size) * -0.5); opacity: 1; } }
+  .btn-wrapper:has(.dot-btn:hover) .dot.bottom.left{ bottom: 50%; left: 20%; animation: move-bottom-left var(--animation-speed) ease-in-out forwards; animation-delay: calc(var(--animation-speed)*1.8); }
+  @keyframes move-bottom-left{ 80%{ opacity: .6; } 100%{ bottom: calc(var(--dot-size) * -0.5); left: calc(var(--dot-size) * -0.5); opacity: 1; } }
+  .btn-wrapper .line{ position: absolute; transition: all .3s ease-in-out; }
+  .btn-wrapper .line.horizontal{ height: var(--line-weight); width: 100%; background-image: repeating-linear-gradient(90deg, #0000 0 calc(var(--line-weight)*2), var(--line-color) calc(var(--line-weight)*2) calc(var(--line-weight)*4)); }
+  .btn-wrapper .line.top{ top: calc(var(--line-weight)*-0.5); transform-origin: top left; transform: rotate(5deg) scaleX(0); }
+  .btn-wrapper:has(.dot-btn:hover) .line.top{ animation: draw-top var(--animation-speed) ease-in-out forwards; animation-delay: calc(var(--animation-speed)*.8); }
+  @keyframes draw-top{ 100%{ transform: rotate(0deg) scaleX(1); } }
+  .btn-wrapper .line.bottom{ bottom: calc(var(--line-weight)*-0.5); transform-origin: bottom right; transform: rotate(5deg) scaleX(0); }
+  .btn-wrapper:has(.dot-btn:hover) .line.bottom{ animation: draw-bottom var(--animation-speed) ease-in-out forwards; animation-delay: calc(var(--animation-speed)*2); }
+  @keyframes draw-bottom{ 100%{ transform: rotate(0deg) scaleX(1); } }
+  .btn-wrapper .line.vertical{ width: var(--line-weight); height: 100%; background-image: repeating-linear-gradient(0deg, #0000 0 calc(var(--line-weight)*2), var(--line-color) calc(var(--line-weight)*2) calc(var(--line-weight)*4)); }
+  .btn-wrapper .line.left{ left: calc(var(--line-weight)*-0.5); transform-origin: bottom left; transform: rotate(0deg) scaleY(0); }
+  .btn-wrapper:has(.dot-btn:hover) .line.left{ animation: draw-left var(--animation-speed) ease-in-out forwards; animation-delay: calc(var(--animation-speed)*2.4); }
+  @keyframes draw-left{ 100%{ transform: rotate(0deg) scaleY(1); } }
+  .btn-wrapper .line.right{ right: calc(var(--line-weight)*-0.5); transform-origin: top right; transform: rotate(5deg) scaleY(0); }
+  .btn-wrapper:has(.dot-btn:hover) .line.right{ animation: draw-right var(--animation-speed) ease-in-out forwards; animation-delay: calc(var(--animation-speed)*1.4); }
+  @keyframes draw-right{ 100%{ transform: rotate(0deg) scaleY(1); } }
+
+  /* ============ 2. Floating Dots CTA ============ */
+  .floating-btn{
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    background: radial-gradient(65.28% 65.28% at 50% 100%, rgba(34, 211, 238, 0.8) 0%, rgba(34, 211, 238, 0) 100%), linear-gradient(0deg, #2563eb, #2563eb);
+    border-radius: 0.75rem;
+    border: none;
+    outline: none;
+    padding: 12px 18px;
+    min-height: 48px;
+    min-width: 102px;
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .floating-btn::before, .floating-btn::after{ content: ""; position: absolute; transition: all 0.5s ease-in-out; z-index: 0; }
+  .floating-btn::before{ inset: 1px; background: linear-gradient(177.95deg, rgba(255,255,255,0.19) 0%, rgba(255,255,255,0) 100%); border-radius: calc(0.75rem - 1px); }
+  .floating-btn::after{ inset: 2px; background: radial-gradient(65.28% 65.28% at 50% 100%, rgba(34,211,238,0.8) 0%, rgba(34,211,238,0) 100%), linear-gradient(0deg, #2563eb, #2563eb); border-radius: calc(0.75rem - 2px); }
+  .floating-btn:active{ transform: scale(0.95); }
+  .points_wrapper{ overflow: hidden; width: 100%; height: 100%; pointer-events: none; position: absolute; z-index: 1; }
+  .points_wrapper .point{ bottom: -10px; position: absolute; animation: floating-points infinite ease-in-out; pointer-events: none; width: 2px; height: 2px; background-color: #fff; border-radius: 9999px; }
+  @keyframes floating-points{ 0%{ transform: translateY(0); } 85%{ opacity: 0; } 100%{ transform: translateY(-55px); opacity: 0; } }
+  .points_wrapper .point:nth-child(1){ left: 10%; opacity: 1; animation-duration: 2.35s; animation-delay: 0.2s; }
+  .points_wrapper .point:nth-child(2){ left: 30%; opacity: 0.7; animation-duration: 2.5s; animation-delay: 0.5s; }
+  .points_wrapper .point:nth-child(3){ left: 25%; opacity: 0.8; animation-duration: 2.2s; animation-delay: 0.1s; }
+  .points_wrapper .point:nth-child(4){ left: 44%; opacity: 0.6; animation-duration: 2.05s; }
+  .points_wrapper .point:nth-child(5){ left: 50%; opacity: 1; animation-duration: 1.9s; }
+  .points_wrapper .point:nth-child(6){ left: 75%; opacity: 0.5; animation-duration: 1.5s; animation-delay: 1.5s; }
+  .points_wrapper .point:nth-child(7){ left: 88%; opacity: 0.9; animation-duration: 2.2s; animation-delay: 0.2s; }
+  .points_wrapper .point:nth-child(8){ left: 58%; opacity: 0.8; animation-duration: 2.25s; animation-delay: 0.2s; }
+  .points_wrapper .point:nth-child(9){ left: 98%; opacity: 0.6; animation-duration: 2.6s; animation-delay: 0.1s; }
+  .points_wrapper .point:nth-child(10){ left: 65%; opacity: 1; animation-duration: 2.5s; animation-delay: 0.2s; }
+  .floating-inner{ z-index: 2; gap: 6px; position: relative; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; line-height: 1.5; transition: color 0.2s ease-in-out; }
+  .floating-inner svg{ width: 18px; height: 18px; transition: transform 0.3s ease; stroke: white; fill: none; }
+  .floating-btn:hover .floating-inner svg{ transform: translateX(2px); }
+  .floating-btn:hover .floating-inner svg path{ animation: dash 0.8s linear forwards; }
+  @keyframes dash{ 0%{ stroke-dasharray: 0,20; stroke-dashoffset: 0; } 50%{ stroke-dasharray: 10,10; stroke-dashoffset: -5; } 100%{ stroke-dasharray: 20,0; stroke-dashoffset: -10; } }
+
+  /* ============ 3. Gradient Beam CTA ============ */
+  .beam-btn{
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    transition: all 0.5s;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 0.12em;
+    border-radius: 9999px;
+    padding: 1.25rem 3rem;
+  }
+  .beam-btn:hover{ transform: scale(1.02); box-shadow: 0 0 40px -10px rgba(234,88,12,0.5); }
+  .beam-border{ position: absolute; inset: 0; z-index: -2; border-radius: 9999px; overflow: hidden; padding: 1px; }
+  .beam-border .spin{ position: absolute; inset: -100%; background: conic-gradient(from 0deg, transparent 0 300deg, #ea580c 360deg); animation: beam-spin 3s linear infinite; }
+  .beam-border .core{ position: absolute; inset: 1px; border-radius: 9999px; background: #000; }
+  @keyframes beam-spin{ to{ transform: rotate(360deg); } }
+  .beam-inner{ position: absolute; overflow: hidden; background: #09090b; border-radius: 9999px; inset: 2px; z-index: -1; }
+  .beam-inner .fade{ position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(63,63,70,0.6), transparent); }
+  .beam-inner .dots{ position: absolute; inset: 0; opacity: 0.3; mix-blend-mode: overlay; background-image: radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px); background-size: 12px 12px; animation: dots-move 8s linear infinite; }
+  @keyframes dots-move{ 0%{ background-position: 0 0; } 100%{ background-position: 24px 24px; } }
+  .beam-inner .glow{ position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 66%; height: 50%; background: rgba(249,115,22,0.1); filter: blur(24px); border-radius: 9999px; pointer-events: none; transition: background-color 0.5s; }
+  .beam-btn:hover .beam-inner .glow{ background: rgba(249,115,22,0.3); }
+  .beam-btn span{ position: relative; z-index: 1; color: rgba(255,255,255,0.9); }
+  .beam-btn:hover span{ color: #fff; }
+  .beam-btn svg{ position: relative; z-index: 1; margin-left: 0.5rem; transition: transform 0.3s; }
+  .beam-btn:hover svg{ transform: translateX(3px); }
+
+  /* ============ 4. Gradient CTA ============ */
+  .gradient-cta-btn{
+    all: unset;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    font-weight: 500;
+    color: #7c2d12;
+    background: linear-gradient(to right, #FFEBB1, #FFC438);
+    border-radius: 9999px;
+    padding: 1rem 2rem;
+    box-shadow: 0 15px 33px -12px rgba(255,162,42,0.9), inset 0 4px 6.3px rgba(252,220,134,1), inset 0 -5px 6.3px rgba(255,162,38,1);
+    transition: box-shadow 0.3s;
+  }
+  .gradient-cta-btn:hover{ box-shadow: 0 15px 40px -8px rgba(255,162,42,1), inset 0 4px 6.3px rgba(252,220,134,1), inset 0 -5px 6.3px rgba(255,162,38,1); }
+  .gradient-cta-btn .sweep{ position: absolute; inset: 0; background: rgba(255,255,255,0.2); transform: translateY(100%); transition: transform 0.3s; }
+  .gradient-cta-btn:hover .sweep{ transform: translateY(0); }
+  .gradient-cta-btn span{ position: relative; display: flex; align-items: center; gap: 0.5rem; }
+
+  /* ============ 5. Gradient Pill Button ============ */
+  .pill-btn{
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: rgba(0,0,0,0.6);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.2), rgba(0,0,0,0.1));
+    border-radius: 9999px;
+    padding: 0.75rem 1.5rem;
+    position: relative;
+    box-shadow: 0 18px 35px rgba(31,41,55,0.25), 0 0 0 1px rgba(209,213,219,0.3);
+    transition: all 0.2s;
+  }
+  .pill-btn:hover{ background: #f8fafc; color: #334155; }
+  .pill-btn::before{
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(0,0,0,0.4), rgba(255,255,255,0.8));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* ============ 6. Launch Button ============ */
+  .launch-wrap{ position: relative; display: inline-block; }
+  .launch-glow{ position: absolute; inset: -4px; opacity: 0.4; transition: opacity 0.5s; background: rgba(245,158,11,0.4); border-radius: 0.9rem; filter: blur(6px); }
+  .launch-btn{ position: relative; display: flex; align-items: center; gap: 0.75rem; background: linear-gradient(to bottom, #fde68a, #fcd34d, #f59e0b); color: #451a03; border-radius: 0.9rem; padding: 1rem 2rem; border: none; cursor: pointer; font-size: 1.05rem; font-weight: 500; box-shadow: 0 0 0 1px rgba(251,191,36,0.5), 0 4px 0 #b45309, 0 10px 15px -3px rgba(0,0,0,0.5); transition: all 0.15s; }
+  .launch-wrap:hover .launch-glow{ opacity: 0.75; }
+  .launch-btn:active{ transform: translateY(2px); box-shadow: 0 0 0 1px rgba(251,191,36,0.5), 0 2px 0 #b45309; }
+  .launch-btn svg{ fill: rgba(69,26,3,0.2); stroke-width: 1.5; }
+
+  /* ============ 7. Sliding Text CTA ============ */
+  .slide-btn{
+    all: unset;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    min-width: 150px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 1s cubic-bezier(0.15,0.83,0.66,1);
+    box-shadow: 0 2.8px 2.2px rgba(0,0,0,0.3), 0 6.7px 5.3px rgba(0,0,0,0.35), 0 12.5px 10px rgba(0,0,0,0.4);
+    font-weight: 600;
+    color: #a3a3a3;
+    letter-spacing: -0.01em;
+    background: #262626;
+    border: 1px solid #525252;
+    border-radius: 9999px;
+    padding: 0.75rem 1.25rem;
+  }
+  .slide-btn:hover{ transform: translateY(-3px); color: #fff; }
+  .slide-btn .txt-original, .slide-btn .txt-clone{ position: relative; z-index: 1; }
+  .slide-btn .txt-original{ transition: all 0.5s ease-out; }
+  .slide-btn:hover .txt-original{ transform: translateY(2rem); opacity: 0; filter: blur(4px); }
+  .slide-btn .txt-clone{ position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease-in-out; transform: translateY(-2rem); opacity: 0; filter: blur(4px); }
+  .slide-btn:hover .txt-clone{ transform: translateY(0); opacity: 1; filter: blur(0); }
+  .slide-btn .underline{ position: absolute; bottom: 0; left: 50%; height: 1px; width: 70%; transform: translateX(-50%); transition: opacity 1s; opacity: 0; background: linear-gradient(to right, transparent, #e5e5e5, transparent); border-radius: 9999px; filter: blur(2px); }
+  .slide-btn:hover .underline{ opacity: 0.8; }
+  .slide-btn .shine{ position: absolute; inset: 0; opacity: 0; transition: opacity 1s; pointer-events: none; background: linear-gradient(to top, rgba(255,255,255,0.2), rgba(255,255,255,0.1), transparent); border-radius: 9999px; }
+  .slide-btn:hover .shine{ opacity: 0.6; }
+
+  /* ============ 8. Spinning Border Button ============ */
+  .spin-btn{
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    border-radius: 9999px;
+    padding: 1px;
+    transition: all 0.3s;
+  }
+  .spin-btn:hover{ transform: translateY(-2px); box-shadow: 0 0 25px rgba(255,255,255,0.1); }
+  .spin-btn .beam{ position: absolute; inset: -100%; animation: spin-beam 3s linear infinite; background: conic-gradient(from 90deg at 50% 50%, transparent 0%, transparent 75%, #fff 100%); opacity: 0; transition: opacity 0.3s; }
+  .spin-btn:hover .beam{ opacity: 1; }
+  @keyframes spin-beam{ to{ transform: rotate(360deg); } }
+  .spin-btn .static-border{ position: absolute; inset: 0; border-radius: 9999px; background: #27272a; transition: opacity 0.3s; }
+  .spin-btn:hover .static-border{ opacity: 0; }
+  .spin-btn .surface{ display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-transform: uppercase; transition: color 0.3s; font-size: 0.75rem; font-weight: 500; color: #a1a1aa; letter-spacing: 0.15em; background: linear-gradient(to bottom, #27272a, #09090b); width: 100%; height: 100%; border-radius: 9999px; padding: 0.65rem 1.5rem; position: relative; box-shadow: inset 0 1px 0 rgba(255,255,255,0.3); }
+  .spin-btn:hover .surface{ color: #fff; }
+  .spin-btn svg{ transition: transform 0.3s; }
+  .spin-btn:hover svg{ transform: translateX(1.5px); }
+
+  /* ============ 9. Glassmorphism CTA ============ */
+  .glass-btn{
+    --spread: 90deg;
+    --shimmer-color: rgba(255,255,255,0.6);
+    --speed: 4s;
+    all: unset;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 9999px;
+    transition: all 0.3s;
+    box-shadow: 0 8px 40px rgba(129,140,248,0.25);
+  }
+  .glass-btn:hover{ transform: scale(1.05); box-shadow: 0 0 40px 8px rgba(129,140,248,0.35); }
+  .glass-btn .shimmer-wrap{ position: absolute; inset: -200%; width: 400%; height: 400%; animation: rotate-gradient var(--speed) linear infinite; }
+  @keyframes rotate-gradient{ to{ transform: rotate(360deg); } }
+  .glass-btn .shimmer{ position: absolute; inset: 0; background: conic-gradient(from calc(270deg - (var(--spread) * 0.5)), transparent 0, var(--shimmer-color) var(--spread), transparent var(--spread)); }
+  .glass-btn .glass-bg{ position: absolute; inset: 1px; border-radius: 9999px; background: rgba(255,255,255,0.05); backdrop-filter: blur(6px); }
+  .glass-content{ z-index: 1; display: flex; align-items: center; gap: 0.75rem; font-size: 1rem; font-weight: 500; color: #fff; padding: 0.75rem 1.25rem; position: relative; }
+  .glass-content .icon-dot{ display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 9999px; background: rgba(255,255,255,0.1); }
+
+  /* ============ 10. Generate Button (loading state) ============ */
+  .gen-btn{
+    all: unset;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 0.6rem;
+    padding: 0.85rem 1.6rem;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .gen-btn:hover{ border-color: #6366f1; background: #1e1b2e; }
+  .gen-btn .spinner{ width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25); border-top-color: #a5b4fc; animation: spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  footer{
+    margin-top: 3rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Rectangle Buttons</h1>
+    <p>Hover any button to see its effect</p>
+  </header>
+
+  <div class="grid">
+
+    <div class="card">
+      <span class="label">Dot Border</span>
+      <a href="#" class="btn-wrapper" onclick="return false">
+        <div class="line horizontal top"></div>
+        <div class="line vertical right"></div>
+        <div class="line horizontal bottom"></div>
+        <div class="line vertical left"></div>
+        <div class="dot top left"></div>
+        <div class="dot top right"></div>
+        <div class="dot bottom right"></div>
+        <div class="dot bottom left"></div>
+        <button class="dot-btn">
+          <span>Start Creating</span>
+          <svg class="btn-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.6744 11.4075L15.7691 17.1233C15.7072 17.309 15.5586 17.4529 15.3709 17.5087L3.69348 20.9803C3.22819 21.1186 2.79978 20.676 2.95328 20.2155L6.74467 8.84131C6.79981 8.67588 6.92419 8.54263 7.08543 8.47624L12.472 6.25822C12.696 6.166 12.9535 6.21749 13.1248 6.38876L17.5294 10.7935C17.6901 10.9542 17.7463 11.1919 17.6744 11.4075Z"></path>
+            <path d="M3.2959 20.6016L9.65986 14.2376"></path>
+            <path d="M17.7917 11.0557L20.6202 8.22724C21.4012 7.44619 21.4012 6.17986 20.6202 5.39881L18.4989 3.27749C17.7178 2.49645 16.4515 2.49645 15.6704 3.27749L12.842 6.10592"></path>
+            <path d="M11.7814 12.1163C11.1956 11.5305 10.2458 11.5305 9.66004 12.1163C9.07426 12.7021 9.07426 13.6519 9.66004 14.2376C10.2458 14.8234 11.1956 14.8234 11.7814 14.2376C12.3671 13.6519 12.3671 12.7021 11.7814 12.1163Z"></path>
+          </svg>
+        </button>
+      </a>
+    </div>
+
+    <div class="card">
+      <span class="label">Floating Dots</span>
+      <button type="button" class="floating-btn">
+        <div class="points_wrapper">
+          <i class="point"></i><i class="point"></i><i class="point"></i><i class="point"></i><i class="point"></i>
+          <i class="point"></i><i class="point"></i><i class="point"></i><i class="point"></i><i class="point"></i>
+        </div>
+        <span class="floating-inner">
+          Sign Up
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+        </span>
+      </button>
+    </div>
+
+    <div class="card">
+      <span class="label">Gradient Beam</span>
+      <button class="beam-btn">
+        <div class="beam-border"><div class="spin"></div><div class="core"></div></div>
+        <div class="beam-inner"><div class="fade"></div><div class="dots"></div><div class="glow"></div></div>
+        <span>Start Building</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+      </button>
+    </div>
+
+    <div class="card">
+      <span class="label">Gradient CTA</span>
+      <button class="gradient-cta-btn">
+        <div class="sweep"></div>
+        <span>
+          Start Free Pilot
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg>
+        </span>
+      </button>
+    </div>
+
+    <div class="card">
+      <span class="label">Gradient Pill</span>
+      <button class="pill-btn">
+        <span>Demo Lesson</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+      </button>
+    </div>
+
+    <div class="card">
+      <span class="label">Launch</span>
+      <div class="launch-wrap">
+        <div class="launch-glow"></div>
+        <button class="launch-btn">
+          <span>Initialise Launch</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="label">Sliding Text</span>
+      <button class="slide-btn">
+        <span class="txt-original">Download Mac app</span>
+        <span class="txt-clone">Download Mac app</span>
+        <span class="underline" aria-hidden="true"></span>
+        <span class="shine" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <div class="card">
+      <span class="label">Spinning Border</span>
+      <button class="spin-btn">
+        <span class="beam"></span>
+        <span class="static-border"></span>
+        <span class="surface">
+          <span>Request Demo</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+        </span>
+      </button>
+    </div>
+
+    <div class="card">
+      <span class="label">Glassmorphism</span>
+      <a href="#" class="glass-btn" onclick="return false">
+        <div class="shimmer-wrap"><div class="shimmer"></div></div>
+        <div class="glass-bg"></div>
+        <span class="glass-content">
+          <span>Generate My Site</span>
+          <span class="icon-dot">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"></path><path d="m14 7 3 3"></path><path d="M5 6v4"></path><path d="M19 14v4"></path><path d="M10 2v2"></path><path d="M7 8H3"></path><path d="M21 16h-4"></path><path d="M11 3H9"></path></svg>
+          </span>
+        </span>
+      </a>
+    </div>
+
+    <div class="card">
+      <span class="label">Generate</span>
+      <button class="gen-btn" id="genBtn">
+        <span class="spinner" id="genSpinner" style="display:none"></span>
+        <span id="genLabel">Generate</span>
+      </button>
+    </div>
+
+  </div>
+
+  <footer>Ten rectangular button treatments &middot; CSS-only, no JavaScript required except the generate demo</footer>
+
+  <script>
+    // Small self-animating demo for the "Generate" button: click to toggle a brief loading state.
+    (function(){
+      var btn = document.getElementById('genBtn');
+      var spinner = document.getElementById('genSpinner');
+      var label = document.getElementById('genLabel');
+      if(!btn) return;
+      btn.addEventListener('click', function(){
+        spinner.style.display = 'inline-block';
+        label.textContent = 'Generating…';
+        setTimeout(function(){
+          spinner.style.display = 'none';
+          label.textContent = 'Generate';
+        }, 1600);
+      });
+    })();
+  </script>
+</body>
+</html>

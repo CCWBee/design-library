@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tab bar · glass</title>
+<style>
+  /* ---------------------------------------------------------------------------
+     Tokens. Defined once on :root (light defaults), redefined for dark under a
+     guarded media query, and redefined again for the manual toggle so the
+     button wins in both directions. No colour is defined only inside a media
+     query. Ink and fills are alpha colours; the CSS opacity property is never
+     used, so nothing fades its descendants wholesale.
+  --------------------------------------------------------------------------- */
+  :root {
+    color-scheme: light dark;
+
+    /* Page */
+    --ink:            rgba(20, 24, 33, 0.92);
+    --ink-soft:       rgba(20, 24, 33, 0.62);
+    --ink-faint:      rgba(20, 24, 33, 0.40);
+    --canvas:         #eef1f6;
+    --card:           rgba(255, 255, 255, 0.66);
+    --card-border:    rgba(16, 24, 40, 0.10);
+
+    /* The busy backdrop the glass reads through */
+    --wash-1: #dfe7f5;
+    --wash-2: #f3e6ef;
+    --wash-3: #e2f0ea;
+    --wash-4: #f6efe0;
+
+    /* Glass bar */
+    --glass-fallback: rgba(255, 255, 255, 0.90);
+    --glass-tint:     rgba(255, 255, 255, 0.52);
+    --glass-blur:     18px;
+    --glass-saturate: 180%;
+    --glass-border:   rgba(255, 255, 255, 0.65);
+    --glass-hi:       rgba(255, 255, 255, 0.55);
+    --glass-radius:   22px;
+    --glass-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.10),
+      0 14px 34px rgba(16, 24, 40, 0.18);
+
+    /* Tab items */
+    --tab-ink:        rgba(20, 24, 33, 0.60);   /* inactive label + icon */
+    --tab-ink-active: rgba(20, 24, 33, 0.95);
+    --tab-hover-fill: rgba(20, 24, 33, 0.06);
+    --tab-press-fill: rgba(20, 24, 33, 0.12);
+    --pill-fill:      rgba(255, 255, 255, 0.72); /* selected: brighter tint */
+    --pill-border:    rgba(255, 255, 255, 0.80);
+    --pill-shadow:    0 1px 2px rgba(16, 24, 40, 0.14);
+    --accent:         rgba(58, 92, 214, 1);      /* active accent, kept rare */
+    --tab-disabled:   rgba(20, 24, 33, 0.28);
+    --focus-ring:     rgba(58, 92, 214, 0.90);
+    --focus-halo:     rgba(255, 255, 255, 0.85);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink:            rgba(240, 243, 248, 0.94);
+      --ink-soft:       rgba(240, 243, 248, 0.60);
+      --ink-faint:      rgba(240, 243, 248, 0.38);
+      --canvas:         #10131a;
+      --card:           rgba(30, 35, 46, 0.55);
+      --card-border:    rgba(255, 255, 255, 0.10);
+
+      --wash-1: #1b2743;
+      --wash-2: #2a1f38;
+      --wash-3: #163029;
+      --wash-4: #33291a;
+
+      --glass-fallback: rgba(24, 28, 36, 0.92);
+      --glass-tint:     rgba(26, 31, 41, 0.46);
+      --glass-border:   rgba(255, 255, 255, 0.14);
+      --glass-hi:       rgba(255, 255, 255, 0.10);
+      --glass-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.42),
+        0 14px 38px rgba(0, 0, 0, 0.58);
+
+      --tab-ink:        rgba(240, 243, 248, 0.62);
+      --tab-ink-active: rgba(240, 243, 248, 0.98);
+      --tab-hover-fill: rgba(255, 255, 255, 0.08);
+      --tab-press-fill: rgba(255, 255, 255, 0.14);
+      --pill-fill:      rgba(255, 255, 255, 0.16);
+      --pill-border:    rgba(255, 255, 255, 0.22);
+      --pill-shadow:    0 1px 2px rgba(0, 0, 0, 0.35);
+      --accent:         rgba(140, 168, 255, 1);
+      --tab-disabled:   rgba(240, 243, 248, 0.30);
+      --focus-ring:     rgba(140, 168, 255, 0.95);
+      --focus-halo:     rgba(10, 13, 20, 0.85);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ink:            rgba(240, 243, 248, 0.94);
+    --ink-soft:       rgba(240, 243, 248, 0.60);
+    --ink-faint:      rgba(240, 243, 248, 0.38);
+    --canvas:         #10131a;
+    --card:           rgba(30, 35, 46, 0.55);
+    --card-border:    rgba(255, 255, 255, 0.10);
+
+    --wash-1: #1b2743;
+    --wash-2: #2a1f38;
+    --wash-3: #163029;
+    --wash-4: #33291a;
+
+    --glass-fallback: rgba(24, 28, 36, 0.92);
+    --glass-tint:     rgba(26, 31, 41, 0.46);
+    --glass-border:   rgba(255, 255, 255, 0.14);
+    --glass-hi:       rgba(255, 255, 255, 0.10);
+    --glass-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.42),
+      0 14px 38px rgba(0, 0, 0, 0.58);
+
+    --tab-ink:        rgba(240, 243, 248, 0.62);
+    --tab-ink-active: rgba(240, 243, 248, 0.98);
+    --tab-hover-fill: rgba(255, 255, 255, 0.08);
+    --tab-press-fill: rgba(255, 255, 255, 0.14);
+    --pill-fill:      rgba(255, 255, 255, 0.16);
+    --pill-border:    rgba(255, 255, 255, 0.22);
+    --pill-shadow:    0 1px 2px rgba(0, 0, 0, 0.35);
+    --accent:         rgba(140, 168, 255, 1);
+    --tab-disabled:   rgba(240, 243, 248, 0.30);
+    --focus-ring:     rgba(140, 168, 255, 0.95);
+    --focus-halo:     rgba(10, 13, 20, 0.85);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color: var(--ink);
+    background-color: var(--canvas);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2rem) 5rem;
+  }
+
+  /* ---------- Spec-sheet chrome ---------- */
+  header.sheet-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2.75rem;
+  }
+  h1 {
+    font-size: clamp(1.5rem, 3.5vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.4rem;
+  }
+  .cell {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .cell code {
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
+    font-size: 0.85em;
+    color: var(--ink);
+    background-color: var(--tab-hover-fill);
+    padding: 0.1em 0.4em;
+    border-radius: 5px;
+  }
+
+  .toggle {
+    flex: none;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink);
+    background-color: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 9px;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+  }
+  .toggle:hover { background-color: var(--tab-hover-fill); }
+  .toggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  section { margin-top: 3rem; }
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 0 0 0.35rem;
+  }
+  .note {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 1.5rem;
+  }
+
+  /* The stage each specimen sits on: a busy per-theme backdrop so the blur
+     has something to work against. */
+  .stage {
+    position: relative;
+    border-radius: 20px;
+    padding: 2.25rem 1.25rem;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    background-color: var(--canvas);
+    background-image:
+      radial-gradient(42% 60% at 12% 18%, var(--wash-1) 0%, transparent 60%),
+      radial-gradient(46% 64% at 88% 12%, var(--wash-2) 0%, transparent 62%),
+      radial-gradient(50% 70% at 78% 92%, var(--wash-3) 0%, transparent 60%),
+      radial-gradient(44% 60% at 22% 88%, var(--wash-4) 0%, transparent 60%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+  }
+  .stage.tight { padding: 1.6rem 1rem; }
+
+  .specimen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .specimen-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+  }
+
+  /* ---------------------------------------------------------------------------
+     The glass tab bar. Base rule uses the opaque fallback fill; the live blur
+     is added only where backdrop-filter is supported. This is app navigation,
+     so it is a <nav> of links with aria-current on the selected item, not a
+     tablist. The active pill is a brighter tint, as the register prescribes.
+  --------------------------------------------------------------------------- */
+  .tabbar {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.4rem;
+    border-radius: var(--glass-radius);
+    background-color: var(--glass-fallback);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    background-image: linear-gradient(
+      to bottom,
+      var(--glass-hi),
+      rgba(255, 255, 255, 0) 42%
+    );
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .tabbar {
+      background-color: var(--glass-tint);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+  }
+
+  .tab {
+    -webkit-appearance: none;
+    appearance: none;
+    font: inherit;
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--tab-ink);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    min-width: 68px;
+    min-height: 52px;
+    padding: 0.4rem 0.7rem;
+    border-radius: 15px;
+    border: 1px solid transparent;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  }
+  .tab svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+  }
+  .tab .lbl {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  /* Hover and pressed. Demo classes duplicate the live pseudo-states so the
+     sheet documents itself without a pointer; grouped so they cannot drift. */
+  .tab:hover,
+  .tab.is-hover { background-color: var(--tab-hover-fill); color: var(--tab-ink-active); }
+  .tab:active,
+  .tab.is-press { background-color: var(--tab-press-fill); color: var(--tab-ink-active); }
+
+  /* Selected: brighter-tint pill + accent ink. aria-current drives it. */
+  .tab[aria-current="page"],
+  .tab.is-selected {
+    background-color: var(--pill-fill);
+    border-color: var(--pill-border);
+    box-shadow: var(--pill-shadow);
+    color: var(--accent);
+  }
+
+  /* Focus-visible: a ring that clears both the glass tint and the page. The
+     halo separates it from the surface underneath. */
+  .tab:focus-visible,
+  .tab.is-focus {
+    outline: none;
+    border-color: var(--focus-ring);
+    box-shadow:
+      0 0 0 2px var(--focus-halo),
+      0 0 0 4px var(--focus-ring);
+  }
+
+  /* Disabled: reduced-alpha ink, no fill change, not the opacity property. */
+  .tab:disabled,
+  .tab.is-disabled {
+    color: var(--tab-disabled);
+    cursor: not-allowed;
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  /* Compact variant: icon and label on one row, shorter bar. */
+  .tabbar.compact { padding: 0.3rem; }
+  .tabbar.compact .tab {
+    flex-direction: row;
+    gap: 0.45rem;
+    min-height: 40px;
+    min-width: 0;
+    padding: 0.35rem 0.8rem;
+    border-radius: 12px;
+  }
+  .tabbar.compact .tab svg { width: 18px; height: 18px; }
+  .tabbar.compact .tab .lbl { font-size: 0.82rem; }
+
+  /* Icon-only variant: square targets, label carried by aria-label + title. */
+  .tabbar.icononly .tab {
+    min-width: 52px;
+    padding: 0.5rem;
+  }
+
+  /* State-grid: the six states side by side on one bar. */
+  .grid-note {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    justify-content: center;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+  .grid-note b { color: var(--ink); font-weight: 600; }
+
+  .legend {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem 1.5rem;
+    max-width: 62ch;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .legend b { color: var(--ink); font-weight: 600; font-size: 0.82rem; }
+  .legend span { display: block; }
+
+  .fineprint {
+    margin-top: 3.5rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    max-width: 66ch;
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .tabbar {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background-color: var(--glass-fallback);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tab,
+    .toggle { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="sheet-head">
+    <div>
+      <h1>Tab bar</h1>
+      <p class="cell">Navigation family · glass register · ontology cell <code>navigation / tab-bar / glass</code></p>
+    </div>
+    <button type="button" class="toggle" id="themeToggle" aria-label="Switch colour theme">Theme</button>
+  </header>
+
+  <p class="note">
+    A floating bottom bar for switching top-level views, blurred so the page reads through it. The
+    selected item takes a brighter-tint pill and the accent ink; everything else stays quiet. Built
+    as app navigation, so it is a <code>nav</code> of links carrying <code>aria-current</code>, not a
+    tablist. Try it with the keyboard: tab through the live specimen to see the focus ring.
+  </p>
+
+  <section>
+    <h2>Live</h2>
+    <p class="note">The working component. Selecting a tab moves the pill; the others return to rest.</p>
+    <div class="stage">
+      <nav class="tabbar" aria-label="Primary">
+        <a class="tab" href="#home" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+          <span class="lbl">Home</span>
+        </a>
+        <a class="tab" href="#search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.6-3.6"/></svg>
+          <span class="lbl">Search</span>
+        </a>
+        <a class="tab" href="#activity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5 6 5-14L17 12h4"/></svg>
+          <span class="lbl">Activity</span>
+        </a>
+        <a class="tab" href="#profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.7"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg>
+          <span class="lbl">Profile</span>
+        </a>
+      </nav>
+    </div>
+  </section>
+
+  <section>
+    <h2>States</h2>
+    <p class="note">
+      Every state forced statically so the sheet reads without a pointer. Default is the resting
+      inactive tab; selected is the current view. Pressed and selected are distinct: one is a
+      momentary touch, the other a persistent position.
+    </p>
+    <div class="stage">
+      <nav class="tabbar" aria-label="States" role="group">
+        <span class="tab" role="img" aria-label="Default state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+          <span class="lbl">Default</span>
+        </span>
+        <span class="tab is-hover" role="img" aria-label="Hover state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.6-3.6"/></svg>
+          <span class="lbl">Hover</span>
+        </span>
+        <span class="tab is-focus" role="img" aria-label="Focus-visible state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5 6 5-14L17 12h4"/></svg>
+          <span class="lbl">Focus</span>
+        </span>
+        <span class="tab is-press" role="img" aria-label="Pressed state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+          <span class="lbl">Pressed</span>
+        </span>
+        <span class="tab is-selected" role="img" aria-label="Selected state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.7"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg>
+          <span class="lbl">Selected</span>
+        </span>
+        <span class="tab is-disabled" role="img" aria-label="Disabled state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+          <span class="lbl">Disabled</span>
+        </span>
+      </nav>
+      <ul class="legend">
+        <li><b>Default</b><span>Inactive view, quiet ink, no fill.</span></li>
+        <li><b>Hover</b><span>Faint fill, ink lifts to full contrast.</span></li>
+        <li><b>Focus-visible</b><span>Accent ring with a halo, keyboard only.</span></li>
+        <li><b>Pressed</b><span>Deeper fill for the touch, momentary.</span></li>
+        <li><b>Selected</b><span>Brighter pill, accent ink, aria-current.</span></li>
+        <li><b>Disabled</b><span>Reduced-alpha ink, no pointer, no fill.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Size and layout variants</h2>
+    <p class="note">
+      Standard is the stacked icon-over-label bottom bar. Compact puts icon and label on one row for
+      a slimmer bar or wider screens. Icon-only drops the labels for dense contexts; each target keeps
+      its name through <code>aria-label</code> and a tooltip.
+    </p>
+    <div class="stage">
+
+      <div class="specimen">
+        <span class="specimen-label">Standard</span>
+        <nav class="tabbar" aria-label="Standard variant">
+          <a class="tab" href="#s1" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+            <span class="lbl">Home</span>
+          </a>
+          <a class="tab" href="#s2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.6-3.6"/></svg>
+            <span class="lbl">Search</span>
+          </a>
+          <a class="tab" href="#s3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.7"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg>
+            <span class="lbl">Profile</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="specimen">
+        <span class="specimen-label">Compact</span>
+        <nav class="tabbar compact" aria-label="Compact variant">
+          <a class="tab" href="#c1" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+            <span class="lbl">Home</span>
+          </a>
+          <a class="tab" href="#c2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.6-3.6"/></svg>
+            <span class="lbl">Search</span>
+          </a>
+          <a class="tab" href="#c3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.7"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg>
+            <span class="lbl">Profile</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="specimen">
+        <span class="specimen-label">Icon-only</span>
+        <nav class="tabbar icononly" aria-label="Icon-only variant">
+          <a class="tab" href="#i1" aria-current="page" aria-label="Home" title="Home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+          </a>
+          <a class="tab" href="#i2" aria-label="Search" title="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.6-3.6"/></svg>
+          </a>
+          <a class="tab" href="#i3" aria-label="Activity" title="Activity">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5 6 5-14L17 12h4"/></svg>
+          </a>
+          <a class="tab" href="#i4" aria-label="Profile" title="Profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.7"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg>
+          </a>
+        </nav>
+      </div>
+
+    </div>
+  </section>
+
+  <p class="fineprint">
+    On loading: a top-level navigation tab bar has no loading state of its own. It stays present and
+    responsive while the view it points at loads; any progress belongs to that view, not to the bar.
+    So none is shown here. Accessibility notes: the bar is a landmark <code>nav</code> with a label,
+    the current view carries <code>aria-current="page"</code>, focus is always visible with a ring
+    that clears the glass, targets meet the 44px minimum on the standard size, and the component
+    honours <code>prefers-reduced-transparency</code> (blur off, opaque fill) and
+    <code>prefers-reduced-motion</code> (transitions off). All ink and fills use alpha colours; the
+    CSS opacity property is not used anywhere.
+  </p>
+
+</div>
+
+<script>
+  // Theme toggle: sets data-theme so the manual choice wins over the OS setting
+  // in both directions. Starts from whatever the OS prefers.
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    function current() {
+      if (root.getAttribute('data-theme')) return root.getAttribute('data-theme');
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+    });
+  })();
+
+  // Live specimen: move aria-current on selection, without navigating.
+  (function () {
+    var live = document.querySelector('nav[aria-label="Primary"]');
+    if (!live) return;
+    live.addEventListener('click', function (e) {
+      var tab = e.target.closest('.tab');
+      if (!tab) return;
+      e.preventDefault();
+      live.querySelectorAll('.tab').forEach(function (t) { t.removeAttribute('aria-current'); });
+      tab.setAttribute('aria-current', 'page');
+    });
+  })();
+</script>
+</body>
+</html>

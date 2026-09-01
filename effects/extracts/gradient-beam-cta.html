@@ -1,0 +1,167 @@
+<!--
+  Gradient Beam CTA
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN + utility classes (rewritten as plain CSS), lucide icon class,
+  outer "Component Preview" iframe scaffolding, and the auto-centering resize-observer script.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gradient Beam CTA</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #000;
+    color: #fff;
+  }
+
+  @keyframes beam-spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes dots-move {
+    0% { background-position: 0 0; }
+    100% { background-position: 24px 24px; }
+  }
+
+  .cta {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: none;
+    border-radius: 999px;
+    padding: 20px 48px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.9);
+    background: transparent;
+    cursor: pointer;
+    transition: transform 500ms ease, box-shadow 500ms ease, color 300ms ease;
+  }
+  .cta:hover,
+  .cta:focus-visible {
+    transform: scale(1.02);
+    color: #fff;
+    box-shadow: 0 0 40px -10px rgba(234, 88, 12, 0.5);
+  }
+  .cta:focus-visible {
+    outline: 2px solid rgba(234, 88, 12, 0.6);
+    outline-offset: 4px;
+  }
+
+  /* rotating conic-gradient beam ring */
+  .cta .ring {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 999px;
+    overflow: hidden;
+    padding: 1px;
+  }
+  .cta .ring::before {
+    content: "";
+    position: absolute;
+    inset: -100%;
+    background: conic-gradient(from 0deg, transparent 0 300deg, #ea580c 360deg);
+    animation: beam-spin 3s linear infinite;
+  }
+  .cta .ring::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border-radius: 999px;
+    background: #000;
+  }
+
+  /* inner body: gradient wash + moving dot texture + hover glow */
+  .cta .inner {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    left: 2px;
+    z-index: 2;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #09090b;
+  }
+  .cta .inner .wash {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(63, 63, 70, 0.6), transparent);
+  }
+  .cta .inner .dots {
+    position: absolute;
+    inset: 0;
+    opacity: 0.3;
+    mix-blend-mode: overlay;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1px);
+    background-size: 12px 12px;
+    animation: dots-move 8s linear infinite;
+  }
+  .cta .inner .glow {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 66%;
+    height: 50%;
+    border-radius: 999px;
+    background: rgba(249, 115, 22, 0.1);
+    filter: blur(24px);
+    pointer-events: none;
+    transition: background 500ms ease;
+  }
+  .cta:hover .inner .glow {
+    background: rgba(249, 115, 22, 0.3);
+  }
+
+  /* content */
+  .cta .label {
+    position: relative;
+    z-index: 3;
+  }
+  .cta svg {
+    position: relative;
+    z-index: 3;
+    margin-left: 8px;
+    transition: transform 300ms ease;
+  }
+  .cta:hover svg {
+    transform: translateX(4px);
+  }
+</style>
+</head>
+<body>
+  <button class="cta">
+    <span class="ring"></span>
+    <span class="inner">
+      <span class="wash"></span>
+      <span class="dots"></span>
+      <span class="glow"></span>
+    </span>
+    <span class="label">Start Building</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14"></path>
+      <path d="m12 5 7 7-7 7"></path>
+    </svg>
+  </button>
+</body>
+</html>

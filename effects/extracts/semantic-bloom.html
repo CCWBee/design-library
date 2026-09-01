@@ -1,0 +1,346 @@
+<!--
+  Semantic Bloom
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped: React/iframe host wrapper, postMessage control channel, product name ("Codex")
+  default text, editable journal textarea + query input, status HUD readout, Tailwind-style
+  scaffolding. Kept: the Canvas2D particle swarm, the SVG goo/turbulence filter, and the
+  word-attraction/glow behaviour, rewired to run standalone with a fixed seed phrase.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semantic Bloom</title>
+<style>
+  :root {
+    --bg-color: #030303;
+    --text-color: #555555;
+    --highlight-color: #e0e0e0;
+    --sf-semantic-size: 1;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  #bio-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    filter: url('#liquid-filter') contrast(150%) brightness(100%);
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  .noise-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 3;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+
+  .interface-layer {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(2rem, 8vw, 8rem);
+  }
+
+  .journal-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    color: var(--text-color);
+    font-size: clamp(4rem, calc(12vw * var(--sf-semantic-size)), 11rem);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.065em;
+    text-align: center;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 640px) {
+    .interface-layer { padding: 1.5rem; }
+    .journal-area { font-size: clamp(3rem, calc(19vw * var(--sf-semantic-size)), 7rem); }
+  }
+
+  .word {
+    position: relative;
+    display: inline-block;
+    color: var(--text-color);
+    transition: color 1s ease, text-shadow 0.5s ease;
+    z-index: 2;
+  }
+
+  .word.active {
+    color: var(--highlight-color);
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+  }
+
+  #cursor-follower {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+    mix-blend-mode: exclusion;
+  }
+
+  .label {
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #3a3a3a;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<svg style="position: absolute; width: 0; height: 0;">
+  <defs>
+    <filter id="liquid-filter">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"></feGaussianBlur>
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo"></feColorMatrix>
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise"></feTurbulence>
+      <feDisplacementMap in="goo" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+      <feComposite in="SourceGraphic" operator="atop"></feComposite>
+    </filter>
+  </defs>
+</svg>
+
+<div class="noise-overlay"></div>
+<canvas id="bio-layer"></canvas>
+
+<div class="interface-layer">
+  <div class="journal-area" id="editor">Semantic Bloom</div>
+</div>
+
+<span class="label">move to bloom</span>
+<div id="cursor-follower"></div>
+
+<script>
+  const canvas = document.getElementById('bio-layer');
+  const ctx = canvas.getContext('2d');
+  const editor = document.getElementById('editor');
+  const cursorFollower = document.getElementById('cursor-follower');
+
+  let width, height;
+  let mouse = { x: -1000, y: -1000 };
+
+  const config = {
+    particleCount: 50,
+    baseRadius: 15,
+    wanderStrength: 0.5,
+    connectionDist: 150,
+    textAttractionRadius: 200
+  };
+
+  let particles = [];
+  let wordCoordinates = [];
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    updateWordCoords();
+  }
+  window.addEventListener('resize', resize);
+
+  function scanText() {
+    const text = editor.textContent;
+    const words = text.split(/(\s+)/);
+    editor.innerHTML = '';
+    words.forEach(word => {
+      const span = document.createElement('span');
+      span.textContent = word;
+      if (word.trim().length > 0) span.className = 'word';
+      editor.appendChild(span);
+    });
+    updateWordCoords();
+  }
+
+  function updateWordCoords() {
+    wordCoordinates = [];
+    const spans = document.querySelectorAll('.word');
+    spans.forEach(span => {
+      const rect = span.getBoundingClientRect();
+      wordCoordinates.push({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        element: span,
+        active: false
+      });
+    });
+  }
+
+  class Particle {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 2;
+      this.vy = (Math.random() - 0.5) * 2;
+      this.radius = config.baseRadius * (0.8 + Math.random() * 0.5);
+      this.angle = Math.random() * Math.PI * 2;
+    }
+
+    update() {
+      this.angle += (Math.random() - 0.5) * 0.2;
+      this.vx += Math.cos(this.angle) * config.wanderStrength;
+      this.vy += Math.sin(this.angle) * config.wanderStrength;
+
+      this.vx *= 0.95;
+      this.vy *= 0.95;
+
+      const dx = mouse.x - this.x;
+      const dy = mouse.y - this.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 400) {
+        this.vx += dx * 0.002;
+        this.vy += dy * 0.002;
+      }
+
+      let closestDist = Infinity;
+      let closestWord = null;
+
+      wordCoordinates.forEach(word => {
+        const wdx = word.x - this.x;
+        const wdy = word.y - this.y;
+        const wDist = Math.sqrt(wdx * wdx + wdy * wdy);
+        if (wDist < closestDist) {
+          closestDist = wDist;
+          closestWord = word;
+        }
+      });
+
+      if (closestWord && closestDist < config.textAttractionRadius) {
+        const wdx = closestWord.x - this.x;
+        const wdy = closestWord.y - this.y;
+        this.vx += wdx * 0.01;
+        this.vy += wdy * 0.01;
+
+        if (closestDist < 30) {
+          if (!closestWord.active) {
+            closestWord.element.classList.add('active');
+            closestWord.active = true;
+          }
+        } else if (closestDist > 60) {
+          if (closestWord.active) {
+            closestWord.element.classList.remove('active');
+            closestWord.active = false;
+          }
+        }
+      }
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      if (this.x < 0) this.x = width;
+      if (this.x > width) this.x = 0;
+      if (this.y < 0) this.y = height;
+      if (this.y > height) this.y = 0;
+    }
+
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+      ctx.fill();
+    }
+  }
+
+  function init() {
+    resize();
+    for (let i = 0; i < config.particleCount; i++) {
+      particles.push(new Particle(width / 2 + (Math.random() - 0.5) * 100, height / 2 + (Math.random() - 0.5) * 100));
+    }
+    scanText();
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.strokeStyle = 'rgba(120, 120, 120, 0.15)';
+    ctx.lineWidth = 4;
+
+    for (let i = 0; i < particles.length; i++) {
+      let p1 = particles[i];
+      p1.update();
+      p1.draw();
+
+      for (let j = i + 1; j < particles.length; j++) {
+        let p2 = particles[j];
+        const dx = p1.x - p2.x;
+        const dy = p1.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < config.connectionDist) {
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('mousemove', e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    cursorFollower.style.transform = `translate(${e.clientX}px, ${e.clientY}px) scale(1)`;
+  });
+
+  window.addEventListener('touchmove', e => {
+    if (e.touches && e.touches[0]) {
+      mouse.x = e.touches[0].clientX;
+      mouse.y = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  init();
+  animate();
+
+  setTimeout(scanText, 100);
+</script>
+
+</body>
+</html>

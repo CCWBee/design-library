@@ -1,0 +1,426 @@
+<!--
+  Ignition Terminal
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN scaffolding (converted to hand-written CSS), GSAP + ScrollTrigger
+  (replaced with a plain requestAnimationFrame intro), Iconify script, Google Fonts link
+  (replaced with the system font stack), and the fictional company branding text.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ignition Terminal</title>
+<style>
+  :root {
+    --paper: #f4f1ea;
+    --ink: #2b2622;
+    --accent: #d43d17;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  ::selection { background: var(--accent); color: #fff; }
+
+  #bg-gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    display: block;
+    pointer-events: none;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .eyebrow {
+    margin-bottom: 3.5rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: #57504a;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  .eyebrow.in { opacity: 1; transform: translateY(0); }
+
+  .sys-label {
+    margin-bottom: 2rem;
+    font-size: 0.72rem;
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0;
+    transform: translateY(60%);
+    transition: opacity 0.7s ease 0.15s, transform 0.7s ease 0.15s;
+  }
+  .sys-label.in { opacity: 1; transform: translateY(0); }
+
+  .intro-wrapper {
+    opacity: 0;
+    transform: scale(0.55);
+    filter: blur(8px);
+    transition: opacity 0.8s cubic-bezier(.34,1.4,.5,1),
+                transform 0.8s cubic-bezier(.34,1.4,.5,1),
+                filter 0.8s ease;
+  }
+  .intro-wrapper.in {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  button#btn {
+    display: block;
+    width: 264px;
+    height: 78px;
+    border: 0;
+    padding: 7px;
+    border-radius: 24px;
+    cursor: pointer;
+    outline: none;
+    background: linear-gradient(180deg, #3c3f46 0%, #15171b 55%, #2a2d33 100%);
+    box-shadow: 0 26px 52px rgba(15,12,10,.35), 0 3px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.14);
+    transition: transform 0.3s cubic-bezier(.34,1.4,.5,1), box-shadow 0.3s ease;
+  }
+  button#btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 32px 64px rgba(160,60,12,.3), 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.16);
+  }
+  button#btn:active {
+    transform: translateY(1px) scale(0.985);
+  }
+  button#btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 5px;
+  }
+
+  .btn-face {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 17px;
+    overflow: hidden;
+    background: #06050a;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,.9);
+  }
+
+  canvas#gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .btn-label {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    color: #fdf6ee;
+    text-shadow: 0 0 14px rgba(255, 170, 100, .55), 0 1px 6px rgba(0, 0, 0, .9);
+  }
+
+  .caption {
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1.6;
+    color: #78706a;
+    max-width: 280px;
+    opacity: 0;
+    transform: translateY(60%);
+    transition: opacity 0.7s ease 0.25s, transform 0.7s ease 0.25s;
+  }
+  .caption.in { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+  <canvas id="bg-gl" aria-hidden="true"></canvas>
+
+  <main>
+    <div class="eyebrow" id="eyebrow">IGNITION TERMINAL</div>
+    <div class="sys-label" id="sys-label">SYS 07 / IGNITE</div>
+
+    <div class="intro-wrapper" id="intro-wrapper">
+      <button id="btn" type="button">
+        <span class="btn-face">
+          <canvas id="gl" aria-hidden="true"></canvas>
+          <span class="btn-label">LAUNCH</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="caption" id="caption">Hover to prime the core accelerator, click to execute initialisation.</div>
+  </main>
+
+  <script>
+    // --- Plain intro sequence (replaces GSAP timeline) ---
+    requestAnimationFrame(function () {
+      document.getElementById('eyebrow').classList.add('in');
+      setTimeout(function () { document.getElementById('sys-label').classList.add('in'); }, 150);
+      setTimeout(function () { document.getElementById('intro-wrapper').classList.add('in'); }, 300);
+      setTimeout(function () { document.getElementById('caption').classList.add('in'); }, 450);
+    });
+
+    // Subtle ambient parallax on pointer move
+    (function () {
+      var wrap = document.getElementById('intro-wrapper');
+      var tx = 0, ty = 0, cx = 0, cy = 0;
+      document.addEventListener('mousemove', function (e) {
+        tx = (e.clientX / window.innerWidth - 0.5) * 12;
+        ty = (e.clientY / window.innerHeight - 0.5) * 12;
+      });
+      function loop() {
+        cx += (tx - cx) * 0.06;
+        cy += (ty - cy) * 0.06;
+        wrap.style.transform = (wrap.classList.contains('in') ? 'scale(1) ' : 'scale(0.55) ') +
+          'translate(' + cx.toFixed(2) + 'px,' + cy.toFixed(2) + 'px)';
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    })();
+
+    // --- Ambient Background WebGL ---
+    (function () {
+      var canvas = document.getElementById('bg-gl');
+      var gl = canvas.getContext('webgl');
+      if (!gl) return;
+
+      var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+      var FS = `
+        precision highp float;
+        uniform vec2 u_res;
+        uniform float u_time;
+        float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+        float noise(vec2 p){
+          vec2 i=floor(p), f=fract(p);
+          vec2 u=f*f*(3.0-2.0*f);
+          return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),
+                     mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);
+        }
+        void main(){
+          vec2 uv = gl_FragCoord.xy / u_res;
+          float n = noise(uv * 2.5 + vec2(u_time * 0.015, u_time * 0.025));
+          n += noise(uv * 5.0 - vec2(u_time * 0.01, u_time * 0.02)) * 0.5;
+          vec3 col1 = vec3(0.957, 0.945, 0.918);
+          vec3 col2 = vec3(0.925, 0.910, 0.880);
+          vec3 finalCol = mix(col1, col2, n * 0.6 + 0.2);
+          gl_FragColor = vec4(finalCol, 1.0);
+        }
+      `;
+
+      function compile(type, src) {
+        var s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      }
+      var prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      var buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      var locP = gl.getAttribLocation(prog, 'p');
+      gl.enableVertexAttribArray(locP);
+      gl.vertexAttribPointer(locP, 2, gl.FLOAT, false, 0, 0);
+
+      var uRes = gl.getUniformLocation(prog, 'u_res');
+      var uTime = gl.getUniformLocation(prog, 'u_time');
+
+      function resize() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var w = window.innerWidth * dpr;
+        var h = window.innerHeight * dpr;
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+          gl.viewport(0, 0, w, h);
+        }
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      function frame(now) {
+        resize();
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uTime, now / 1000);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    // --- Ignition Button WebGL ---
+    (function () {
+      var btn = document.getElementById('btn');
+      var canvas = document.getElementById('gl');
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var gl = canvas.getContext('webgl');
+      if (!gl) { document.body.classList.add('nogl'); return; }
+
+      var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+      var FS = [
+        'precision highp float;',
+        'uniform vec2 u_res;',
+        'uniform float u_time;',
+        'uniform float u_warp;',
+        'uniform float u_flash;',
+        'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}',
+        'float noise(vec2 p){',
+        '  vec2 i=floor(p), f=fract(p);',
+        '  vec2 u=f*f*(3.0-2.0*f);',
+        '  return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),',
+        '             mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);',
+        '}',
+        'float fbm(vec2 p){',
+        '  float v=0.0; float a=0.5;',
+        '  for(int i=0;i<4;i++){ v+=a*noise(p); p=p*2.07+vec2(13.1,5.7); a*=0.5; }',
+        '  return v;',
+        '}',
+        'void main(){',
+        '  vec2 sc = gl_FragCoord.xy / u_res;',
+        '  vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / u_res.y;',
+        '  float r = length(uv);',
+        '  float rr = max(r, 0.08);',
+        '  float a = atan(uv.y, uv.x);',
+        '  float t = u_time;',
+        '  vec3 col = vec3(0.012, 0.011, 0.014);',
+        '  float hz = fbm(uv * 2.6 + vec2(t * 0.35, 1.7));',
+        '  col += vec3(0.13, 0.06, 0.032) * hz * (0.7 + 0.6 * u_warp);',
+        '  for (int i = 0; i < 3; i++) {',
+        '    float fi = float(i);',
+        '    float ringN = 26.0 + fi * 9.0;',
+        '    vec2 sp = vec2((a / 6.28318 + 0.5) * ringN,',
+        '                   (0.3 + fi * 0.22) / rr + t * (2.0 + fi * 1.2));',
+        '    vec2 cell = floor(sp);',
+        '    vec2 f = fract(sp);',
+        '    float h = hash(cell + fi * 17.31);',
+        '    float on = step(0.68, h);',
+        '    vec2 c = vec2(0.2 + 0.6 * hash(cell + 4.7), 0.5);',
+        '    vec2 dlt = f - c;',
+        '    float sy = mix(130.0, 8.0, u_warp);',
+        '    float star = on * exp(-(dlt.x * dlt.x * 150.0 + dlt.y * dlt.y * sy));',
+        '    float tw = 0.7 + 0.3 * sin(h * 81.0 + t * 9.0);',
+        '    tw = mix(tw, 1.0, u_warp);',
+        '    vec3 sCol = mix(vec3(1.0, 0.94, 0.85), vec3(1.0, 0.6, 0.33), step(0.9, h));',
+        '    float fade = smoothstep(0.02, 0.25, r);',
+        '    col += sCol * star * tw * fade * (1.1 + 0.7 * u_warp);',
+        '  }',
+        '  col += vec3(1.0, 0.8, 0.58) * u_warp * 0.32 * exp(-r * 4.0);',
+        '  vec2 e = sc * (1.0 - sc);',
+        '  col *= 0.3 + 0.7 * pow(e.x * e.y * 16.0, 0.3);',
+        '  col = mix(col, vec3(1.0, 0.97, 0.92), clamp(u_flash, 0.0, 1.0));',
+        '  gl_FragColor = vec4(col, 1.0);',
+        '}'
+      ].join('\n');
+
+      function compile(type, src) {
+        var s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          console.error('shader compile failed:', gl.getShaderInfoLog(s));
+        }
+        return s;
+      }
+      var prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      var buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      var locP = gl.getAttribLocation(prog, 'p');
+      gl.enableVertexAttribArray(locP);
+      gl.vertexAttribPointer(locP, 2, gl.FLOAT, false, 0, 0);
+
+      var uRes = gl.getUniformLocation(prog, 'u_res');
+      var uTime = gl.getUniformLocation(prog, 'u_time');
+      var uWarp = gl.getUniformLocation(prog, 'u_warp');
+      var uFlash = gl.getUniformLocation(prog, 'u_flash');
+
+      function resize() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+        var h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+          gl.viewport(0, 0, w, h);
+        }
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      var warp = 0, warpTarget = 0, flash = 0, z = 0;
+      var last = performance.now();
+
+      btn.addEventListener('mouseenter', function () { warpTarget = 1; });
+      btn.addEventListener('mouseleave', function () { warpTarget = 0; });
+      btn.addEventListener('focus', function () { warpTarget = 1; });
+      btn.addEventListener('blur', function () { warpTarget = 0; });
+      btn.addEventListener('click', function () {
+        flash = 1;
+        warp = 0;
+        z = 0;
+      });
+
+      function frame(now) {
+        var dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        warp += (warpTarget - warp) * Math.min(1, dt * 2.6);
+        flash *= Math.exp(-4.5 * dt);
+        z += dt * (0.05 + warp * 1.35);
+        resize();
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uTime, reduced ? 4.0 : z);
+        gl.uniform1f(uWarp, warp);
+        gl.uniform1f(uFlash, flash);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

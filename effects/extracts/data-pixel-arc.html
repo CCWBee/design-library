@@ -1,0 +1,310 @@
+<!--
+  Data Pixel Arc — pixel-arc data readout, animated dial (Canvas2D)
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: React/TSX component wrapper, ResizeObserver/IntersectionObserver plumbing tied to a host app,
+  Tailwind utility classes and CSS hue-rotate/saturate filter hookup — replaced with a plain requestAnimationFrame
+  loop, hand-written CSS, and a small on-page control panel for the effect's own parameters (mode, speed, pixel
+  size, arc shape, thickness, brightness).
+-->
+<title>Data Pixel Arc</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #030308;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #panel {
+    position: fixed;
+    left: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: rgba(10, 12, 14, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: rgba(235, 240, 235, 0.85);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    min-width: 220px;
+    transition: opacity 0.25s ease;
+  }
+  #panel.hidden { opacity: 0; pointer-events: none; }
+  #panel h1 {
+    margin: 0 0 0.15rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(245, 250, 245, 0.95);
+    letter-spacing: 0.01em;
+  }
+  #panel .sub {
+    margin: 0 0 0.35rem;
+    font-size: 0.66rem;
+    color: rgba(200, 210, 200, 0.55);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .row label { flex: 0 0 auto; opacity: 0.85; }
+  .row input[type="range"] {
+    flex: 1 1 auto;
+    accent-color: #3fdc7a;
+  }
+  .row select {
+    flex: 1 1 auto;
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 5px;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.7rem;
+    font-family: inherit;
+  }
+  .val {
+    flex: 0 0 2.6rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.6;
+  }
+  #toggle {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 11;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(10, 12, 14, 0.55);
+    color: rgba(230, 235, 230, 0.8);
+    border-radius: 8px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.7rem;
+    font-family: inherit;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+</style>
+
+<div id="stage">
+  <canvas id="canvas"></canvas>
+</div>
+
+<button id="toggle" type="button">Hide controls</button>
+<div id="panel">
+  <h1>Data Pixel Arc</h1>
+  <p class="sub">Pixel-arc data readout, animated dial</p>
+
+  <div class="row">
+    <label for="mode">Mode</label>
+    <select id="mode">
+      <option value="dark" selected>Dark</option>
+      <option value="light">Light</option>
+    </select>
+  </div>
+  <div class="row">
+    <label for="speed">Speed</label>
+    <input id="speed" type="range" min="0" max="3" step="0.05" value="1" />
+    <span class="val" id="speed-val">1.00</span>
+  </div>
+  <div class="row">
+    <label for="pixelSize">Pixel size</label>
+    <input id="pixelSize" type="range" min="2" max="20" step="1" value="8" />
+    <span class="val" id="pixelSize-val">8</span>
+  </div>
+  <div class="row">
+    <label for="arcCenter">Arc centre</label>
+    <input id="arcCenter" type="range" min="0" max="1" step="0.01" value="0.4" />
+    <span class="val" id="arcCenter-val">0.40</span>
+  </div>
+  <div class="row">
+    <label for="arcDrop">Arc drop</label>
+    <input id="arcDrop" type="range" min="0" max="2" step="0.01" value="0.9" />
+    <span class="val" id="arcDrop-val">0.90</span>
+  </div>
+  <div class="row">
+    <label for="thickness">Thickness</label>
+    <input id="thickness" type="range" min="0.05" max="1" step="0.01" value="0.35" />
+    <span class="val" id="thickness-val">0.35</span>
+  </div>
+  <div class="row">
+    <label for="brightness">Brightness</label>
+    <input id="brightness" type="range" min="0.2" max="2" step="0.05" value="1" />
+    <span class="val" id="brightness-val">1.00</span>
+  </div>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+
+    var DEFAULTS = {
+      mode: "dark",
+      speed: 1,
+      pixelSize: 8,
+      arcCenter: 0.4,
+      arcDrop: 0.9,
+      thickness: 0.35,
+      brightness: 1,
+    };
+
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d", { alpha: false });
+
+    var width = 1;
+    var height = 1;
+    var time = 0;
+    var lightBackground = null;
+
+    var options = {
+      mode: DEFAULTS.mode,
+      speed: DEFAULTS.speed,
+      pixelSize: DEFAULTS.pixelSize,
+      arcCenter: DEFAULTS.arcCenter,
+      arcDrop: DEFAULTS.arcDrop,
+      thickness: DEFAULTS.thickness,
+      brightness: DEFAULTS.brightness,
+    };
+
+    function resize() {
+      var bounds = canvas.getBoundingClientRect();
+      width = Math.max(1, bounds.width);
+      height = Math.max(1, bounds.height);
+      var pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      lightBackground = context.createLinearGradient(0, 0, 0, height);
+      lightBackground.addColorStop(0, "#f8faf6");
+      lightBackground.addColorStop(0.58, "#f3f6f1");
+      lightBackground.addColorStop(1, "#edf1ec");
+    }
+
+    function render() {
+      var isLight = options.mode === "light";
+      context.fillStyle = isLight && lightBackground ? lightBackground : "#030308";
+      context.fillRect(0, 0, width, height);
+
+      var cols = Math.ceil(width / options.pixelSize);
+      var rows = Math.ceil(height / options.pixelSize);
+      var arcCenterY = height * options.arcCenter;
+      var arcDrop = height * options.arcDrop;
+      var thickness = height * options.thickness;
+
+      for (var x = 0; x < cols; x += 1) {
+        for (var y = 0; y < rows; y += 1) {
+          var px = x * options.pixelSize;
+          var py = y * options.pixelSize;
+          var nx = (px / width) * 2 - 1;
+          var curveY = arcCenterY + Math.pow(Math.abs(nx), 1.8) * arcDrop;
+          var intensity = Math.max(0, 1 - Math.abs(py - curveY) / thickness);
+          if (intensity <= 0.01) continue;
+          var wave1 = Math.sin(nx * 4 - time * 1.5) * 0.1;
+          var wave2 = Math.cos(py * 0.01 + time) * 0.1;
+          intensity = Math.max(0, Math.min(1, intensity + wave1 + wave2));
+          intensity *= Math.max(0, 1 - Math.pow(Math.abs(nx), 2.5));
+          if (intensity <= 0.02) continue;
+
+          var coreStrength = Math.pow(intensity, 3);
+          var middleStrength = Math.pow(intensity, 1.5);
+          var r, g, b;
+
+          if (isLight) {
+            var pigment = Math.pow(intensity, 0.78);
+            var inkStrength = Math.max(0.45, Math.min(1.35, options.brightness));
+            var paper = [238, 242, 237];
+            var ink = [
+              192 - 172 * pigment - 10 * coreStrength,
+              204 - 88 * pigment + 18 * coreStrength,
+              193 - 132 * pigment + 4 * coreStrength,
+            ];
+            r = Math.max(0, Math.min(255, Math.round(paper[0] + (ink[0] - paper[0]) * inkStrength)));
+            g = Math.max(0, Math.min(255, Math.round(paper[1] + (ink[1] - paper[1]) * inkStrength)));
+            b = Math.max(0, Math.min(255, Math.round(paper[2] + (ink[2] - paper[2]) * inkStrength)));
+          } else {
+            r = Math.floor((30 * intensity + 100 * coreStrength) * options.brightness);
+            g = Math.floor((220 * middleStrength + 40 * coreStrength) * options.brightness);
+            b = Math.floor((80 * intensity + 50 * coreStrength) * options.brightness);
+          }
+
+          context.fillStyle = "rgb(" + r + ", " + g + ", " + b + ")";
+          context.globalAlpha = isLight ? Math.min(1, 0.22 + Math.pow(intensity, 0.68) * 0.78) : intensity;
+          context.fillRect(px, py, options.pixelSize - 1, options.pixelSize - 1);
+        }
+      }
+      context.globalAlpha = 1;
+      time += 0.02 * options.speed;
+    }
+
+    var frame = 0;
+    function tick() {
+      render();
+      frame = requestAnimationFrame(tick);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+    frame = requestAnimationFrame(tick);
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden && frame) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+      } else if (!document.hidden && !frame) {
+        frame = requestAnimationFrame(tick);
+      }
+    });
+
+    // --- controls ---
+    function bindRange(id, key, decimals) {
+      var input = document.getElementById(id);
+      var out = document.getElementById(id + "-val");
+      input.addEventListener("input", function () {
+        var v = parseFloat(input.value);
+        options[key] = v;
+        out.textContent = decimals === 0 ? String(Math.round(v)) : v.toFixed(decimals);
+      });
+    }
+    bindRange("speed", "speed", 2);
+    bindRange("pixelSize", "pixelSize", 0);
+    bindRange("arcCenter", "arcCenter", 2);
+    bindRange("arcDrop", "arcDrop", 2);
+    bindRange("thickness", "thickness", 2);
+    bindRange("brightness", "brightness", 2);
+
+    document.getElementById("mode").addEventListener("change", function (e) {
+      options.mode = e.target.value === "light" ? "light" : "dark";
+    });
+
+    var panel = document.getElementById("panel");
+    var toggle = document.getElementById("toggle");
+    toggle.addEventListener("click", function () {
+      var hidden = panel.classList.toggle("hidden");
+      toggle.textContent = hidden ? "Show controls" : "Hide controls";
+    });
+  })();
+</script>

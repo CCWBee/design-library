@@ -1,0 +1,203 @@
+<!--
+  Portal Field
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN scaffolding, Iconify icons, GSAP/ScrollTrigger text reveal, Google Fonts,
+  the login/authentication card markup and copy, theme-toggle button, structural framing overlay,
+  and the THREE.js orthographic-camera/PlaneGeometry boilerplate — reimplemented as a raw WebGL2
+  fullscreen-quad shader (identical noise/arc glow maths, no library needed).
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Field</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #020202;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  .label {
+    position: fixed;
+    left: 1.5rem;
+    top: 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(244, 244, 245, 0.4);
+    pointer-events: none;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<div class="label">Portal field</div>
+<canvas id="gl"></canvas>
+<script>
+(function () {
+  const canvas = document.getElementById('gl');
+  const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+  if (!gl) {
+    document.body.innerHTML = '<p style="color:#eee;font-family:system-ui;padding:2rem">WebGL is not available in this browser.</p>';
+    return;
+  }
+
+  const vertexSrc = `
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0.0, 1.0);
+    }
+  `;
+
+  const fragmentSrc = `
+    precision highp float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+    uniform vec3 u_colorCore;
+    uniform vec3 u_colorFringe;
+
+    vec2 hash( vec2 p ) {
+        p = vec2( dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)) );
+        return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+    }
+    float noise( in vec2 p ) {
+        const float K1 = 0.366025404;
+        const float K2 = 0.211324865;
+        vec2 i = floor( p + (p.x+p.y)*K1 );
+        vec2 a = p - i + (i.x+i.y)*K2;
+        vec2 o = (a.x>a.y) ? vec2(1.0,0.0) : vec2(0.0,1.0);
+        vec2 b = a - o + K2;
+        vec2 c = a - 1.0 + 2.0*K2;
+        vec3 h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+        vec3 n = h*h*h*h*vec3( dot(a,hash(i+0.0)), dot(b,hash(i+o)), dot(c,hash(i+1.0)));
+        return dot( n, vec3(70.0) );
+    }
+
+    float sdArc(vec2 p, vec2 center, float radius, float width, float warp) {
+        p.y += sin(p.x * 2.0 + u_time * 0.3) * warp;
+        p.x += noise(p * 1.5 + u_time * 0.1) * (warp * 0.8);
+        float d = length(p - center) - radius;
+        return abs(d) - width;
+    }
+
+    void main() {
+        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+        vec2 st = uv;
+        st.x *= u_resolution.x / u_resolution.y;
+
+        vec2 mouseOffset = (u_mouse - 0.5) * 0.05;
+        st += mouseOffset;
+
+        vec2 center = vec2(0.5 * (u_resolution.x / u_resolution.y), 0.5);
+
+        float d1 = sdArc(st, center, 0.6, 0.02, 0.15);
+        float d2 = sdArc(st, center, 0.65, 0.06, 0.2);
+
+        float coreGlow = exp(-d1 * 30.0);
+        float fringeGlow = exp(-d2 * 10.0);
+        float wash = smoothstep(1.5, -0.5, length(st - center)) * 0.15;
+
+        vec3 finalColor = vec3(0.0);
+        finalColor += u_colorCore * coreGlow;
+        finalColor += u_colorFringe * fringeGlow;
+        finalColor += u_colorFringe * wash * (sin(u_time * 0.5) * 0.2 + 0.8);
+
+        float alpha = clamp(coreGlow + fringeGlow + wash, 0.0, 1.0);
+        finalColor = vec3(1.0) - exp(-finalColor * 1.5);
+
+        gl_FragColor = vec4(finalColor, alpha * 0.6);
+    }
+  `;
+
+  function compile(type, src) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, src);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(shader));
+    }
+    return shader;
+  }
+
+  const program = gl.createProgram();
+  gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSrc));
+  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSrc));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(gl.getProgramInfoLog(program));
+  }
+  gl.useProgram(program);
+
+  const quad = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+
+  const positionLoc = gl.getAttribLocation(program, 'position');
+  gl.enableVertexAttribArray(positionLoc);
+  gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+  const u_time = gl.getUniformLocation(program, 'u_time');
+  const u_resolution = gl.getUniformLocation(program, 'u_resolution');
+  const u_mouse = gl.getUniformLocation(program, 'u_mouse');
+  const u_colorCore = gl.getUniformLocation(program, 'u_colorCore');
+  const u_colorFringe = gl.getUniformLocation(program, 'u_colorFringe');
+
+  gl.uniform3f(u_colorCore, 1.0, 1.0, 1.0);
+  gl.uniform3f(u_colorFringe, 0.118, 0.227, 0.541); // #1e3a8a
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  let mouse = { x: 0.5, y: 0.5 };
+  let targetMouse = { x: 0.5, y: 0.5 };
+
+  window.addEventListener('mousemove', (e) => {
+    targetMouse.x = e.clientX / window.innerWidth;
+    targetMouse.y = 1.0 - (e.clientY / window.innerHeight);
+  });
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(u_resolution, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const start = performance.now();
+  function animate() {
+    requestAnimationFrame(animate);
+    const elapsed = (performance.now() - start) / 1000;
+
+    mouse.x += (targetMouse.x - mouse.x) * 0.03;
+    mouse.y += (targetMouse.y - mouse.y) * 0.03;
+
+    gl.uniform1f(u_time, elapsed);
+    gl.uniform2f(u_mouse, mouse.x, mouse.y);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>

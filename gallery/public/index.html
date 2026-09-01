@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The design library</title>
+  <meta name="description" content="A living browser for the design library: every asset, live previews, and the coverage matrix.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1 class="wordmark">The design library</h1>
+        <p class="lede" id="lede">A living index of the library. It reads the folders on every load, so it never goes stale.</p>
+      </div>
+      <div class="hero-controls">
+        <div class="viewswitch" role="group" aria-label="Choose a view">
+          <button type="button" id="view-gallery" class="viewswitch-btn is-active" aria-pressed="true">Gallery</button>
+          <button type="button" id="view-ontology" class="viewswitch-btn" aria-pressed="false">Ontology</button>
+        </div>
+        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Theme, following system">
+          <span class="theme-glyph" aria-hidden="true"></span>
+          <span class="theme-label" id="theme-label">Auto</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar" id="toolbar">
+    <div class="toolbar-inner">
+      <div class="search">
+        <label class="visually-hidden" for="search">Search by name, register, type or family</label>
+        <input type="search" id="search" autocomplete="off" spellcheck="false"
+               placeholder="Search by name, register, type or family">
+      </div>
+      <div class="filters" id="cat-filters" role="group" aria-label="Filter by category"></div>
+    </div>
+    <div class="active-filter" id="active-filter" hidden>
+      <span id="active-filter-text"></span>
+      <button type="button" id="active-filter-clear" class="linkish">Clear</button>
+    </div>
+  </div>
+
+  <main id="main" tabindex="-1">
+    <div class="notice" id="error" role="alert" hidden></div>
+
+    <section id="gallery-view" aria-label="Gallery">
+      <p class="result-count" id="result-count" aria-live="polite"></p>
+      <div class="grid" id="grid"></div>
+      <p class="empty" id="empty" hidden>Nothing matches that search. Try a broader term or clear the filter.</p>
+    </section>
+
+    <section id="ontology-view" aria-label="Ontology" hidden>
+      <div class="ontology-intro">
+        <h2>Coverage by type and register</h2>
+        <p class="lede">Where the library has a purpose-built reference, a working example, a plan to generate on demand, or nothing meaningful to build. Select a filled cell to see its files.</p>
+        <ul class="legend" id="legend" aria-label="Cell meanings"></ul>
+      </div>
+      <div class="ontology-scroll">
+        <div id="ontology"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detail-title" hidden>
+    <div class="detail-backdrop" id="detail-backdrop"></div>
+    <div class="detail-panel" role="document">
+      <div class="detail-head">
+        <div class="detail-heading">
+          <h2 class="detail-title" id="detail-title"></h2>
+          <p class="detail-sub" id="detail-sub"></p>
+        </div>
+        <button type="button" class="detail-close" id="detail-close" aria-label="Close">Close</button>
+      </div>
+      <div class="detail-body" id="detail-body"></div>
+    </div>
+  </div>
+
+  <div class="visually-hidden" aria-live="polite" id="live"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

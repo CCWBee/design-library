@@ -1,0 +1,483 @@
+<!--
+  Nexus Tactile — tactile fluidic surface, soft rubbery deform.
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped: Tailwind CDN, Iconify icons, GSAP (replaced with plain CSS transitions/rAF),
+  Google Fonts (Inter), and all marketing copy/branding; layout rebuilt in hand-written CSS.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nexus Tactile</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #02040a;
+    color: #d4d4d4;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  body {
+    position: relative;
+  }
+
+  #bg-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 2s ease;
+  }
+  #bg-canvas.ready { opacity: 1; }
+
+  header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 2rem 2.5rem;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 300;
+    font-size: 0.8rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #8a8a8a;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+    animation-delay: 0.4s;
+  }
+
+  main.content-layer {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    transition: transform 1.4s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .tag {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #06b6d4;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    transform: translateY(1rem);
+    animation: revealUp 0.8s ease forwards;
+    animation-delay: 0.7s;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 6vw, 4.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+    color: #f0f0f0;
+    text-align: center;
+    max-width: 44rem;
+    margin: 0 0 1.5rem;
+  }
+  h1 .muted { color: #8a8a8a; }
+
+  p.subhead {
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: #8a8a8a;
+    letter-spacing: 0.02em;
+    max-width: 26rem;
+    text-align: center;
+    margin: 0 0 3rem;
+    opacity: 0;
+    transform: translateY(1rem);
+    animation: revealUp 0.8s ease forwards;
+    animation-delay: 1.2s;
+  }
+
+  .intro {
+    opacity: 0;
+    transform: translateY(-1.2rem) scale(0.95);
+    animation: dropIn 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+    animation-delay: 1.4s;
+  }
+
+  .btn-wrap {
+    padding: 1px;
+    border-radius: 19px;
+    background: linear-gradient(to bottom, rgba(6,182,212,0.3), rgba(38,38,38,0.2), rgba(8,51,68,0.4));
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  }
+
+  #btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 250px;
+    height: 70px;
+    border: 0;
+    padding: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #050b11;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 22px 44px rgba(4,24,36,0.35), 0 3px 9px rgba(5,10,15,0.4), inset 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  #btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 28px 56px rgba(6,182,212,0.25), 0 4px 11px rgba(5,10,15,0.45);
+  }
+  #btn:active {
+    transform: translateY(1px) scale(0.985);
+  }
+  #btn:focus-visible {
+    outline: 2px solid #06b6d4;
+    outline-offset: 5px;
+  }
+
+  #gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  #btn span {
+    position: relative;
+    z-index: 10;
+    pointer-events: none;
+    font-weight: 400;
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    color: #e0faff;
+    text-shadow: 0 1px 10px rgba(0,18,25,0.85);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  #btn span svg { opacity: 0.8; }
+
+  p.note {
+    font-weight: 300;
+    font-size: 0.75rem;
+    color: #6b6b6b;
+    letter-spacing: 0.02em;
+    margin-top: 2.5rem;
+    opacity: 0;
+    transform: translateY(1rem);
+    animation: revealUp 0.8s ease forwards;
+    animation-delay: 1.6s;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
+  @keyframes dropIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<header>
+  <div>Nexus</div>
+</header>
+
+<main class="content-layer">
+  <div class="tag">System 07 &middot; Viscosity</div>
+
+  <h1>Viscous fields.<br><span class="muted">Reengineered.</span></h1>
+
+  <p class="subhead">
+    A tactile feedback surface with continuous, adaptive fluid response.
+  </p>
+
+  <div class="intro">
+    <div class="btn-wrap">
+      <button id="btn" type="button">
+        <canvas id="gl" aria-hidden="true"></canvas>
+        <span>
+          SURGE
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <p class="note">Sweep the cursor over the button to raise turbulence, click to discharge.</p>
+</main>
+
+<script>
+  // Simple entrance/parallax replacing GSAP.
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("bg-canvas").classList.add("ready");
+
+    document.addEventListener("mousemove", (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 15;
+      const y = (e.clientY / window.innerHeight - 0.5) * 15;
+      document.querySelector(".content-layer").style.transform = `translate(${x}px, ${y}px)`;
+    });
+  });
+
+  // --------------------------------------------------------
+  // Ambient ceiling background (WebGL)
+  // --------------------------------------------------------
+  (function initAmbientBG() {
+    const canvas = document.getElementById('bg-canvas');
+    const gl = canvas.getContext('webgl');
+    if (!gl) return;
+
+    const vs = 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }';
+    const fs = `
+      precision mediump float;
+      uniform vec2 u_res;
+      uniform float u_time;
+
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+                   mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+      }
+      float fbm(vec2 p) {
+        float v = 0.0, a = 0.5;
+        for (int i = 0; i < 4; i++) { v += a * noise(p); p = p * 2.0; a *= 0.5; }
+        return v;
+      }
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / u_res;
+        uv.x *= u_res.x / u_res.y;
+
+        float t = u_time * 0.15;
+
+        vec2 q = vec2(fbm(uv + t), fbm(uv + vec2(1.0) + t));
+        vec2 r = vec2(fbm(uv + 1.0*q + vec2(1.7, 9.2) + 0.15*t),
+                      fbm(uv + 1.0*q + vec2(8.3, 2.8) + 0.126*t));
+
+        float f = fbm(uv + r);
+
+        vec3 col = mix(vec3(0.01, 0.02, 0.03), vec3(0.01, 0.04, 0.07), f);
+        col = mix(col, vec3(0.02, 0.07, 0.12), clamp(length(q) * 0.5, 0.0, 1.0));
+
+        vec2 e = gl_FragCoord.xy / u_res * (1.0 - gl_FragCoord.xy / u_res);
+        col *= 0.5 + 0.5 * pow(e.x * e.y * 15.0, 0.3);
+
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `;
+
+    function compile(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    }
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+    const locP = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(locP);
+    gl.vertexAttribPointer(locP, 2, gl.FLOAT, false, 0, 0);
+
+    const uRes = gl.getUniformLocation(prog, 'u_res');
+    const uTime = gl.getUniformLocation(prog, 'u_time');
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const start = performance.now();
+    function render(now) {
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, (now - start) / 1000);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  })();
+
+  // --------------------------------------------------------
+  // Interactive tactile liquid button (WebGL)
+  // --------------------------------------------------------
+  (function initButtonWebGL() {
+    var btn = document.getElementById('btn');
+    var canvas = document.getElementById('gl');
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var gl = canvas.getContext('webgl');
+
+    if (!gl) {
+      btn.style.background = 'linear-gradient(to top, #0284c7 0%, #06b6d4 52%, #a5f3fc 55%, #050b11 56%)';
+      canvas.style.display = 'none';
+      return;
+    }
+
+    var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+    var FS = [
+      'precision highp float;',
+      'uniform vec2 u_res;',
+      'uniform float u_time;',
+      'uniform float u_level;',
+      'uniform float u_tilt;',
+      'uniform float u_slosh;',
+      'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}',
+      'float noise(vec2 p){',
+      '  vec2 i=floor(p), f=fract(p);',
+      '  vec2 u=f*f*(3.0-2.0*f);',
+      '  return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),',
+      '             mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);',
+      '}',
+      'float fbm(vec2 p){',
+      '  float v=0.0; float a=0.5;',
+      '  for(int i=0;i<4;i++){ v+=a*noise(p); p=p*2.04+vec2(11.3,7.1); a*=0.5; }',
+      '  return v;',
+      '}',
+      'void main(){',
+      '  vec2 uv = gl_FragCoord.xy / u_res;',
+      '  float ar = u_res.x / u_res.y;',
+      '  float x = uv.x * ar;',
+      '  float t = u_time;',
+      '  float amp = 0.012 + u_slosh * 0.045;',
+      '  float surf = u_level',
+      '    + u_tilt * (uv.x - 0.5) * 0.34',
+      '    + amp * sin(x * 5.1 + t * 4.6)',
+      '    + amp * 0.62 * sin(x * 9.7 + t * (-6.8) + 1.7)',
+      '    + amp * 0.38 * sin(x * 14.3 + t * 8.9 + 4.2);',
+      '  float d = surf - uv.y;',
+      '  vec3 col = mix(vec3(0.03, 0.06, 0.1), vec3(0.05, 0.09, 0.15), uv.y);',
+      '  col += vec3(0.02, 0.05, 0.1) * pow(max(0.0, 1.0 - abs(uv.y - 0.88) * 6.0), 2.0);',
+      '  float inside = smoothstep(0.0, 0.012, d);',
+      '  float depth = clamp(d / max(u_level, 0.001), 0.0, 1.0);',
+      '  vec3 liq = mix(vec3(0.0, 0.9, 1.0), vec3(0.02, 0.15, 0.45), depth);',
+      '  float caust = fbm(vec2(x * 4.2, (uv.y + t * 0.14) * 4.2));',
+      '  liq *= 0.8 + 0.42 * caust;',
+      '  liq += vec3(0.02, 0.25, 0.35) * pow(max(0.0, d * 3.0), 1.5) * u_slosh;',
+      '  col = mix(col, liq, inside);',
+      '  col += vec3(0.4, 0.9, 1.0) * exp(-abs(d) * 80.0) * 0.85;',
+      '  col += vec3(0.8, 0.98, 1.0) * exp(-abs(d) * 220.0) * 0.5;',
+      '  vec2 e = uv * (1.0 - uv);',
+      '  col *= 0.55 + 0.45 * pow(e.x * e.y * 16.0, 0.22);',
+      '  gl_FragColor = vec4(col, 1.0);',
+      '}'
+    ].join('\n');
+
+    function compile(type, src) {
+      var s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    }
+
+    var prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    var locP = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(locP);
+    gl.vertexAttribPointer(locP, 2, gl.FLOAT, false, 0, 0);
+
+    var uRes = gl.getUniformLocation(prog, 'u_res');
+    var uTime = gl.getUniformLocation(prog, 'u_time');
+    var uLevel = gl.getUniformLocation(prog, 'u_level');
+    var uTilt = gl.getUniformLocation(prog, 'u_tilt');
+    var uSlosh = gl.getUniformLocation(prog, 'u_slosh');
+
+    function resize() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+      var h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        gl.viewport(0, 0, w, h);
+      }
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    var BASE = 0.56;
+    var level = BASE, gulp = 0;
+    var slosh = 0.4, tilt = 0, tiltTarget = 0;
+    var lastX = null;
+    var last = performance.now();
+
+    btn.addEventListener('mousemove', function (e) {
+      var rect = btn.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / Math.max(1, rect.width);
+      if (lastX !== null) {
+        slosh = Math.min(1.4, slosh + Math.abs(x - lastX) * 2.6);
+      }
+      lastX = x;
+      tiltTarget = Math.max(-1, Math.min(1, (x - 0.5) * 2));
+    });
+    btn.addEventListener('mouseleave', function () { lastX = null; tiltTarget = 0; });
+    btn.addEventListener('focus', function () { slosh = Math.min(1.4, slosh + 0.5); });
+    btn.addEventListener('click', function () {
+      gulp = 1;
+      slosh = Math.min(1.4, slosh + 0.7);
+    });
+
+    function frame(now) {
+      var dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      slosh *= Math.exp(-1.5 * dt);
+      gulp *= Math.exp(-1.1 * dt);
+      tilt += (tiltTarget - tilt) * Math.min(1, dt * 5);
+      var levelTarget = BASE - 0.36 * gulp;
+      level += (levelTarget - level) * Math.min(1, dt * 5.5);
+
+      resize();
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, reduced ? 2.0 : now / 1000);
+      gl.uniform1f(uLevel, level);
+      gl.uniform1f(uTilt, tilt);
+      gl.uniform1f(uSlosh, reduced ? 0.25 : slosh);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
+</script>
+</body>
+</html>

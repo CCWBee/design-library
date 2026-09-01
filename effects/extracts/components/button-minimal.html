@@ -1,0 +1,455 @@
+<title>Button · Minimal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ---- Tokens: light (bare :root is the light palette) ---- */
+  :root {
+    --canvas:      #ffffff;
+    --panel:       rgb(0 0 0 / 3%);
+
+    --ink:         rgb(0 0 0 / 92%);   /* primary text */
+    --ink-2:       rgb(0 0 0 / 64%);   /* supporting text */
+    --ink-3:       rgb(0 0 0 / 44%);   /* metadata */
+
+    --fill:        rgb(0 0 0 / 92%);   /* primary button face */
+    --fill-hover:  rgb(0 0 0 / 100%);  /* hover lifts one rung */
+    --fill-active: rgb(0 0 0 / 80%);
+    --on-fill:     rgb(255 255 255 / 98%);
+
+    --line:        rgb(0 0 0 / 28%);   /* control boundary, >=3:1 */
+    --line-hover:  rgb(0 0 0 / 44%);
+    --wash-hover:  rgb(0 0 0 / 5%);
+    --wash-active: rgb(0 0 0 / 9%);
+
+    --danger:      rgb(178 24 24 / 100%);
+    --danger-hover:rgb(150 18 18 / 100%);
+    --danger-active:rgb(120 14 14 / 100%);
+    --on-danger:   rgb(255 255 255 / 98%);
+
+    --ring:        rgb(0 0 0 / 88%);
+
+    --r-md: 8px; --r-lg: 10px;
+    --s-2: 8px; --s-3: 16px; --s-4: 24px; --s-6: 48px; --s-7: 64px;
+  }
+
+  /* System-dark, unless an explicit light choice overrides it */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:      #0e0e10;
+      --panel:       rgb(255 255 255 / 4%);
+
+      --ink:         rgb(255 255 255 / 92%);
+      --ink-2:       rgb(255 255 255 / 64%);
+      --ink-3:       rgb(255 255 255 / 46%);
+
+      --fill:        rgb(255 255 255 / 92%);
+      --fill-hover:  rgb(255 255 255 / 100%);
+      --fill-active: rgb(255 255 255 / 80%);
+      --on-fill:     rgb(0 0 0 / 96%);
+
+      --line:        rgb(255 255 255 / 34%);
+      --line-hover:  rgb(255 255 255 / 52%);
+      --wash-hover:  rgb(255 255 255 / 8%);
+      --wash-active: rgb(255 255 255 / 13%);
+
+      --danger:      rgb(240 116 116 / 100%);
+      --danger-hover:rgb(246 140 140 / 100%);
+      --danger-active:rgb(224 96 96 / 100%);
+      --on-danger:   rgb(0 0 0 / 92%);
+
+      --ring:        rgb(255 255 255 / 92%);
+    }
+  }
+
+  /* Explicit toggle wins in both directions */
+  :root[data-theme="dark"] {
+    --canvas:      #0e0e10;
+    --panel:       rgb(255 255 255 / 4%);
+
+    --ink:         rgb(255 255 255 / 92%);
+    --ink-2:       rgb(255 255 255 / 64%);
+    --ink-3:       rgb(255 255 255 / 46%);
+
+    --fill:        rgb(255 255 255 / 92%);
+    --fill-hover:  rgb(255 255 255 / 100%);
+    --fill-active: rgb(255 255 255 / 80%);
+    --on-fill:     rgb(0 0 0 / 96%);
+
+    --line:        rgb(255 255 255 / 34%);
+    --line-hover:  rgb(255 255 255 / 52%);
+    --wash-hover:  rgb(255 255 255 / 8%);
+    --wash-active: rgb(255 255 255 / 13%);
+
+    --danger:      rgb(240 116 116 / 100%);
+    --danger-hover:rgb(246 140 140 / 100%);
+    --danger-active:rgb(224 96 96 / 100%);
+    --on-danger:   rgb(0 0 0 / 92%);
+
+    --ring:        rgb(255 255 255 / 92%);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-4) var(--s-7);
+  }
+
+  /* ---- Page head ---- */
+  .topline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    font-size: 0.8125rem;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-2);
+  }
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0;
+  }
+  .lede {
+    color: var(--ink-2);
+    max-width: 40rem;
+    margin: var(--s-3) 0 0;
+  }
+
+  /* ---- Sections ---- */
+  section { margin-top: var(--s-7); }
+  h2 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .note {
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+    margin: var(--s-2) 0 var(--s-4);
+    max-width: 40rem;
+  }
+
+  /* State / variant grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--s-3);
+  }
+  .cell {
+    background: var(--panel);
+    border-radius: var(--r-lg);
+    padding: var(--s-4) var(--s-3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 7.5rem;
+    justify-content: center;
+    text-align: center;
+  }
+  .cap {
+    font-size: 0.8125rem;
+    color: var(--ink-3);
+  }
+
+  .sizes-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+  }
+
+  /* ---- The button ---- */
+  .btn {
+    --lbl: var(--on-fill);
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    line-height: 1;
+    letter-spacing: 0;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: var(--fill);
+    color: var(--lbl);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 140ms ease, border-color 140ms ease,
+                color 140ms ease, transform 90ms ease;
+  }
+
+  /* Primary (filled solid) is the base .btn above */
+  .btn:hover:not(:disabled):not([aria-disabled="true"]),
+  .btn.s-hover {
+    background: var(--fill-hover);
+  }
+  .btn:active:not(:disabled):not([aria-disabled="true"]),
+  .btn.s-active {
+    background: var(--fill-active);
+    transform: translateY(0.5px) scale(0.995);
+  }
+
+  /* Secondary (hairline outline) */
+  .btn.secondary {
+    --lbl: var(--ink);
+    background: transparent;
+    border-color: var(--line);
+  }
+  .btn.secondary:hover:not(:disabled):not([aria-disabled="true"]),
+  .btn.secondary.s-hover {
+    background: var(--wash-hover);
+    border-color: var(--line-hover);
+  }
+  .btn.secondary:active:not(:disabled):not([aria-disabled="true"]),
+  .btn.secondary.s-active {
+    background: var(--wash-active);
+    transform: translateY(0.5px) scale(0.995);
+  }
+
+  /* Quiet (text only) */
+  .btn.quiet {
+    --lbl: var(--ink);
+    background: transparent;
+    border-color: transparent;
+  }
+  .btn.quiet:hover:not(:disabled):not([aria-disabled="true"]),
+  .btn.quiet.s-hover {
+    background: var(--wash-hover);
+  }
+  .btn.quiet:active:not(:disabled):not([aria-disabled="true"]),
+  .btn.quiet.s-active {
+    background: var(--wash-active);
+    transform: translateY(0.5px) scale(0.995);
+  }
+
+  /* Destructive (distinct from neutral, filled) */
+  .btn.danger {
+    --lbl: var(--on-danger);
+    background: var(--danger);
+  }
+  .btn.danger:hover:not(:disabled):not([aria-disabled="true"]),
+  .btn.danger.s-hover { background: var(--danger-hover); }
+  .btn.danger:active:not(:disabled):not([aria-disabled="true"]),
+  .btn.danger.s-active {
+    background: var(--danger-active);
+    transform: translateY(0.5px) scale(0.995);
+  }
+
+  /* Focus-visible: surface-independent outline ring */
+  .btn:focus-visible,
+  .btn.s-focus {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Disabled */
+  .btn:disabled,
+  .btn[aria-disabled="true"],
+  .btn.s-disabled {
+    cursor: not-allowed;
+    background: var(--wash-active);
+    border-color: transparent;
+    color: var(--ink-3);
+    transform: none;
+  }
+  .btn.secondary:disabled,
+  .btn.secondary.s-disabled {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--ink-3);
+  }
+  .btn.quiet:disabled,
+  .btn.quiet.s-disabled {
+    background: transparent;
+    color: var(--ink-3);
+  }
+  .btn.danger:disabled,
+  .btn.danger.s-disabled {
+    background: var(--wash-active);
+    color: var(--ink-3);
+  }
+
+  /* Loading */
+  .btn.s-loading { cursor: progress; }
+  .spinner {
+    width: 1em;
+    height: 1em;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-right-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Sizes */
+  .btn.sm { min-height: 32px; padding: 0 12px; font-size: 0.8125rem; border-radius: var(--r-md); }
+  .btn.lg { min-height: 48px; padding: 0 22px; font-size: 1rem; border-radius: var(--r-lg); }
+
+  /* Theme toggle: plain neutral control */
+  .toggle {
+    appearance: none;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    min-height: 36px;
+    padding: 0 14px;
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease;
+  }
+  .toggle:hover { background: var(--wash-hover); border-color: var(--line-hover); }
+  .toggle:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn, .toggle { transition: none; }
+    .btn:active:not(:disabled), .btn.s-active { transform: none; }
+    .spinner { animation: none; border-color: currentColor; }
+  }
+
+  @media (max-width: 34rem) {
+    .wrap { padding: var(--s-6) var(--s-3); }
+    h1 { font-size: 1.875rem; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="topline">
+      <div>
+        <p class="eyebrow">Actions · minimal register</p>
+        <h1>Button</h1>
+      </div>
+      <button class="toggle" id="themeToggle" type="button" aria-live="polite">Theme: system</button>
+    </div>
+    <p class="lede">
+      The action control in the minimal register. Filled solid for the one primary action in a
+      chapter, hairline outline for secondary, quiet text for tertiary, and a distinct destructive
+      face. Ink and fills are set with alpha colours; hierarchy comes from size and space.
+    </p>
+  </header>
+
+  <section aria-labelledby="h-primary">
+    <h2 id="h-primary">Primary, full state checklist</h2>
+    <p class="note">
+      The default swatch is live: hover, press, and tab to it for the real states. The remaining
+      swatches are held in each state so the sheet documents itself.
+    </p>
+    <div class="grid">
+      <div class="cell"><button class="btn" type="button">Save changes</button><span class="cap">Default</span></div>
+      <div class="cell"><button class="btn s-hover" type="button">Save changes</button><span class="cap">Hover</span></div>
+      <div class="cell"><button class="btn s-focus" type="button">Save changes</button><span class="cap">Focus-visible</span></div>
+      <div class="cell"><button class="btn s-active" type="button">Save changes</button><span class="cap">Pressed</span></div>
+      <div class="cell"><button class="btn" type="button" disabled>Save changes</button><span class="cap">Disabled</span></div>
+      <div class="cell"><button class="btn s-loading" type="button" aria-busy="true" disabled><span class="spinner" aria-hidden="true"></span>Saving</button><span class="cap">Loading</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-secondary">
+    <h2 id="h-secondary">Secondary, hairline outline</h2>
+    <p class="note">One filled action per chapter; everything else steps down to outline or quiet.</p>
+    <div class="grid">
+      <div class="cell"><button class="btn secondary" type="button">Cancel</button><span class="cap">Default</span></div>
+      <div class="cell"><button class="btn secondary s-hover" type="button">Cancel</button><span class="cap">Hover</span></div>
+      <div class="cell"><button class="btn secondary s-focus" type="button">Cancel</button><span class="cap">Focus-visible</span></div>
+      <div class="cell"><button class="btn secondary s-active" type="button">Cancel</button><span class="cap">Pressed</span></div>
+      <div class="cell"><button class="btn secondary" type="button" disabled>Cancel</button><span class="cap">Disabled</span></div>
+      <div class="cell"><button class="btn secondary s-loading" type="button" aria-busy="true" disabled><span class="spinner" aria-hidden="true"></span>Loading</button><span class="cap">Loading</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-quiet">
+    <h2 id="h-quiet">Quiet, text only</h2>
+    <p class="note">For low-emphasis actions that should recede until sought.</p>
+    <div class="grid">
+      <div class="cell"><button class="btn quiet" type="button">Learn more</button><span class="cap">Default</span></div>
+      <div class="cell"><button class="btn quiet s-hover" type="button">Learn more</button><span class="cap">Hover</span></div>
+      <div class="cell"><button class="btn quiet s-focus" type="button">Learn more</button><span class="cap">Focus-visible</span></div>
+      <div class="cell"><button class="btn quiet s-active" type="button">Learn more</button><span class="cap">Pressed</span></div>
+      <div class="cell"><button class="btn quiet" type="button" disabled>Learn more</button><span class="cap">Disabled</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-danger">
+    <h2 id="h-danger">Destructive</h2>
+    <p class="note">Kept visually distinct from neutral actions, so a delete never reads as a save.</p>
+    <div class="grid">
+      <div class="cell"><button class="btn danger" type="button">Delete</button><span class="cap">Default</span></div>
+      <div class="cell"><button class="btn danger s-hover" type="button">Delete</button><span class="cap">Hover</span></div>
+      <div class="cell"><button class="btn danger s-focus" type="button">Delete</button><span class="cap">Focus-visible</span></div>
+      <div class="cell"><button class="btn danger s-active" type="button">Delete</button><span class="cap">Pressed</span></div>
+      <div class="cell"><button class="btn danger" type="button" disabled>Delete</button><span class="cap">Disabled</span></div>
+      <div class="cell"><button class="btn danger s-loading" type="button" aria-busy="true" disabled><span class="spinner" aria-hidden="true"></span>Deleting</button><span class="cap">Loading</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-sizes">
+    <h2 id="h-sizes">Sizes</h2>
+    <p class="note">Small for dense toolbars, medium as the default, large for a standalone call to action.</p>
+    <div class="cell" style="align-items:center">
+      <div class="sizes-row">
+        <button class="btn sm" type="button">Small</button>
+        <button class="btn" type="button">Medium</button>
+        <button class="btn lg" type="button">Large</button>
+      </div>
+      <span class="cap">Primary shown; every variant carries the three sizes.</span>
+    </div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("themeToggle");
+    var order = ["system", "light", "dark"];
+    var state = "system";
+
+    try {
+      var stored = localStorage.getItem("btn-min-theme");
+      if (stored && order.indexOf(stored) !== -1) state = stored;
+    } catch (e) {}
+
+    function apply() {
+      if (state === "system") root.removeAttribute("data-theme");
+      else root.setAttribute("data-theme", state);
+      btn.textContent = "Theme: " + state;
+      try { localStorage.setItem("btn-min-theme", state); } catch (e) {}
+    }
+
+    btn.addEventListener("click", function () {
+      state = order[(order.indexOf(state) + 1) % order.length];
+      apply();
+    });
+
+    apply();
+  })();
+</script>

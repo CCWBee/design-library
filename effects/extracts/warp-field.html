@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!--
+  Warp Field — a warping starfield / space-warp field (streaks + drifting tiles)
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: React/useEffect mount, TypeScript types, option-panel props; replaced with plain JS. Vendored three.min.js (r149 UMD, MIT) locally instead of the CDN/bundler import. No fonts, no network, no analytics.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Warp Field</title>
+<style>
+  :root {
+    --bg: #02040a;
+    --fg: rgba(255, 255, 255, 0.72);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+  }
+  .warp-field {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  .warp-field canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* mirrors the ThreeUI defaults: hue 0deg, saturation 1, brightness 1 */
+    filter: hue-rotate(0deg) saturate(1) brightness(1);
+  }
+  .label {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--fg);
+    z-index: 2;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="warp-field">
+    <canvas id="warp"></canvas>
+  </div>
+  <p class="label">Warp field</p>
+
+  <script src="three.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      var OPTIONS = {
+        speed: 15,
+        streakOpacity: 0.6,
+        tileOpacity: 0.9,
+        fov: 75
+      };
+
+      var canvas = document.getElementById("warp");
+
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x02040a);
+      scene.fog = new THREE.FogExp2(0x02040a, 0.001);
+
+      var camera = new THREE.PerspectiveCamera(OPTIONS.fov, 1, 0.1, 2000);
+      camera.position.z = 0;
+
+      var renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: "high-performance"
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      var group = new THREE.Group();
+      scene.add(group);
+
+      // --- Streaks (line segments that stretch towards the camera) ---
+      var streakGeometry = new THREE.BufferGeometry();
+      var streakCount = 400;
+      var streakPositions = new Float32Array(streakCount * 6);
+      var streakColors = new Float32Array(streakCount * 6);
+      var colorPalette = [
+        new THREE.Color(0x10b981),
+        new THREE.Color(0x059669),
+        new THREE.Color(0x34d399),
+        new THREE.Color(0xffffff)
+      ];
+      for (var i = 0; i < streakCount; i += 1) {
+        var angle = Math.random() * Math.PI * 2;
+        var radius = Math.random() * 800 + 20;
+        var x = Math.cos(angle) * radius;
+        var y = Math.sin(angle) * radius;
+        var z = (Math.random() - 0.5) * 2000;
+        var length = Math.random() * 150 + 50;
+        streakPositions[i * 6] = x;
+        streakPositions[i * 6 + 1] = y;
+        streakPositions[i * 6 + 2] = z;
+        streakPositions[i * 6 + 3] = x;
+        streakPositions[i * 6 + 4] = y;
+        streakPositions[i * 6 + 5] = z + length;
+        var c = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+        streakColors[i * 6] = c.r; streakColors[i * 6 + 1] = c.g; streakColors[i * 6 + 2] = c.b;
+        streakColors[i * 6 + 3] = c.r; streakColors[i * 6 + 4] = c.g; streakColors[i * 6 + 5] = c.b;
+      }
+      streakGeometry.setAttribute("position", new THREE.BufferAttribute(streakPositions, 3));
+      streakGeometry.setAttribute("color", new THREE.BufferAttribute(streakColors, 3));
+      var streakMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: OPTIONS.streakOpacity,
+        blending: THREE.AdditiveBlending
+      });
+      var streaks = new THREE.LineSegments(streakGeometry, streakMaterial);
+      group.add(streaks);
+
+      // --- Tiles (flat planes drifting past like debris) ---
+      var boxGeometry = new THREE.PlaneGeometry(8, 20);
+      var boxCount = 40;
+      var objects = [];
+      for (var j = 0; j < boxCount; j += 1) {
+        var material = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: OPTIONS.tileOpacity,
+          side: THREE.DoubleSide
+        });
+        material.color.setHex(
+          Math.random() > 0.6 ? 0xa7f3d0 : (Math.random() > 0.5 ? 0xd1fae5 : 0xffffff)
+        );
+        var mesh = new THREE.Mesh(boxGeometry, material);
+        var a2 = Math.random() * Math.PI * 2;
+        var r2 = Math.random() * 400 + 100;
+        mesh.position.x = Math.cos(a2) * r2;
+        mesh.position.y = Math.sin(a2) * r2;
+        mesh.position.z = (Math.random() - 0.5) * 2000;
+        mesh.lookAt(0, 0, mesh.position.z + 100);
+        var scale = Math.random() * 1.5 + 0.5;
+        mesh.scale.set(scale, scale, scale);
+        group.add(mesh);
+        objects.push(mesh);
+      }
+
+      function resize() {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        camera.aspect = w / Math.max(1, h);
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h, false);
+      }
+
+      function render() {
+        var positions = streaks.geometry.attributes.position.array;
+        for (var k = 0; k < streakCount; k += 1) {
+          positions[k * 6 + 2] += OPTIONS.speed;
+          positions[k * 6 + 5] += OPTIONS.speed;
+          if (positions[k * 6 + 2] > 200) {
+            var len = positions[k * 6 + 5] - positions[k * 6 + 2];
+            positions[k * 6 + 2] = -1800;
+            positions[k * 6 + 5] = -1800 + len;
+          }
+        }
+        streaks.geometry.attributes.position.needsUpdate = true;
+        for (var m = 0; m < objects.length; m += 1) {
+          objects[m].position.z += OPTIONS.speed;
+          if (objects[m].position.z > 200) objects[m].position.z = -1800;
+        }
+        renderer.render(scene, camera);
+      }
+
+      var frame = 0;
+      function tick() {
+        render();
+        frame = document.hidden ? 0 : requestAnimationFrame(tick);
+      }
+
+      window.addEventListener("resize", resize);
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden && !frame) frame = requestAnimationFrame(tick);
+      });
+
+      resize();
+      frame = requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>

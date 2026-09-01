@@ -1,0 +1,492 @@
+<title>Search bar · minimal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ---- Tokens: light (base) ---------------------------------------- */
+  :root {
+    --canvas:      #ffffff;
+    --panel:       rgb(0 0 0 / 2.5%);
+    --ink:         rgb(0 0 0 / 92%);
+    --ink-2:       rgb(0 0 0 / 64%);
+    --ink-3:       rgb(0 0 0 / 44%);
+    --border:      rgb(0 0 0 / 14%);
+    --border-strong: rgb(0 0 0 / 55%);
+    --hover:       rgb(0 0 0 / 5%);
+    --pressed:     rgb(0 0 0 / 9%);
+    --field-bg:    rgb(0 0 0 / 2%);
+    --field-bg-hover: rgb(0 0 0 / 4%);
+    --ring:        rgb(0 0 0 / 16%);
+
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+    --r-sm: 6px; --r-md: 8px; --r-lg: 12px;
+
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* ---- Tokens: dark ------------------------------------------------- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:      #0d0d0f;
+      --panel:       rgb(255 255 255 / 3%);
+      --ink:         rgb(255 255 255 / 92%);
+      --ink-2:       rgb(255 255 255 / 66%);
+      --ink-3:       rgb(255 255 255 / 46%);
+      --border:      rgb(255 255 255 / 16%);
+      --border-strong: rgb(255 255 255 / 62%);
+      --hover:       rgb(255 255 255 / 6%);
+      --pressed:     rgb(255 255 255 / 10%);
+      --field-bg:    rgb(255 255 255 / 3%);
+      --field-bg-hover: rgb(255 255 255 / 6%);
+      --ring:        rgb(255 255 255 / 22%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas:      #0d0d0f;
+    --panel:       rgb(255 255 255 / 3%);
+    --ink:         rgb(255 255 255 / 92%);
+    --ink-2:       rgb(255 255 255 / 66%);
+    --ink-3:       rgb(255 255 255 / 46%);
+    --border:      rgb(255 255 255 / 16%);
+    --border-strong: rgb(255 255 255 / 62%);
+    --hover:       rgb(255 255 255 / 6%);
+    --pressed:     rgb(255 255 255 / 10%);
+    --field-bg:    rgb(255 255 255 / 3%);
+    --field-bg-hover: rgb(255 255 255 / 6%);
+    --ring:        rgb(255 255 255 / 22%);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-4) var(--s-8);
+  }
+
+  /* ---- Page head --------------------------------------------------- */
+  .topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s-4);
+  }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    font-variant: small-caps;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-2);
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0;
+  }
+  .lede {
+    color: var(--ink-2);
+    max-width: 38rem;
+    margin: var(--s-3) 0 0;
+  }
+
+  .toggle {
+    flex: none;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: var(--field-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .toggle:hover { background: var(--field-bg-hover); color: var(--ink); }
+  .toggle:focus-visible {
+    outline: none;
+    border-color: var(--border-strong);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  /* ---- Section scaffold -------------------------------------------- */
+  section { margin-top: var(--s-8); }
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .section-note {
+    color: var(--ink-2);
+    font-size: 0.92rem;
+    margin: var(--s-2) 0 0;
+    max-width: 40rem;
+  }
+
+  .grid {
+    margin-top: var(--s-5);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: var(--s-6) var(--s-5);
+  }
+  .cell-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    margin: 0 0 var(--s-1);
+  }
+  .cell-desc {
+    font-size: 0.78rem;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-3);
+  }
+
+  /* ---- The component: search bar ----------------------------------- */
+  .search {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    width: 100%;
+    height: 44px;
+    padding: 0 var(--s-3);
+    background: var(--field-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--ink);
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .search__icon { flex: none; width: 18px; height: 18px; color: var(--ink-3); }
+  .search__icon svg { display: block; width: 100%; height: 100%; }
+
+  .search__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+    padding: 0;
+  }
+  .search__input::placeholder { color: var(--ink-3); }
+  .search__input:focus { outline: none; }
+
+  /* clear button, shown when there is text */
+  .search__clear {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--ink-3);
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .search__clear svg { width: 14px; height: 14px; display: block; }
+  .search__clear:hover { background: var(--hover); color: var(--ink-2); }
+  .search__clear:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring);
+    color: var(--ink-2);
+  }
+
+  /* loading spinner replaces the leading icon */
+  .search__spinner {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    border-top-color: var(--border-strong);
+    animation: spin 720ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Live interaction states ------------------------------------- */
+  .search:hover,
+  .search.is-hover {
+    background: var(--field-bg-hover);
+    border-color: var(--border-strong);
+  }
+
+  /* the field is focus-within when the input has keyboard focus */
+  .search:focus-within,
+  .search.is-focus {
+    background: var(--canvas);
+    border-color: var(--border-strong);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  .search:active,
+  .search.is-active {
+    background: var(--pressed);
+  }
+  /* active must not swallow the focus ring when both hold */
+  .search:focus-within:active,
+  .search.is-focus.is-active {
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  /* disabled */
+  .search.is-disabled {
+    background: var(--panel);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+  .search.is-disabled .search__icon,
+  .search.is-disabled .search__input,
+  .search.is-disabled .search__input::placeholder {
+    color: var(--ink-3);
+  }
+  .search__input:disabled { cursor: not-allowed; color: var(--ink-3); }
+
+  /* ---- Size variants ----------------------------------------------- */
+  .search--sm { height: 36px; padding: 0 var(--s-2) 0 var(--s-3); }
+  .search--sm .search__input { font-size: 0.875rem; }
+  .search--sm .search__icon,
+  .search--sm .search__spinner { width: 16px; height: 16px; }
+
+  .search--lg { height: 52px; padding: 0 var(--s-4); border-radius: var(--r-lg); }
+  .search--lg .search__input { font-size: 1.05rem; }
+  .search--lg .search__icon,
+  .search--lg .search__spinner { width: 20px; height: 20px; }
+
+  /* ---- Live demo band ---------------------------------------------- */
+  .demo {
+    margin-top: var(--s-5);
+    padding: var(--s-6) var(--s-5);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+  }
+  .demo .search { max-width: 32rem; }
+  .demo__status {
+    margin: var(--s-3) 0 0;
+    font-size: 0.82rem;
+    color: var(--ink-3);
+    min-height: 1.2em;
+  }
+
+  /* ---- Reduced motion & transparency ------------------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 90ms !important; }
+    .search__spinner { animation: none; border-top-color: var(--border-strong); }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .search:focus-within,
+    .search.is-focus { box-shadow: 0 0 0 2px var(--border-strong); }
+  }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <p class="eyebrow">Inputs · Minimal</p>
+      <h1>Search bar</h1>
+      <p class="lede">A hairline field on the canvas with a leading icon at reduced ink, a clear
+        control that appears with content, and a focus ring that thickens the border rather than
+        recolouring it. Every state and size below is rendered from one component.</p>
+    </div>
+    <button class="toggle" id="themeToggle" type="button" aria-pressed="false">Theme: system</button>
+  </div>
+
+  <!-- Live, interactive -->
+  <section aria-labelledby="live-h">
+    <h2 class="section-title" id="live-h">Live</h2>
+    <p class="section-note">A working instance. Type to reveal the clear control, submit to see the
+      brief loading state, and tab to it to check the focus ring.</p>
+    <div class="demo">
+      <form class="search" id="liveSearch" role="search" autocomplete="off">
+        <span class="search__icon" id="liveIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+            <path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <input class="search__input" id="liveInput" type="search" name="q"
+               placeholder="Search the library" aria-label="Search the library">
+        <button class="search__clear" id="liveClear" type="button" aria-label="Clear search" hidden>
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </form>
+      <p class="demo__status" id="liveStatus" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- State checklist -->
+  <section aria-labelledby="states-h">
+    <h2 class="section-title" id="states-h">States</h2>
+    <p class="section-note">The full checklist, each forced so the sheet documents itself. Hover and
+      pressed also occur live on the instance above.</p>
+
+    <div class="grid">
+      <div>
+        <p class="cell-label">Default</p>
+        <p class="cell-desc">Resting field, placeholder at tertiary ink.</p>
+        <div class="search">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" placeholder="Search the library" aria-label="Default example" tabindex="-1">
+        </div>
+      </div>
+
+      <div>
+        <p class="cell-label">Hover</p>
+        <p class="cell-desc">Fill lifts one rung, border strengthens.</p>
+        <div class="search is-hover">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" placeholder="Search the library" aria-label="Hover example" tabindex="-1">
+        </div>
+      </div>
+
+      <div>
+        <p class="cell-label">Focus-visible</p>
+        <p class="cell-desc">Border goes solid, a neutral ring is added.</p>
+        <div class="search is-focus">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" value="harbour" aria-label="Focus example" tabindex="-1">
+          <button class="search__clear" type="button" aria-label="Clear search" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+      </div>
+
+      <div>
+        <p class="cell-label">Pressed</p>
+        <p class="cell-desc">Momentary darker fill on pointer-down.</p>
+        <div class="search is-active">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" placeholder="Search the library" aria-label="Pressed example" tabindex="-1">
+        </div>
+      </div>
+
+      <div>
+        <p class="cell-label">Disabled</p>
+        <p class="cell-desc">Muted panel fill, no ring, not focusable.</p>
+        <div class="search is-disabled">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" placeholder="Search unavailable" aria-label="Disabled example" disabled>
+        </div>
+      </div>
+
+      <div>
+        <p class="cell-label">Loading</p>
+        <p class="cell-desc">Leading icon becomes a spinner while a query runs.</p>
+        <div class="search">
+          <span class="search__spinner" aria-hidden="true"></span>
+          <input class="search__input" type="text" value="tide charts" aria-label="Loading example" tabindex="-1">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Size variants -->
+  <section aria-labelledby="sizes-h">
+    <h2 class="section-title" id="sizes-h">Sizes</h2>
+    <p class="section-note">Three heights on the 8px rhythm. Icon, type size, and radius scale with
+      the field so proportion holds.</p>
+
+    <div class="grid">
+      <div>
+        <p class="cell-label">Small · 36px</p>
+        <p class="cell-desc">Dense toolbars and filter rows.</p>
+        <div class="search search--sm">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" placeholder="Search" aria-label="Small example" tabindex="-1">
+        </div>
+      </div>
+
+      <div>
+        <p class="cell-label">Medium · 44px</p>
+        <p class="cell-desc">The default, a comfortable touch target.</p>
+        <div class="search">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" placeholder="Search the library" aria-label="Medium example" tabindex="-1">
+        </div>
+      </div>
+
+      <div>
+        <p class="cell-label">Large · 52px</p>
+        <p class="cell-desc">Page-level or hero search.</p>
+        <div class="search search--lg">
+          <span class="search__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <input class="search__input" type="text" placeholder="Search the whole library" aria-label="Large example" tabindex="-1">
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Theme toggle: system -> light -> dark -> system
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("themeToggle");
+    var order = ["system", "light", "dark"];
+    var i = 0;
+    function apply() {
+      var mode = order[i];
+      if (mode === "system") { root.removeAttribute("data-theme"); }
+      else { root.setAttribute("data-theme", mode); }
+      btn.textContent = "Theme: " + mode;
+      btn.setAttribute("aria-pressed", mode !== "system" ? "true" : "false");
+    }
+    btn.addEventListener("click", function () { i = (i + 1) % order.length; apply(); });
+    apply();
+  })();
+
+  // Live search behaviour
+  (function () {
+    var form = document.getElementById("liveSearch");
+    var input = document.getElementById("liveInput");
+    var clear = document.getElementById("liveClear");
+    var icon = document.getElementById("liveIcon");
+    var status = document.getElementById("liveStatus");
+    var spinner = null;
+    var timer = null;
+
+    function syncClear() { clear.hidden = input.value.length === 0; }
+
+    input.addEventListener("input", syncClear);
+
+    clear.addEventListener("click", function () {
+      input.value = "";
+      syncClear();
+      status.textContent = "";
+      input.focus();
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var q = input.value.trim();
+      if (!q) { status.textContent = "Type a query, then search."; return; }
+      if (spinner) return;
+      spinner = document.createElement("span");
+      spinner.className = "search__spinner";
+      spinner.setAttribute("aria-hidden", "true");
+      icon.replaceWith(spinner);
+      status.textContent = 'Searching for "' + q + '"';
+      timer = setTimeout(function () {
+        spinner.replaceWith(icon);
+        spinner = null;
+        status.textContent = 'Showing results for "' + q + '"';
+      }, 1100);
+    });
+  })();
+</script>

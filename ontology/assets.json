@@ -1,0 +1,1402 @@
+{
+ "$schema_note": "By-intent map over the design library. status: example=a verified file realises this cell; exemplar=a purpose-built reference; synth=generate on demand via ../ontology/register-rules.md; n/a=not a meaningful combination. State (size/hover/focus/disabled/loading/theme) is NOT a cell axis; each realised asset implements it internally.",
+ "registers": [
+  "minimal",
+  "glass",
+  "tactile",
+  "shader"
+ ],
+ "families": [
+  {
+   "family": "actions",
+   "types": [
+    {
+     "type": "button",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/button-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/button-glass.html"
+       ]
+      },
+      "tactile": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/liquid-metal-button.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/gradient-cta.html",
+        "../effects/extracts/liquid-metal-button.html",
+        "../effects/extracts/lumen-cta.html",
+        "../effects/extracts/shader-buttons.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "icon-button",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "fab",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "split-menu-button",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "segmented-control",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "dropdown-menu",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "link",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "n/a"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "button-group",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "inputs",
+   "types": [
+    {
+     "type": "text-field",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/text-field-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "search-bar",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/search-bar-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/search-bar-glass.html"
+       ]
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "textarea",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "prompt-composer",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "select",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/select-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "combobox",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "file-upload",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "stepper",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "otp-input",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "selection",
+   "types": [
+    {
+     "type": "checkbox",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/checkbox-radio-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "radio",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/checkbox-radio-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "switch",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/switch-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/switch-tactile.html"
+       ]
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/skeuomorphic-toggle.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "slider",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "chips",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "rating",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "colour-picker",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "navigation",
+   "types": [
+    {
+     "type": "tab-bar",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/tab-bar-glass.html"
+       ]
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "sidebar",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "breadcrumb",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "n/a"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "pagination",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "dock",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/animated-top-dock.html",
+        "../effects/extracts/genie-dock.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "command-palette",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "wizard-nav",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "surfaces",
+   "types": [
+    {
+     "type": "card",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/card-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/card-glass.html"
+       ]
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "panel",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "sheet-drawer",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "modal",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/modal-glass.html"
+       ]
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "accordion",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "popover",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "feedback",
+   "types": [
+    {
+     "type": "toast",
+     "cells": {
+      "minimal": {
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/toast-minimal.html"
+       ]
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "badge",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "tooltip",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "progress-bar",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/predictive-arc.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "spinner",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/uplink-loader.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "skeleton",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "empty-state",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "alert-banner",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "data",
+   "types": [
+    {
+     "type": "table",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "rows-list",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "diff-view",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "filter-bar",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "stat-tile",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/data-pixel-arc.html",
+        "../effects/extracts/maccess-elements.html",
+        "../effects/extracts/performance-gauges.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "key-value",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "media-hero",
+   "types": [
+    {
+     "type": "shader-background",
+     "cells": {
+      "minimal": {
+       "status": "n/a"
+      },
+      "glass": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/condensation.html"
+       ]
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/aura-ui-fluid.html",
+        "../effects/extracts/flow-field.html",
+        "../effects/extracts/flux-vortex.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "gradient-background",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/gradient-collection.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "particle-field",
+     "cells": {
+      "minimal": {
+       "status": "n/a"
+      },
+      "glass": {
+       "status": "n/a"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/constellation-field.html",
+        "../effects/extracts/particle-drift.html",
+        "../effects/extracts/ribbon-field.html",
+        "../effects/extracts/warp-field.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "orb-sphere",
+     "cells": {
+      "minimal": {
+       "status": "n/a"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/brand-orbs.html",
+        "../effects/extracts/energy-orb.html",
+        "../effects/extracts/globe.html",
+        "../effects/extracts/liquid-form.html",
+        "../effects/extracts/orbital-sphere.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "scene-3d",
+     "cells": {
+      "minimal": {
+       "status": "n/a"
+      },
+      "glass": {
+       "status": "n/a"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/bookshelf.html",
+        "../effects/extracts/japanese-tower.html",
+        "../effects/extracts/koi-studies.html",
+        "../effects/extracts/landscape.html",
+        "../effects/extracts/temple-night.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "image-treatment",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/crt.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "hero-composition",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "ai-native",
+   "types": [
+    {
+     "type": "approval-card",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "tool-chip",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "streaming-text",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "thinking-indicator",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "context-card",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "insight-card",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "synth"
+      }
+     }
+    },
+    {
+     "type": "diff-change-view",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "citation",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "n/a"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "family": "typography",
+   "types": [
+    {
+     "type": "heading-treatment",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/article-headings.html",
+        "../effects/extracts/typography-vortex.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "animated-text",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "n/a"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/character-carousel.html",
+        "../effects/extracts/text-path-studies.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "wordmark",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "synth"
+      },
+      "shader": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/audio-wordmark.html",
+        "../effects/extracts/glassblown-neon.html"
+       ],
+       "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
+      }
+     }
+    },
+    {
+     "type": "prose-block",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "n/a"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
+     "type": "code-block",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "synth"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkbox and radio · Minimal</title>
+<style>
+  /* ---- Tokens: light ---------------------------------------------------- */
+  :root {
+    --canvas:        #ffffff;
+    --panel:         rgb(0 0 0 / 3%);
+    --ink-1:         rgb(0 0 0 / 92%);
+    --ink-2:         rgb(0 0 0 / 64%);
+    --ink-3:         rgb(0 0 0 / 44%);
+    --separator:     rgb(0 0 0 / 10%);
+
+    /* Control-specific. Unchecked border is set to clear the 3:1 non-text
+       contrast bar against the canvas, which the 10% hairline cannot. */
+    --control-border:      rgb(0 0 0 / 52%);
+    --control-border-hi:   rgb(0 0 0 / 78%);
+    --control-fill-on:     rgb(0 0 0 / 92%);
+    --check-ink:           #ffffff;
+    --hover-fill:          rgb(0 0 0 / 5%);
+    --pressed-fill:        rgb(0 0 0 / 9%);
+
+    --disabled-border:     rgb(0 0 0 / 22%);
+    --disabled-fill-on:    rgb(0 0 0 / 26%);
+    --disabled-ink:        rgb(0 0 0 / 34%);
+
+    --ring:                rgb(0 0 0 / 62%);
+
+    --r-sm: 5px; --r-md: 6px;
+
+    --s-1: 4px; --s-2: 8px; --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* ---- Tokens: dark ----------------------------------------------------- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:      #0e0e10;
+      --panel:       rgb(255 255 255 / 4%);
+      --ink-1:       rgb(255 255 255 / 92%);
+      --ink-2:       rgb(255 255 255 / 66%);
+      --ink-3:       rgb(255 255 255 / 46%);
+      --separator:   rgb(255 255 255 / 12%);
+
+      --control-border:      rgb(255 255 255 / 56%);
+      --control-border-hi:   rgb(255 255 255 / 82%);
+      --control-fill-on:     rgb(255 255 255 / 92%);
+      --check-ink:           #0e0e10;
+      --hover-fill:          rgb(255 255 255 / 7%);
+      --pressed-fill:        rgb(255 255 255 / 12%);
+
+      --disabled-border:     rgb(255 255 255 / 22%);
+      --disabled-fill-on:    rgb(255 255 255 / 26%);
+      --disabled-ink:        rgb(255 255 255 / 34%);
+
+      --ring:                rgb(255 255 255 / 70%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas:      #0e0e10;
+    --panel:       rgb(255 255 255 / 4%);
+    --ink-1:       rgb(255 255 255 / 92%);
+    --ink-2:       rgb(255 255 255 / 66%);
+    --ink-3:       rgb(255 255 255 / 46%);
+    --separator:   rgb(255 255 255 / 12%);
+
+    --control-border:      rgb(255 255 255 / 56%);
+    --control-border-hi:   rgb(255 255 255 / 82%);
+    --control-fill-on:     rgb(255 255 255 / 92%);
+    --check-ink:           #0e0e10;
+    --hover-fill:          rgb(255 255 255 / 7%);
+    --pressed-fill:        rgb(255 255 255 / 12%);
+
+    --disabled-border:     rgb(255 255 255 / 22%);
+    --disabled-fill-on:    rgb(255 255 255 / 26%);
+    --disabled-ink:        rgb(255 255 255 / 34%);
+
+    --ring:                rgb(255 255 255 / 70%);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink-1);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-5) var(--s-8);
+  }
+
+  /* ---- Masthead --------------------------------------------------------- */
+  .top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-7);
+  }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    font-variant: small-caps;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-2);
+  }
+  h1 {
+    font-size: clamp(1.6rem, 1.2rem + 1.8vw, 2.1rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    margin: 0 0 var(--s-3);
+  }
+  .lede {
+    margin: 0;
+    max-width: 40rem;
+    color: var(--ink-2);
+  }
+
+  .toggle {
+    flex: none;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-1);
+    background: transparent;
+    border: 1px solid var(--control-border);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease;
+  }
+  .toggle:hover { background: var(--hover-fill); border-color: var(--control-border-hi); }
+  .toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--canvas), 0 0 0 4px var(--ring);
+  }
+
+  /* ---- Chapters --------------------------------------------------------- */
+  section { margin-top: var(--s-8); }
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--s-2);
+  }
+  .note {
+    margin: 0 0 var(--s-5);
+    max-width: 40rem;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+
+  /* State / variant grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--s-2);
+  }
+  .cell {
+    background: var(--panel);
+    border-radius: var(--r-md);
+    padding: var(--s-4) var(--s-3) var(--s-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-height: 96px;
+  }
+  .cell .state {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    font-variant: small-caps;
+    color: var(--ink-3);
+  }
+
+  /* ---- The control ------------------------------------------------------ */
+  .opt {
+    --box: 20px;
+    --tick: 2px;
+    --radius: var(--r-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    cursor: pointer;
+    user-select: none;
+    color: var(--ink-1);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .opt--sm { --box: 16px; --tick: 1.5px; --radius: 4px; font-size: 0.88rem; }
+  .opt--lg { --box: 26px; --tick: 2.5px; --radius: 7px; font-size: 1.05rem; }
+
+  .opt input {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .box {
+    position: relative;
+    flex: none;
+    width: var(--box);
+    height: var(--box);
+    border: 1.5px solid var(--control-border);
+    border-radius: var(--radius);
+    background: transparent;
+    display: grid;
+    place-items: center;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .opt--radio .box { border-radius: 50%; }
+
+  /* Ring wrapper so the focus halo hugs the box only */
+  .box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: none;
+    transition: box-shadow 140ms ease;
+  }
+
+  /* Tick (checkbox) */
+  .opt--check .box::after {
+    content: "";
+    width: 32%;
+    height: 60%;
+    margin-bottom: 8%;
+    border: solid var(--check-ink);
+    border-width: 0 var(--tick) var(--tick) 0;
+    transform: rotate(45deg) scale(0);
+    transform-origin: center;
+    transition: transform 160ms cubic-bezier(.2,.7,.3,1);
+  }
+  /* Dot (radio) */
+  .opt--radio .box::after {
+    content: "";
+    width: 44%;
+    height: 44%;
+    border-radius: 50%;
+    background: var(--check-ink);
+    transform: scale(0);
+    transition: transform 160ms cubic-bezier(.2,.7,.3,1);
+  }
+
+  /* Hover (live + forced .is-hover) */
+  .opt:not(.is-disabled):hover .box,
+  .opt.is-hover .box {
+    border-color: var(--control-border-hi);
+    background: var(--hover-fill);
+  }
+  /* Pressed (live + forced .is-active) */
+  .opt:not(.is-disabled):active .box,
+  .opt.is-active .box {
+    background: var(--pressed-fill);
+    border-color: var(--control-border-hi);
+  }
+
+  /* Focus-visible (live + forced .is-focus) */
+  .opt input:focus-visible + .box::before,
+  .opt.is-focus .box::before {
+    box-shadow: 0 0 0 2px var(--canvas), 0 0 0 4px var(--ring);
+  }
+
+  /* Checked (live + forced .is-checked) */
+  .opt input:checked + .box,
+  .opt.is-checked .box {
+    background: var(--control-fill-on);
+    border-color: var(--control-fill-on);
+  }
+  .opt input:checked + .box::after,
+  .opt.is-checked .box::after {
+    transform: rotate(45deg) scale(1);
+  }
+  .opt--radio input:checked + .box::after,
+  .opt--radio.is-checked .box::after {
+    transform: scale(1);
+  }
+
+  /* Indeterminate (checkbox only) */
+  .opt--check input:indeterminate + .box,
+  .opt--check.is-indeterminate .box {
+    background: var(--control-fill-on);
+    border-color: var(--control-fill-on);
+  }
+  .opt--check input:indeterminate + .box::after,
+  .opt--check.is-indeterminate .box::after {
+    width: 52%;
+    height: 0;
+    margin: 0;
+    border-width: 0 0 var(--tick) 0;
+    transform: none;
+  }
+
+  /* Disabled (live + forced .is-disabled) */
+  .opt:has(input:disabled),
+  .opt.is-disabled {
+    cursor: not-allowed;
+    color: var(--disabled-ink);
+  }
+  .opt:has(input:disabled) .box,
+  .opt.is-disabled .box {
+    border-color: var(--disabled-border);
+    background: transparent;
+  }
+  .opt:has(input:disabled:checked) .box,
+  .opt:has(input:disabled:indeterminate) .box,
+  .opt.is-disabled.is-checked .box,
+  .opt.is-disabled.is-indeterminate .box {
+    background: var(--disabled-fill-on);
+    border-color: var(--disabled-fill-on);
+  }
+
+  /* ---- Worked example fieldset ----------------------------------------- */
+  fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  legend {
+    padding: 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: var(--s-3);
+  }
+  .stack { display: flex; flex-direction: column; gap: var(--s-3); }
+  .two-up {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--s-6);
+    background: var(--panel);
+    border-radius: var(--r-md);
+    padding: var(--s-5);
+  }
+  .sizes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-6);
+  }
+
+  footer {
+    margin-top: var(--s-8);
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--separator);
+    color: var(--ink-3);
+    font-size: 0.82rem;
+  }
+  code {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    font-size: 0.82em;
+    color: var(--ink-2);
+  }
+
+  /* ---- Accessibility media queries ------------------------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    .box, .box::before, .box::after, .toggle { transition: none; }
+  }
+  /* No blur/translucent material is used here; kept for parity with the set. */
+  @media (prefers-reduced-transparency: reduce) {
+    .cell, .two-up { background: var(--panel); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <p class="eyebrow">Selection family</p>
+      <h1>Checkbox and radio · Minimal</h1>
+      <p class="lede">A reference for the two binary selection controls in the minimal register. Alpha-black ink and fills, a hairline box that fills to solid ink on select, a visible focus ring, and motion held under 200&nbsp;ms. Every control below is a real, keyboard-operable input.</p>
+    </div>
+    <button class="toggle" id="themeBtn" type="button" aria-pressed="false">Dark</button>
+  </div>
+
+  <!-- ============ CHECKBOX STATES ============ -->
+  <section aria-labelledby="cb-h">
+    <h2 id="cb-h">Checkbox states</h2>
+    <p class="note">The full lifecycle. Default, hover, focus-visible, pressed, checked, indeterminate, and disabled. Hover, focus, and pressed cells are frozen for reference; the rest respond to the pointer and keyboard.</p>
+
+    <div class="grid">
+      <div class="cell">
+        <span class="state">Default</span>
+        <label class="opt opt--check opt--md"><input type="checkbox"><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Hover</span>
+        <label class="opt opt--check opt--md is-hover"><input type="checkbox"><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Focus-visible</span>
+        <label class="opt opt--check opt--md is-focus"><input type="checkbox"><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Pressed</span>
+        <label class="opt opt--check opt--md is-active"><input type="checkbox"><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Checked</span>
+        <label class="opt opt--check opt--md is-checked"><input type="checkbox" checked><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Checked, focus-visible</span>
+        <label class="opt opt--check opt--md is-checked is-focus"><input type="checkbox" checked><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Indeterminate</span>
+        <label class="opt opt--check opt--md is-indeterminate"><input type="checkbox"><span class="box"></span><span class="txt">Select all</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Disabled</span>
+        <label class="opt opt--check opt--md is-disabled"><input type="checkbox" disabled><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Disabled, checked</span>
+        <label class="opt opt--check opt--md is-disabled is-checked"><input type="checkbox" checked disabled><span class="box"></span><span class="txt">Send receipts</span></label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RADIO STATES ============ -->
+  <section aria-labelledby="rb-h">
+    <h2 id="rb-h">Radio states</h2>
+    <p class="note">The same lifecycle for the single-choice control. A radio has no indeterminate state; otherwise it mirrors the checkbox exactly, drawn as a circle with an ink dot.</p>
+
+    <div class="grid">
+      <div class="cell">
+        <span class="state">Default</span>
+        <label class="opt opt--radio opt--md"><input type="radio" name="r-def"><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Hover</span>
+        <label class="opt opt--radio opt--md is-hover"><input type="radio" name="r-hov"><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Focus-visible</span>
+        <label class="opt opt--radio opt--md is-focus"><input type="radio" name="r-foc"><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Pressed</span>
+        <label class="opt opt--radio opt--md is-active"><input type="radio" name="r-act"><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Selected</span>
+        <label class="opt opt--radio opt--md is-checked"><input type="radio" name="r-sel" checked><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Selected, focus-visible</span>
+        <label class="opt opt--radio opt--md is-checked is-focus"><input type="radio" name="r-self" checked><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Disabled</span>
+        <label class="opt opt--radio opt--md is-disabled"><input type="radio" name="r-dis" disabled><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+      <div class="cell">
+        <span class="state">Disabled, selected</span>
+        <label class="opt opt--radio opt--md is-disabled is-checked"><input type="radio" name="r-dsel" checked disabled><span class="box"></span><span class="txt">Standard post</span></label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SIZES ============ -->
+  <section aria-labelledby="sz-h">
+    <h2 id="sz-h">Size variants</h2>
+    <p class="note">Three sizes share one geometry. Small for dense tables and toolbars, medium as the default, large for touch and primary questions. The tick, dot, radius, and label all scale together.</p>
+
+    <div class="sizes">
+      <label class="opt opt--check opt--sm is-checked"><input type="checkbox" checked><span class="box"></span><span class="txt">Small</span></label>
+      <label class="opt opt--check opt--md is-checked"><input type="checkbox" checked><span class="box"></span><span class="txt">Medium</span></label>
+      <label class="opt opt--check opt--lg is-checked"><input type="checkbox" checked><span class="box"></span><span class="txt">Large</span></label>
+
+      <label class="opt opt--radio opt--sm is-checked"><input type="radio" name="s-sm" checked><span class="box"></span><span class="txt">Small</span></label>
+      <label class="opt opt--radio opt--md is-checked"><input type="radio" name="s-md" checked><span class="box"></span><span class="txt">Medium</span></label>
+      <label class="opt opt--radio opt--lg is-checked"><input type="radio" name="s-lg" checked><span class="box"></span><span class="txt">Large</span></label>
+    </div>
+  </section>
+
+  <!-- ============ WORKED GROUPS ============ -->
+  <section aria-labelledby="ex-h">
+    <h2 id="ex-h">In use</h2>
+    <p class="note">Live groups with the controls doing their real job. A radio group for a single choice, a checklist for several. These respond fully to the pointer and keyboard.</p>
+
+    <div class="two-up">
+      <fieldset>
+        <legend>Delivery</legend>
+        <div class="stack">
+          <label class="opt opt--radio opt--md"><input type="radio" name="ship" checked><span class="box"></span><span class="txt">Standard, three days</span></label>
+          <label class="opt opt--radio opt--md"><input type="radio" name="ship"><span class="box"></span><span class="txt">Express, next day</span></label>
+          <label class="opt opt--radio opt--md"><input type="radio" name="ship"><span class="box"></span><span class="txt">Collect in person</span></label>
+          <label class="opt opt--radio opt--md is-disabled"><input type="radio" name="ship" disabled><span class="box"></span><span class="txt">Same day, unavailable here</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Notifications</legend>
+        <div class="stack">
+          <label class="opt opt--check opt--md" id="parent">
+            <input type="checkbox" id="parentBox"><span class="box"></span><span class="txt">All updates</span>
+          </label>
+          <div class="stack" style="padding-left:calc(var(--s-3) + var(--s-2))">
+            <label class="opt opt--check opt--md"><input type="checkbox" class="child" checked><span class="box"></span><span class="txt">Order status</span></label>
+            <label class="opt opt--check opt--md"><input type="checkbox" class="child"><span class="box"></span><span class="txt">Dispatch and tracking</span></label>
+            <label class="opt opt--check opt--md"><input type="checkbox" class="child"><span class="box"></span><span class="txt">Offers, occasionally</span></label>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+  </section>
+
+  <footer>
+    Ontology cell: <code>selection / checkbox-radio / minimal</code>. Self-contained over <code>file://</code>: system font stack, no remote assets, alpha-black ink and fills throughout.
+  </footer>
+
+</div>
+
+<script>
+  // Theme toggle: cycles the explicit override; default follows the system.
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("themeBtn");
+    function systemDark() {
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    function currentDark() {
+      var t = root.getAttribute("data-theme");
+      if (t === "dark") return true;
+      if (t === "light") return false;
+      return systemDark();
+    }
+    function sync() {
+      var dark = currentDark();
+      btn.textContent = dark ? "Light" : "Dark";
+      btn.setAttribute("aria-pressed", dark ? "true" : "false");
+    }
+    btn.addEventListener("click", function () {
+      root.setAttribute("data-theme", currentDark() ? "light" : "dark");
+      sync();
+    });
+    sync();
+  })();
+
+  // Parent checkbox drives the indeterminate demo in the live group.
+  (function () {
+    var parent = document.getElementById("parentBox");
+    var children = Array.prototype.slice.call(document.querySelectorAll(".child"));
+    if (!parent) return;
+    function refresh() {
+      var on = children.filter(function (c) { return c.checked; }).length;
+      parent.checked = on === children.length;
+      parent.indeterminate = on > 0 && on < children.length;
+    }
+    parent.addEventListener("change", function () {
+      children.forEach(function (c) { c.checked = parent.checked; });
+      parent.indeterminate = false;
+    });
+    children.forEach(function (c) { c.addEventListener("change", refresh); });
+    refresh();
+  })();
+</script>
+</body>
+</html>

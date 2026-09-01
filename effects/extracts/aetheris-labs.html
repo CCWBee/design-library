@@ -1,0 +1,488 @@
+<!--
+  Aetheris Labs — drifting nebula shader wash with an interactive "aether drive" button
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN, Iconify icons, GSAP (replaced with a plain CSS/rAF fade-in), Google
+  Fonts (replaced with the system font stack), marketing copy/footer links, product branding.
+  The two raw WebGL fragment-noise shaders (ambient background + button flame) are unchanged.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aetheris Labs</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #020208;
+    color: #e2f1ff;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    user-select: none;
+  }
+  ::selection { background: rgba(0, 210, 255, 0.3); }
+
+  #bg-gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 1s ease-in;
+  }
+  .vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, transparent 0%, #020208 100%);
+    mix-blend-mode: multiply;
+  }
+
+  nav {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand {
+    font-style: italic;
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+    color: #e2f1ff;
+  }
+  .status-pill {
+    padding: 1px;
+    background: linear-gradient(180deg, rgba(226,241,255,0.15) 0%, rgba(226,241,255,0) 100%);
+    border-radius: 9999px;
+  }
+  .status-pill-inner {
+    background: rgba(8, 10, 20, 0.8);
+    backdrop-filter: blur(8px);
+    border-radius: 9999px;
+    padding: 0.35rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.05);
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: #00d2ff;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .status-label {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: rgba(226,241,255,0.6);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  main {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 1rem;
+  }
+  .eyebrow {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: #00d2ff;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: #e2f1ff;
+    margin: 0 0 3.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5));
+  }
+  h1 span { display: block; }
+  h1 .dim { color: rgba(255,255,255,0.9); }
+
+  #btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 250px;
+    height: 70px;
+    border: 0;
+    padding: 0;
+    border-radius: 1rem;
+    overflow: hidden;
+    cursor: pointer;
+    background: #050b1a;
+    outline: none;
+    box-shadow: 0 24px 48px rgba(4, 98, 126, 0.2), 0 3px 10px rgba(2, 6, 20, 0.35);
+    transition: box-shadow 220ms cubic-bezier(0.34,1.4,0.5,1), transform 220ms cubic-bezier(0.34,1.4,0.5,1);
+  }
+  #btn:hover { transform: translateY(-2px); }
+  #btn:active { transform: translateY(1px) scale(0.985); }
+  #btn:focus-visible { outline: 2px solid #00d2ff; outline-offset: 5px; }
+  #btn canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #btn.nogl canvas { display: none; }
+  .btn-fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    background: radial-gradient(130% 170% at 50% 118%, #61d3ff 0%, #33a7ff 24%, #084c8e 56%, #050a19 88%);
+  }
+  #btn.nogl .btn-fallback { display: block; }
+  .btn-label {
+    position: relative;
+    z-index: 10;
+    pointer-events: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.26em;
+    text-indent: 0.26em;
+    color: #e2f1ff;
+    text-shadow: 0 1px 12px rgba(0, 16, 40, .85);
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: rgba(226,241,255,0.4);
+    letter-spacing: 0.02em;
+    margin-top: 2.5rem;
+    max-width: 24rem;
+    line-height: 1.6;
+  }
+
+  footer {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: rgba(226,241,255,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .gs-word { display: inline-block; transform: translateY(100%); }
+  .gs-fade { opacity: 0; transform: translateY(15px); }
+  .gs-scale-up { opacity: 0; transform: scale(0.85) translateY(20px); }
+  .anim-ready .gs-word,
+  .anim-ready .gs-fade,
+  .anim-ready .gs-scale-up {
+    transition: opacity 1s cubic-bezier(0.16,1,0.3,1), transform 1s cubic-bezier(0.16,1,0.3,1);
+  }
+  .anim-in .gs-word { transform: translateY(0); }
+  .anim-in .gs-fade { opacity: 1; transform: translateY(0); }
+  .anim-in .gs-scale-up { opacity: 1; transform: scale(1) translateY(0); }
+</style>
+</head>
+<body>
+
+<canvas id="bg-gl" aria-hidden="true"></canvas>
+<div class="vignette"></div>
+
+<nav class="gs-fade">
+  <div class="brand">Aetheris.</div>
+  <div class="status-pill">
+    <div class="status-pill-inner">
+      <div class="status-dot"></div>
+      <span class="status-label">Drive engaged</span>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="eyebrow gs-fade">System 09 &middot; Cosmic void</div>
+
+  <h1>
+    <span style="overflow:hidden; padding-bottom:0.4rem;"><span class="gs-word">Access</span></span>
+    <span style="overflow:hidden; padding-bottom:0.4rem;"><span class="gs-word dim">The Cosmos.</span></span>
+  </h1>
+
+  <div class="gs-scale-up">
+    <button id="btn" type="button">
+      <canvas id="gl" aria-hidden="true"></canvas>
+      <div class="btn-fallback"></div>
+      <span class="btn-label">Aether drive</span>
+    </button>
+  </div>
+
+  <p class="hint gs-fade">Hover to accelerate the drive, press to initiate hyper jump.</p>
+</main>
+
+<footer class="gs-fade">
+  <span>Aetheris Labs &mdash; shader demo</span>
+</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  var root = document.body;
+  root.classList.add('anim-ready');
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      root.classList.add('anim-in');
+      document.getElementById('bg-gl').style.opacity = '0.45';
+    });
+  });
+});
+</script>
+
+<!-- WebGL Ambient Cosmic Background -->
+<script>
+(function () {
+  var canvas = document.getElementById('bg-gl');
+  var gl = canvas.getContext('webgl');
+  if (!gl) return;
+
+  var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+  var FS = [
+    'precision highp float;',
+    'uniform vec2 u_res;',
+    'uniform float u_time;',
+    'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}',
+    'float noise(vec2 p){',
+    '  vec2 i=floor(p), f=fract(p);',
+    '  vec2 u=f*f*(3.0-2.0*f);',
+    '  return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),',
+    '             mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);',
+    '}',
+    'float fbm(vec2 p){',
+    '  float v=0.0; float a=0.5;',
+    '  for(int i=0;i<5;i++){ v+=a*noise(p); p=p*2.02+vec2(17.3,9.1); a*=0.5; }',
+    '  return v;',
+    '}',
+    'void main(){',
+    '  vec2 uv = gl_FragCoord.xy / u_res;',
+    '  vec2 p = uv * vec2(u_res.x/u_res.y, 1.0) * 1.5;',
+    '  float t = u_time * 0.12;',
+    '  vec2 q = vec2(fbm(p + vec2(0.0, t*0.28)), fbm(p + vec2(4.1, t*0.23)));',
+    '  vec2 r = vec2(fbm(p + 1.5*q + vec2(2.1, 7.2) + t*0.1),',
+    '                fbm(p + 1.4*q + vec2(5.3, 3.1) + t*0.07));',
+    '  float v = fbm(p + 1.9*r);',
+    '  float m = v*1.3;',
+    '  vec3 c1 = vec3(0.002, 0.004, 0.015);',
+    '  vec3 c2 = vec3(0.006, 0.018, 0.05);',
+    '  vec3 c3 = vec3(0.02, 0.07, 0.18);',
+    '  vec3 col = mix(c1, c2, smoothstep(0.1, 0.6, m));',
+    '  col = mix(col, c3, smoothstep(0.6, 1.0, m));',
+    '  float vein = exp(-abs(q.x - q.y) * 5.0);',
+    '  col += c3 * vein * 0.12;',
+    '  gl_FragColor = vec4(col, 1.0);',
+    '}'
+  ].join('\n');
+
+  function compile(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  var prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  var locP = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(locP);
+  gl.vertexAttribPointer(locP, 2, gl.FLOAT, false, 0, 0);
+
+  var uRes = gl.getUniformLocation(prog, 'u_res');
+  var uTime = gl.getUniformLocation(prog, 'u_time');
+
+  function resize() {
+    var w = canvas.clientWidth;
+    var h = canvas.clientHeight;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function frame(now) {
+    resize();
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, now / 1000);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+<!-- WebGL Aether Engine Button -->
+<script>
+(function () {
+  var btn = document.getElementById('btn');
+  var canvas = document.getElementById('gl');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var gl = canvas.getContext('webgl');
+  if (!gl) { btn.classList.add('nogl'); return; }
+
+  var hoverStyles = "0 30px 60px rgba(0, 150, 220, 0.35), 0 4px 12px rgba(2, 6, 20, 0.4)";
+  var defaultStyles = "0 24px 48px rgba(4, 98, 126, 0.2), 0 3px 10px rgba(2, 6, 20, 0.35)";
+
+  btn.addEventListener('mouseenter', () => { if(!reduced) btn.style.boxShadow = hoverStyles; });
+  btn.addEventListener('mouseleave', () => { if(!reduced) btn.style.boxShadow = defaultStyles; });
+  btn.addEventListener('focus', () => { if(!reduced) btn.style.boxShadow = hoverStyles; });
+  btn.addEventListener('blur', () => { if(!reduced) btn.style.boxShadow = defaultStyles; });
+
+  var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+  var FS = [
+    'precision highp float;',
+    'uniform vec2 u_res;',
+    'uniform float u_time;',
+    'uniform float u_heat;',
+    'uniform float u_flash;',
+    'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}',
+    'float noise(vec2 p){',
+    '  vec2 i=floor(p), f=fract(p);',
+    '  vec2 u=f*f*(3.0-2.0*f);',
+    '  return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),',
+    '             mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);',
+    '}',
+    'float fbm(vec2 p){',
+    '  float v=0.0; float a=0.5;',
+    '  for(int i=0;i<5;i++){ v+=a*noise(p); p=p*2.02+vec2(17.3,9.1); a*=0.5; }',
+    '  return v;',
+    '}',
+    'void main(){',
+    '  vec2 uv = gl_FragCoord.xy / u_res;',
+    '  vec2 p = uv * vec2(u_res.x/u_res.y, 1.0) * 2.1;',
+    '  float t = u_time;',
+    '  float heat = u_heat + u_flash * 1.3;',
+    '  vec2 q = vec2(fbm(p + vec2(0.0, t*0.32)), fbm(p + vec2(5.2, t*0.27)));',
+    '  vec2 r = vec2(fbm(p + 1.7*q + vec2(1.7, 9.2) + t*0.12),',
+    '                fbm(p + 1.6*q + vec2(8.3, 2.8) + t*0.09));',
+    '  float v = fbm(p + 2.1*r);',
+    '  float m = v*1.4 + heat*0.22;',
+    '  vec3 c1 = vec3(0.004, 0.008, 0.035);',
+    '  vec3 c2 = vec3(0.04, 0.08, 0.35);',
+    '  vec3 c3 = vec3(0.0, 0.6, 1.0);',
+    '  vec3 c4 = vec3(0.7, 0.9, 1.0);',
+    '  vec3 col = mix(c1, c2, smoothstep(0.2, 0.52, m));',
+    '  col = mix(col, c3, smoothstep(0.52, 0.8, m));',
+    '  col = mix(col, c4, smoothstep(0.82, 1.02, m));',
+    '  float vein = exp(-abs(q.x - q.y) * 9.0);',
+    '  col += c3 * vein * (0.12 + heat * 0.25);',
+    '  vec2 e = uv * (1.0 - uv);',
+    '  float vig = pow(e.x * e.y * 16.0, 0.28);',
+    '  col *= mix(0.5, 1.0, vig);',
+    '  col *= 0.78 + heat * 0.5;',
+    '  col += vec3(0.82, 0.94, 1.0) * u_flash * 0.4 * (0.3 + v);',
+    '  gl_FragColor = vec4(col, 1.0);',
+    '}'
+  ].join('\n');
+
+  function compile(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  var prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  var locP = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(locP);
+  gl.vertexAttribPointer(locP, 2, gl.FLOAT, false, 0, 0);
+
+  var uRes = gl.getUniformLocation(prog, 'u_res');
+  var uTime = gl.getUniformLocation(prog, 'u_time');
+  var uHeat = gl.getUniformLocation(prog, 'u_heat');
+  var uFlash = gl.getUniformLocation(prog, 'u_flash');
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    var h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  var heat = 0, heatTarget = 0, erupt = 0;
+  var churn = 0;
+  var last = performance.now();
+
+  btn.addEventListener('mouseenter', function () { heatTarget = 1; });
+  btn.addEventListener('mouseleave', function () { heatTarget = 0; });
+  btn.addEventListener('focus', function () { heatTarget = 1; });
+  btn.addEventListener('blur', function () { heatTarget = 0; });
+  btn.addEventListener('mousedown', function () { erupt = 1; });
+  btn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') erupt = 1;
+  });
+
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    heat += (heatTarget - heat) * Math.min(1, dt * 6);
+    erupt *= Math.exp(-3.2 * dt);
+    churn += dt * (0.35 + heat * 1.1 + erupt * 2.2);
+    resize();
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, reduced ? 6.0 : churn);
+    gl.uniform1f(uHeat, heat);
+    gl.uniform1f(uFlash, erupt);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!--
+  quantera-trading-background — volumetric light-shaft field with drifting
+  chalk-style equations and rising dust motes.
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped: the product landing page (nav, headline copy, CTA buttons, social
+  links, language switcher, Google Fonts, marketing text, GSAP-free already);
+  the CDN Three.js/postprocessing import map was replaced with the vendored
+  three.min.js (r144, UMD global) plus a small hand-written bloom composite
+  written directly against THREE core, since EffectComposer/RenderPass/
+  UnrealBloomPass/OutputPass are separate add-on modules not present in the
+  vendored core build.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Trading Floor Light Field</title>
+<style>
+  :root{ color-scheme: dark; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#000;
+    overflow:hidden;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  #gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .label{
+    position:fixed;left:22px;bottom:20px;z-index:2;
+    font-size:12.5px;letter-spacing:.01em;
+    color:rgba(220,235,222,.42);
+    pointer-events:none;
+    user-select:none;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .label{opacity:.3}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+<div class="label">ambient trading-floor light field</div>
+
+<script src="three.min.js"></script>
+<script>
+(function(){
+"use strict";
+const THREE = window.THREE;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* design constants, authored against a 1440 x 880 reference frame */
+const DW = 1440, DH = 880;
+const K = 1;
+let W = 0, H = 0, DPR = 1;
+
+function setScale(){
+  const d = document.documentElement;
+  W = d.clientWidth  || innerWidth  || 0;
+  H = d.clientHeight || innerHeight || 0;
+}
+setScale();
+
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:false, powerPreference:'high-performance' });
+renderer.setClearColor(0x000000, 1);
+DPR = Math.min(devicePixelRatio || 1, 1.75);
+renderer.setPixelRatio(DPR);
+renderer.setSize(W, H, false);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(0, W, H, 0, -1000, 1000);
+const Y = y => H - y;
+
+/* ============================================================
+   1. background — slate + volumetric shafts (full-screen shader)
+   ============================================================ */
+const bgUniforms = {
+  uRes:     { value: new THREE.Vector2(W, H) },
+  uTime:    { value: 0 },
+  uIntro:   { value: 0 },
+  uPointer: { value: new THREE.Vector2(0, 0) },
+};
+
+const NOISE_GLSL = `
+float hash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f*f*(3.0 - 2.0*f);
+  float a = hash21(i), b = hash21(i + vec2(1,0)), c = hash21(i + vec2(0,1)), d = hash21(i + vec2(1,1));
+  return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  for(int i = 0; i < 4; i++){ v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}`;
+
+const bgMat = new THREE.ShaderMaterial({
+  uniforms: bgUniforms,
+  depthWrite:false, depthTest:false,
+  vertexShader:`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader:`
+precision highp float;
+varying vec2 vUv;
+uniform vec2  uRes;
+uniform float uTime, uIntro;
+uniform vec2  uPointer;
+${NOISE_GLSL}
+
+void main(){
+  vec2 uv = vUv;
+  float asp = uRes.x / uRes.y;
+  vec2  s   = vec2((uv.x - 0.5) * asp, 1.0 - uv.y);
+
+  vec3 col = vec3(0.064, 0.065, 0.067);
+
+  float smudge = fbm(vec2(uv.x * 2.6, (1.0 - uv.y) * 1.9) + 11.3);
+  col += vec3(0.020, 0.023, 0.020) * (smudge - 0.46);
+  float smudge2 = fbm(vec2(uv.x * 7.0, (1.0 - uv.y) * 5.2) + 41.0);
+  col += vec3(0.011, 0.013, 0.011) * (smudge2 - 0.5);
+
+  vec2  src = vec2(-0.050 * asp + uPointer.x * 0.012, -0.34);
+  vec2  d   = s - src;
+  float dist = length(d);
+  float ang  = atan(d.x, d.y);
+
+  float tt    = uTime;
+  float swing = sin(tt * 0.100) * 0.050 + sin(tt * 0.043 + 1.7) * 0.026;
+  float aSw   = ang + swing;
+
+  float sh = 0.0;
+  sh += 0.66 * fbm(vec2(aSw *  4.2 + 12.0 + tt * 0.042, dist * 0.95 - tt * 0.052));
+  sh += 0.22 * fbm(vec2(aSw *  9.0 +  3.5 - tt * 0.069, dist * 1.60 - tt * 0.081));
+  sh += 0.09 * fbm(vec2(aSw * 19.0 + 27.0 + tt * 0.121, dist * 2.60 - tt * 0.118));
+  sh = smoothstep(0.14, 1.02, sh);
+
+  float spread = 0.46 + 0.040 * sin(tt * 0.077 + 0.6);
+  float cone   = exp(-(aSw * aSw) / (2.0 * spread * spread));
+  float fall   = smoothstep(1.55, 0.08, dist);
+  float rays   = sh * cone * fall;
+
+  float core  = cone * exp(-dist * 1.40) * 0.70;
+  float pulse = 0.90 + 0.10 * sin(tt * 0.205) + 0.05 * sin(tt * 0.517 + 2.1);
+  float beam  = (rays * 0.58 + core) * pulse;
+  beam *= uIntro;
+
+  vec3 lightCol = vec3(0.72, 1.0, 0.68);
+  col += lightCol * beam * 0.335;
+
+  float haze = smoothstep(0.92, 0.02, 1.0 - uv.y)
+             * (0.55 + 0.45 * fbm(vec2(uv.x * 2.1 + uTime * 0.011, (1.0 - uv.y) * 1.4 - uTime * 0.008) + 5.0));
+  col += vec3(0.082, 0.104, 0.083) * haze * 0.30 * uIntro;
+
+  float wallL = exp(-pow((uv.x - 0.035) / 0.115, 2.0));
+  float wallR = exp(-pow((uv.x - 0.965) / 0.130, 2.0));
+  float wallV = smoothstep(0.02, 0.34, 1.0 - uv.y) * smoothstep(1.05, 0.60, 1.0 - uv.y);
+  col += vec3(0.50, 0.62, 0.52) * (wallL * 0.040 + wallR * 0.105) * wallV * uIntro;
+
+  vec2  wp = s - vec2(0.02, 0.55);
+  float warm = exp(-dot(wp, wp) * 13.0);
+  col += vec3(0.085, 0.072, 0.026) * warm * 0.60 * uIntro;
+
+  float ec = exp(-pow((uv.x - 0.004) / 0.014, 2.0)) + exp(-pow((uv.x - 0.988) / 0.014, 2.0));
+  ec *= smoothstep(0.03, 0.26, 1.0 - uv.y) * smoothstep(1.02, 0.72, 1.0 - uv.y);
+  col += vec3(0.42, 0.62, 0.44) * ec * 0.075 * uIntro;
+
+  vec2 v = (uv - 0.5) * vec2(asp * 0.46, 1.0);
+  float vig = 1.0 - dot(v, v) * 0.72;
+  vig = clamp(vig, 0.0, 1.0);
+  col *= pow(vig, 1.15);
+  col *= smoothstep(-0.13, 0.07, 1.0 - uv.y);
+  col *= smoothstep(-0.14, 0.05, uv.y);
+
+  float g = hash21(gl_FragCoord.xy * 0.7 + fract(uTime) * 311.0);
+  col += (g - 0.5) * 0.017;
+
+  gl_FragColor = vec4(pow(max(col, 0.0), vec3(2.2)), 1.0);
+}`
+});
+const bgQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat);
+bgQuad.frustumCulled = false;
+bgQuad.renderOrder = -10;
+scene.add(bgQuad);
+
+/* ============================================================
+   2. chalk equations — canvas textures on parallaxing planes
+   ============================================================ */
+const EQ_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+
+const EQUATIONS = [
+  { kind:'text', txt:'(9+14)', cx: 272, cy: 320, size: 30, rot: -1.5, op: .21, z: .55 },
+  { kind:'text', txt:'–22+7', cx: 285, cy: 481, size: 38, rot: -9, op: .25, z: .80 },
+  { kind:'text', txt:'5x',      cx: 200, cy: 536, size: 37, rot: -8, op: .23, z: .95 },
+  { kind:'box',  txt:'31', cx: 264, cy: 606, size: 31, box: 72, rot: 18, op: .19, z: .70 },
+  { kind:'box',  txt:'18', cx:1243, cy: 370, size: 27, box: 56, rot: 27, op: .20, z: .60 },
+  { kind:'text', txt:'23+4–9', cx:1184, cy: 520, size: 42, op: .25, rot: -1, z: .85 },
+  { kind:'text', txt:'–6', cx:1044, cy: 600, size: 32, rot: -2, op: .19, z: 1.0 },
+  { kind:'sqrt', num:'7x8', den:'4', cx:1290, cy: 648, size: 47, op: .20, rot: 0, z: .75 },
+];
+
+function chalkCanvas(draw, w, h, ss){
+  const c = document.createElement('canvas');
+  c.width  = Math.ceil(w * ss);
+  c.height = Math.ceil(h * ss);
+  const x = c.getContext('2d');
+  x.scale(ss, ss);
+  draw(x, w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  tex.needsUpdate = true;
+  return tex;
+}
+
+const chalkMatProto = {
+  transparent:true, depthWrite:false, depthTest:false,
+  blending: THREE.NormalBlending, premultipliedAlpha: true,
+};
+
+const chalkVert = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
+const chalkFrag = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uMap;
+uniform float uOpacity, uTime, uSeed, uReveal;
+${NOISE_GLSL}
+void main(){
+  vec4 t = texture2D(uMap, vUv);
+  if(t.a < 0.002) discard;
+
+  float n1 = vnoise(vUv * vec2(140.0, 90.0) + uSeed);
+  float n2 = fbm(vUv * vec2(46.0, 30.0) + uSeed * 3.1);
+  float tooth = 0.40 + 0.78 * n1 * n2 * 1.55;
+  tooth = clamp(tooth, 0.0, 1.25);
+
+  float a = t.a * tooth * uOpacity * uReveal;
+
+  vec3 col = mix(vec3(0.80, 0.86, 0.80), vec3(0.72, 0.95, 0.76), 0.35 + 0.25 * n2);
+  col = pow(col, vec3(2.2));
+  gl_FragColor = vec4(col * a, a);
+}`;
+
+const chalkGroup = new THREE.Group();
+scene.add(chalkGroup);
+const chalkItems = [];
+
+function buildChalk(){
+  for(const it of chalkItems){
+    chalkGroup.remove(it.mesh);
+    it.mesh.geometry.dispose();
+    it.mesh.material.uniforms.uMap.value.dispose();
+    it.mesh.material.dispose();
+  }
+  chalkItems.length = 0;
+
+  const ss = Math.min(3, DPR * 2);
+
+  EQUATIONS.forEach((e, i) => {
+    const S  = e.size * K;
+    const pad = S * 1.15;
+    let w, h, draw;
+
+    if(e.kind === 'text'){
+      const m = measureText(e.txt, S);
+      w = m + pad * 2; h = S * 2.0;
+      draw = (x, cw, ch) => {
+        strokeStyle(x, S);
+        x.fillText(e.txt, cw / 2, ch / 2);
+      };
+    } else if(e.kind === 'box'){
+      const B = e.box * K;
+      w = h = B * 1.55 + pad;
+      draw = (x, cw, ch) => {
+        strokeStyle(x, S);
+        x.save();
+        x.translate(cw / 2, ch / 2);
+        x.lineWidth   = Math.max(1.1, 1.55 * K);
+        x.strokeStyle = 'rgba(255,255,255,.95)';
+        x.lineJoin = 'round';
+        chalkSquare(x, -B / 2, -B / 2, B, B);
+        x.restore();
+        x.fillText(e.txt, cw / 2, ch / 2);
+      };
+    } else {
+      const nW = measureText(e.num, S), dW = measureText(e.den, S);
+      const barW = Math.max(nW, dW) * 1.18;
+      w = barW + S * 1.7 + pad; h = S * 3.9;
+      draw = (x, cw, ch) => {
+        strokeStyle(x, S);
+        const lw = Math.max(1.1, 1.5 * K);
+        x.lineWidth = lw; x.strokeStyle = 'rgba(255,255,255,.92)';
+        x.lineCap = 'round'; x.lineJoin = 'round';
+        const left = (cw - barW) / 2 + S * 0.55;
+        const topY = ch * 0.14;
+        x.beginPath();
+        x.moveTo(left - S * 0.95, topY + S * 0.75);
+        x.lineTo(left - S * 0.62, topY + S * 0.62);
+        x.lineTo(left - S * 0.24, ch * 0.94);
+        x.lineTo(left - S * 0.02, topY);
+        x.lineTo(left + barW, topY);
+        x.stroke();
+        x.fillText(e.num, left + barW / 2, topY + S * 0.90);
+        x.beginPath();
+        x.moveTo(left + barW * 0.06, topY + S * 1.45);
+        x.lineTo(left + barW * 0.92, topY + S * 1.45);
+        x.stroke();
+        x.fillText(e.den, left + barW / 2, topY + S * 2.05);
+      };
+    }
+
+    const tex = chalkCanvas(draw, w, h, ss);
+    const mat = new THREE.ShaderMaterial({
+      ...chalkMatProto,
+      vertexShader: chalkVert, fragmentShader: chalkFrag,
+      uniforms:{
+        uMap:{ value: tex }, uOpacity:{ value: e.op },
+        uTime:{ value: 0 }, uSeed:{ value: i * 17.13 }, uReveal:{ value: 0 },
+      }
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    mesh.rotation.z = -(e.rot || 0) * Math.PI / 180;
+    mesh.renderOrder = 1;
+    chalkGroup.add(mesh);
+    chalkItems.push({ mesh, e, i });
+  });
+  layoutChalk();
+}
+
+function measureText(txt, S){
+  const c = document.createElement('canvas').getContext('2d');
+  c.font = `400 ${S}px ${EQ_FONT}`;
+  c.letterSpacing = `${(-0.01 * S).toFixed(2)}px`;
+  return c.measureText(txt).width;
+}
+function strokeStyle(x, S){
+  x.filter = `blur(${(S * 0.024).toFixed(2)}px)`;
+  x.font = `400 ${S}px ${EQ_FONT}`;
+  x.letterSpacing = `${(-0.01 * S).toFixed(2)}px`;
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillStyle = 'rgba(255,255,255,.95)';
+}
+function chalkSquare(x, X, Yy, w, h){
+  x.beginPath(); x.moveTo(X, Yy); x.lineTo(X + w, Yy);
+  x.lineTo(X + w, Yy + h); x.lineTo(X, Yy + h); x.closePath(); x.stroke();
+}
+
+function layoutChalk(){
+  const cx = W / 2, cy = H / 2;
+  chalkItems.forEach(({ mesh, e }) => {
+    const x = cx + (e.cx - DW / 2) * K;
+    const y = cy + (e.cy - DH / 2) * K;
+    mesh.position.set(x, Y(y), -2);
+  });
+}
+
+/* ============================================================
+   3. sparkle particles — rising dust in the shaft
+   ============================================================ */
+let points = null;
+function buildParticles(){
+  if(points){ scene.remove(points); points.geometry.dispose(); points.material.dispose(); }
+  const N = 42;
+  const pos  = new Float32Array(N * 3);
+  const seed = new Float32Array(N);
+  const scl  = new Float32Array(N);
+  let s0 = 20240613;
+  const rnd = () => (s0 = (s0 * 1664525 + 1013904223) >>> 0) / 4294967296;
+  for(let i = 0; i < N; i++){
+    const t = rnd();
+    const gx = (rnd() * 2 - 1);
+    const bias = Math.sign(gx) * Math.pow(Math.abs(gx), 2.3);
+    pos[i*3+0] = W * (0.5 + bias * 0.40);
+    pos[i*3+1] = H * (0.18 + Math.pow(rnd(), 0.75) * 0.68);
+    pos[i*3+2] = -1;
+    seed[i] = rnd() * 100;
+    scl[i]  = 0.18 + Math.pow(rnd(), 2.6) * 1.0 + (t > .90 ? 0.75 : 0);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aSeed',    new THREE.BufferAttribute(seed, 1));
+  g.setAttribute('aScale',   new THREE.BufferAttribute(scl, 1));
+
+  const mat = new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false, depthTest:false,
+    blending: THREE.AdditiveBlending, premultipliedAlpha: true,
+    uniforms:{ uTime:{ value:0 }, uK:{ value:K }, uReveal:{ value:0 }, uDpr:{ value:DPR },
+               uBand:{ value:new THREE.Vector2(H * 0.08, H * 0.90) } },
+    vertexShader:`
+      attribute float aSeed, aScale;
+      uniform float uTime, uK, uReveal, uDpr;
+      uniform vec2  uBand;
+      varying float vTw; varying float vBig;
+      void main(){
+        vec3 p = position;
+        float s = aSeed;
+
+        float rise = 7.0 + fract(s * 7.31) * 19.0;
+        float u    = fract((position.y - uBand.x + uTime * rise + s * 613.0) / uBand.y);
+        p.y = uBand.x + u * uBand.y;
+
+        p.x += sin(uTime * 0.21 + s * 1.7) * 15.0 * uK
+             + sin(uTime * 0.068 + s * 4.1) * 9.0 * uK;
+
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+
+        float tw   = 0.42 + 0.58 * pow(0.5 + 0.5 * sin(uTime * (0.7 + fract(s) * 1.5) + s * 6.2), 2.4);
+        float edge = smoothstep(0.0, 0.09, u) * smoothstep(1.0, 0.88, u);
+        vTw  = tw * edge * uReveal;
+        vBig = aScale;
+        gl_PointSize = (1.9 + aScale * 3.0) * uK * uDpr;
+        gl_PointSize *= (0.78 + 0.4 * tw);
+      }`,
+    fragmentShader:`
+      precision highp float;
+      varying float vTw; varying float vBig;
+      void main(){
+        vec2 q = gl_PointCoord - 0.5;
+        float r = length(q);
+        float core = exp(-r * r * 46.0);
+        float halo = exp(-r * r * 8.0) * 0.30;
+        float cross = (exp(-abs(q.x) * 46.0) + exp(-abs(q.y) * 46.0)) * exp(-r * r * 16.0);
+        float a = (core + halo + cross * 0.13 * smoothstep(0.9, 1.8, vBig)) * vTw * 0.46;
+        if(a < 0.004) discard;
+        vec3 col = mix(vec3(0.86, 1.0, 0.90), vec3(1.0), 0.55);
+        gl_FragColor = vec4(col * a, a);
+      }`
+  });
+  points = new THREE.Points(g, mat);
+  points.renderOrder = 3;
+  scene.add(points);
+}
+
+/* ============================================================
+   4. bloom — hand-written two-pass box-blur bright-pass composite,
+   standing in for the original UnrealBloomPass/EffectComposer chain
+   (those are separate add-on modules not present in the vendored
+   three.min.js core build, so the same look is rebuilt directly).
+   ============================================================ */
+const bloomCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const bloomQuadGeo = new THREE.PlaneGeometry(2, 2);
+const brightMat = new THREE.ShaderMaterial({
+  uniforms:{ uMap:{ value:null }, uThreshold:{ value:0.62 } },
+  vertexShader:`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy,0.0,1.0); }`,
+  fragmentShader:`
+    precision highp float; varying vec2 vUv;
+    uniform sampler2D uMap; uniform float uThreshold;
+    void main(){
+      vec3 c = texture2D(uMap, vUv).rgb;
+      float l = dot(c, vec3(0.299,0.587,0.114));
+      float k = smoothstep(uThreshold, uThreshold + 0.35, l);
+      gl_FragColor = vec4(c * k, 1.0);
+    }`
+});
+const blurMat = new THREE.ShaderMaterial({
+  uniforms:{ uMap:{ value:null }, uDir:{ value:new THREE.Vector2(1,0) }, uRes:{ value:new THREE.Vector2(1,1) } },
+  vertexShader:`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy,0.0,1.0); }`,
+  fragmentShader:`
+    precision highp float; varying vec2 vUv;
+    uniform sampler2D uMap; uniform vec2 uDir; uniform vec2 uRes;
+    void main(){
+      vec2 texel = uDir / uRes;
+      vec3 sum = texture2D(uMap, vUv).rgb * 0.227027;
+      sum += texture2D(uMap, vUv + texel * 1.3846).rgb * 0.3162162;
+      sum += texture2D(uMap, vUv - texel * 1.3846).rgb * 0.3162162;
+      sum += texture2D(uMap, vUv + texel * 3.2308).rgb * 0.0702703;
+      sum += texture2D(uMap, vUv - texel * 3.2308).rgb * 0.0702703;
+      gl_FragColor = vec4(sum, 1.0);
+    }`
+});
+const compositeMat = new THREE.ShaderMaterial({
+  uniforms:{ uBase:{ value:null }, uBloom:{ value:null }, uStrength:{ value:0.62 } },
+  vertexShader:`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy,0.0,1.0); }`,
+  fragmentShader:`
+    precision highp float; varying vec2 vUv;
+    uniform sampler2D uBase, uBloom; uniform float uStrength;
+    void main(){
+      vec3 base  = texture2D(uBase, vUv).rgb;
+      vec3 bloom = texture2D(uBloom, vUv).rgb;
+      vec3 c = base + bloom * uStrength;
+      gl_FragColor = vec4(c, 1.0);
+    }`
+});
+const bloomQuad = new THREE.Mesh(bloomQuadGeo, brightMat);
+const bloomScene = new THREE.Scene();
+bloomScene.add(bloomQuad);
+
+let sceneRT, brightRT, blurRT1, blurRT2;
+function buildTargets(){
+  [sceneRT, brightRT, blurRT1, blurRT2].forEach(rt => rt && rt.dispose());
+  const rw = Math.max(1, Math.round(W * DPR));
+  const rh = Math.max(1, Math.round(H * DPR));
+  const hw = Math.max(1, Math.round(rw / 2));
+  const hh = Math.max(1, Math.round(rh / 2));
+  const opts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
+  sceneRT = new THREE.WebGLRenderTarget(rw, rh, opts);
+  brightRT = new THREE.WebGLRenderTarget(hw, hh, opts);
+  blurRT1  = new THREE.WebGLRenderTarget(hw, hh, opts);
+  blurRT2  = new THREE.WebGLRenderTarget(hw, hh, opts);
+  blurMat.uniforms.uRes.value.set(hw, hh);
+}
+
+function renderBloomPipeline(){
+  renderer.setRenderTarget(sceneRT);
+  renderer.render(scene, camera);
+
+  bloomQuad.material = brightMat;
+  brightMat.uniforms.uMap.value = sceneRT.texture;
+  renderer.setRenderTarget(brightRT);
+  renderer.render(bloomScene, bloomCam);
+
+  bloomQuad.material = blurMat;
+  let src = brightRT, dst = blurRT1;
+  for(let pass = 0; pass < 4; pass++){
+    blurMat.uniforms.uMap.value = src.texture;
+    blurMat.uniforms.uDir.value.set(pass % 2 === 0 ? 1 : 0, pass % 2 === 0 ? 0 : 1);
+    renderer.setRenderTarget(dst);
+    renderer.render(bloomScene, bloomCam);
+    src = dst;
+    dst = (dst === blurRT1) ? blurRT2 : blurRT1;
+  }
+
+  bloomQuad.material = compositeMat;
+  compositeMat.uniforms.uBase.value = sceneRT.texture;
+  compositeMat.uniforms.uBloom.value = src.texture;
+  renderer.setRenderTarget(null);
+  renderer.render(bloomScene, bloomCam);
+}
+
+/* ============================================================
+   5. timeline / reveal easing
+   ============================================================ */
+const T = {
+  beam:   [0.08, 1.10],
+  chalk:  { start: 1.05, stagger: 0.095, dur: 1.05 },
+  spark:  [0.75, 2.2],
+};
+const ease = t => t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);
+
+/* ============================================================
+   6. resize / build
+   ============================================================ */
+function rebuild(){
+  setScale();
+  if(W < 2 || H < 2) return;
+  renderer.setPixelRatio(DPR);
+  renderer.setSize(W, H, false);
+  camera.left = 0; camera.right = W; camera.top = H; camera.bottom = 0;
+  camera.updateProjectionMatrix();
+  bgUniforms.uRes.value.set(W, H);
+  buildTargets();
+  buildChalk();
+  buildParticles();
+}
+
+let resizeT;
+const scheduleRebuild = () => { clearTimeout(resizeT); resizeT = setTimeout(rebuild, 140); };
+addEventListener('resize', scheduleRebuild);
+
+new ResizeObserver(() => {
+  const d = document.documentElement;
+  if(d.clientWidth !== W || d.clientHeight !== H) scheduleRebuild();
+}).observe(document.documentElement);
+
+const ptr = { x:0, y:0, tx:0, ty:0 };
+addEventListener('pointermove', e => {
+  ptr.tx = (e.clientX / W) * 2 - 1;
+  ptr.ty = (e.clientY / H) * 2 - 1;
+}, { passive:true });
+
+/* ============================================================
+   7. loop with a simple adaptive-resolution governor
+   ============================================================ */
+let frames = 0, acc = 0, governed = false;
+const clock = new THREE.Clock();
+let elapsed = 0;
+
+function drawOnce(){
+  bgUniforms.uTime.value  = elapsed;
+  bgUniforms.uPointer.value.set(ptr.x, ptr.y);
+  bgUniforms.uIntro.value = reduce ? 1 : ease((elapsed - T.beam[0]) / (T.beam[1] - T.beam[0]));
+
+  chalkItems.forEach(({ mesh, e, i }) => {
+    const t0 = T.chalk.start + i * T.chalk.stagger;
+    mesh.material.uniforms.uReveal.value = reduce ? 1 : ease((elapsed - t0) / T.chalk.dur);
+    mesh.material.uniforms.uTime.value = elapsed;
+    const dx = ptr.x * 15 * e.z * K, dy = ptr.y * 11 * e.z * K;
+    const bx = Math.sin(elapsed * 0.10 + i * 1.9) * 5.0 * e.z * K;
+    const by = Math.cos(elapsed * 0.085 + i * 2.4) * 4.0 * e.z * K;
+    const cx = W / 2 + (e.cx - DW / 2) * K;
+    const cy = H / 2 + (e.cy - DH / 2) * K;
+    mesh.position.x = cx + dx + bx;
+    mesh.position.y = Y(cy + dy + by);
+  });
+
+  if(points){
+    points.material.uniforms.uTime.value = elapsed;
+    points.material.uniforms.uBand.value.set(H * 0.08, H * 0.90);
+    points.material.uniforms.uReveal.value =
+      reduce ? 1 : ease((elapsed - T.spark[0]) / (T.spark[1] - T.spark[0]));
+    points.position.x = ptr.x * 20 * K;
+    points.position.y = -ptr.y * 14 * K;
+  }
+
+  renderBloomPipeline();
+}
+
+function frame(){
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  elapsed += dt;
+
+  ptr.x += (ptr.tx - ptr.x) * Math.min(1, dt * 3.2);
+  ptr.y += (ptr.ty - ptr.y) * Math.min(1, dt * 3.2);
+
+  drawOnce();
+
+  frames++; acc += dt;
+  if(!governed && acc > 2.5){
+    const fps = frames / acc;
+    if(fps < 46 && DPR > 1){
+      DPR = Math.max(1, DPR * 0.72);
+      renderer.setPixelRatio(DPR);
+      buildTargets();
+      governed = true;
+    } else if(acc > 5) governed = true;
+    frames = 0; acc = 0;
+  }
+}
+
+/* ============================================================
+   boot
+   ============================================================ */
+rebuild();
+clock.start();
+frame();
+})();
+</script>
+</body>
+</html>

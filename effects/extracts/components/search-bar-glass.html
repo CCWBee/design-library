@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search bar · glass</title>
+<style>
+  /* ----------------------------------------------------------------
+     Tokens. Light theme defaults on :root, dark overridden per theme.
+     Ink and fills set with alpha colours, never the opacity property.
+     ---------------------------------------------------------------- */
+  :root {
+    color-scheme: light dark;
+
+    /* Page canvas: neutral, calm */
+    --page-bg: #f3f4f6;
+    --page-ink: rgba(17, 20, 27, 0.92);
+    --page-ink-soft: rgba(17, 20, 27, 0.58);
+    --page-ink-faint: rgba(17, 20, 27, 0.42);
+    --hairline: rgba(17, 20, 27, 0.12);
+    --tile-bg: rgba(255, 255, 255, 0.66);
+
+    /* The glass search field */
+    --field-tint: rgba(255, 255, 255, 0.58);
+    --field-fallback: rgba(255, 255, 255, 0.90);
+    --field-blur: 18px;
+    --field-saturate: 180%;
+    --field-border: rgba(255, 255, 255, 0.70);
+    --field-highlight: rgba(255, 255, 255, 0.55);
+    --field-radius: 16px;
+    --field-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.10),
+      0 10px 26px rgba(16, 24, 40, 0.16);
+    --field-ink: rgba(18, 22, 30, 0.94);
+    --field-placeholder: rgba(18, 22, 30, 0.50);
+    --field-icon: rgba(18, 22, 30, 0.60);
+
+    /* Accent, used only where it encodes state (focus ring, submit) */
+    --accent: rgba(37, 99, 235, 1);
+    --accent-ink: rgba(255, 255, 255, 0.98);
+    --focus-ring: rgba(37, 99, 235, 0.45);
+
+    /* Backdrop imagery for the tiles, so the frosting has something to read.
+       Built from local gradients only: no remote assets. */
+    --scene:
+      radial-gradient(60% 90% at 18% 12%, rgba(56, 189, 248, 0.95), transparent 60%),
+      radial-gradient(55% 80% at 82% 22%, rgba(251, 146, 60, 0.90), transparent 62%),
+      radial-gradient(70% 90% at 70% 88%, rgba(168, 85, 247, 0.85), transparent 60%),
+      radial-gradient(60% 80% at 28% 82%, rgba(52, 211, 153, 0.85), transparent 60%),
+      linear-gradient(135deg, #1e3a8a, #7c2d92);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #0d0f14;
+      --page-ink: rgba(238, 241, 247, 0.94);
+      --page-ink-soft: rgba(238, 241, 247, 0.62);
+      --page-ink-faint: rgba(238, 241, 247, 0.42);
+      --hairline: rgba(255, 255, 255, 0.12);
+      --tile-bg: rgba(30, 34, 44, 0.55);
+
+      --field-tint: rgba(24, 28, 37, 0.46);
+      --field-fallback: rgba(24, 28, 37, 0.92);
+      --field-border: rgba(255, 255, 255, 0.16);
+      --field-highlight: rgba(255, 255, 255, 0.10);
+      --field-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.45),
+        0 12px 30px rgba(0, 0, 0, 0.55);
+      --field-ink: rgba(240, 243, 248, 0.96);
+      --field-placeholder: rgba(240, 243, 248, 0.52);
+      --field-icon: rgba(240, 243, 248, 0.66);
+
+      --accent: rgba(96, 165, 250, 1);
+      --accent-ink: rgba(9, 12, 20, 0.98);
+      --focus-ring: rgba(96, 165, 250, 0.55);
+    }
+  }
+
+  /* Manual toggle wins in both directions */
+  :root[data-theme="dark"] {
+    --page-bg: #0d0f14;
+    --page-ink: rgba(238, 241, 247, 0.94);
+    --page-ink-soft: rgba(238, 241, 247, 0.62);
+    --page-ink-faint: rgba(238, 241, 247, 0.42);
+    --hairline: rgba(255, 255, 255, 0.12);
+    --tile-bg: rgba(30, 34, 44, 0.55);
+
+    --field-tint: rgba(24, 28, 37, 0.46);
+    --field-fallback: rgba(24, 28, 37, 0.92);
+    --field-border: rgba(255, 255, 255, 0.16);
+    --field-highlight: rgba(255, 255, 255, 0.10);
+    --field-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.45),
+      0 12px 30px rgba(0, 0, 0, 0.55);
+    --field-ink: rgba(240, 243, 248, 0.96);
+    --field-placeholder: rgba(240, 243, 248, 0.52);
+    --field-icon: rgba(240, 243, 248, 0.66);
+
+    --accent: rgba(96, 165, 250, 1);
+    --accent-ink: rgba(9, 12, 20, 0.98);
+    --focus-ring: rgba(96, 165, 250, 0.55);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background-color: var(--page-bg);
+    color: var(--page-ink);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  /* ---- Document header ------------------------------------------- */
+  .doc-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--page-ink-faint);
+    margin: 0 0 0.4rem;
+  }
+  h1 {
+    font-size: 1.85rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .lede {
+    color: var(--page-ink-soft);
+    max-width: 60ch;
+    margin: 1.1rem 0 0;
+  }
+
+  .theme-toggle {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--page-ink);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { background: rgba(127, 127, 127, 0.10); }
+  .theme-toggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* ---- Section scaffolding --------------------------------------- */
+  section { margin-top: 3rem; }
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  .section-note {
+    color: var(--page-ink-soft);
+    font-size: 0.92rem;
+    margin: 0.4rem 0 1.4rem;
+    max-width: 66ch;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.1rem;
+  }
+
+  /* A tile carries the busy backdrop so the frosting is visible.
+     The state label sits above the field on a plain neutral chip-free line. */
+  .tile {
+    background-image: var(--scene);
+    background-size: cover;
+    border-radius: 18px;
+    border: 1px solid var(--hairline);
+    padding: 1.5rem 1.25rem 1.35rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.10);
+  }
+  .state-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    margin-bottom: 0.7rem;
+  }
+  .state-desc {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.78);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    margin-top: 0.55rem;
+  }
+
+  /* ================================================================
+     THE COMPONENT: glass search bar
+     ================================================================ */
+  .searchbar {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0 0.5rem 0 0.85rem;
+    height: var(--sb-h, 48px);
+    border-radius: var(--field-radius);
+    border: 1px solid var(--field-border);
+    background-color: var(--field-fallback);
+    background-image: linear-gradient(
+      to bottom,
+      var(--field-highlight),
+      rgba(255, 255, 255, 0) 42%
+    );
+    box-shadow: var(--field-shadow);
+    color: var(--field-ink);
+    transition: box-shadow 140ms ease, border-color 140ms ease, transform 90ms ease;
+  }
+
+  /* Tier 2: add the live blur only where supported. */
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .searchbar {
+      background-color: var(--field-tint);
+      -webkit-backdrop-filter: blur(var(--field-blur)) saturate(var(--field-saturate));
+      backdrop-filter: blur(var(--field-blur)) saturate(var(--field-saturate));
+    }
+  }
+
+  .searchbar__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    color: var(--field-icon);
+  }
+  .searchbar__icon svg { display: block; width: 18px; height: 18px; }
+
+  .searchbar__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font: inherit;
+    font-size: var(--sb-font, 0.98rem);
+    color: var(--field-ink);
+    background: transparent;
+    border: 0;
+    outline: none;
+    padding: 0;
+    caret-color: var(--accent);
+  }
+  .searchbar__input::placeholder { color: var(--field-placeholder); }
+  /* Remove the native clear affordance; we provide our own. */
+  .searchbar__input::-webkit-search-decoration,
+  .searchbar__input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+
+  .searchbar__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(127, 127, 127, 0.18);
+    color: var(--field-ink);
+    cursor: pointer;
+    padding: 0;
+  }
+  .searchbar__clear svg { width: 12px; height: 12px; display: block; }
+  .searchbar__clear:hover { background: rgba(127, 127, 127, 0.30); }
+
+  .searchbar__submit {
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent-ink);
+    background-color: var(--accent);
+    border: 0;
+    border-radius: calc(var(--field-radius) - 5px);
+    padding: 0 0.95rem;
+    height: calc(var(--sb-h, 48px) - 12px);
+    cursor: pointer;
+    transition: filter 120ms ease, transform 90ms ease;
+  }
+  .searchbar__submit:hover { filter: brightness(1.06); }
+  .searchbar__submit:active { transform: translateY(1px); filter: brightness(0.94); }
+
+  /* --- Live interactive states (real pseudo-classes) --- */
+  .searchbar:hover {
+    border-color: var(--field-border);
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.12),
+      0 14px 32px rgba(16, 24, 40, 0.20);
+  }
+  .searchbar:focus-within {
+    border-color: var(--accent);
+    box-shadow:
+      var(--field-shadow),
+      0 0 0 3px var(--focus-ring);
+  }
+
+  /* --- Forced states for the spec sheet, so each is visible statically.
+     They mirror the live rules above. --- */
+  .searchbar.is-hover {
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.12),
+      0 14px 32px rgba(16, 24, 40, 0.20);
+  }
+  .searchbar.is-focus {
+    border-color: var(--accent);
+    box-shadow:
+      var(--field-shadow),
+      0 0 0 3px var(--focus-ring);
+  }
+  .searchbar.is-pressed .searchbar__submit {
+    transform: translateY(1px);
+    filter: brightness(0.94);
+  }
+
+  /* --- Disabled --- */
+  .searchbar.is-disabled {
+    background-color: rgba(127, 127, 127, 0.14);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--hairline);
+    box-shadow: none;
+  }
+  .searchbar.is-disabled .searchbar__input,
+  .searchbar.is-disabled .searchbar__icon { color: var(--field-placeholder); }
+  .searchbar.is-disabled .searchbar__input { color: var(--field-placeholder); }
+  .searchbar.is-disabled .searchbar__submit {
+    background-color: rgba(127, 127, 127, 0.28);
+    color: var(--field-placeholder);
+    cursor: not-allowed;
+  }
+  .searchbar__input:disabled { cursor: not-allowed; }
+
+  /* --- Loading: spinner replaces the search icon --- */
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(127, 127, 127, 0.35);
+    border-top-color: var(--accent);
+    animation: spin 720ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* --- Size variants --- */
+  .searchbar--sm { --sb-h: 38px; --sb-font: 0.9rem; --field-radius: 12px; }
+  .searchbar--lg { --sb-h: 58px; --sb-font: 1.08rem; --field-radius: 18px; }
+
+  /* A single-row demo lane for the size variants */
+  .stack { display: grid; gap: 1rem; }
+
+  /* ---- Accessibility paths -------------------------------------- */
+  @media (prefers-reduced-transparency: reduce) {
+    .searchbar {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background-color: var(--field-fallback);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+    .spinner { animation: none; border-top-color: var(--accent); }
+  }
+
+  .footnote {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--hairline);
+    color: var(--page-ink-soft);
+    font-size: 0.85rem;
+  }
+  .footnote code {
+    font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+    font-size: 0.82em;
+    background: rgba(127, 127, 127, 0.14);
+    padding: 0.1em 0.4em;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head">
+    <div>
+      <p class="eyebrow">Inputs · glass register</p>
+      <h1>Search bar</h1>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">Toggle theme</button>
+  </header>
+
+  <p class="lede">
+    A frosted search field for placing over imagery or a busy background. The blur removes contrast,
+    so a translucent tint carries the type back to a legible floor and the icon and caret sit at
+    reduced ink. Each field below rests on a coloured backdrop so the frosting is honest; the page
+    itself stays neutral.
+  </p>
+
+  <!-- ============ STATES ============ -->
+  <section aria-labelledby="states-h">
+    <h2 id="states-h">States</h2>
+    <p class="section-note">
+      The full state checklist for this input type: default, hover, focus-visible, pressed submit,
+      disabled and loading. The default field is live; try typing, tabbing to it, or pressing submit.
+      The others are pinned so each reads at a glance.
+    </p>
+
+    <div class="grid">
+
+      <!-- Default (live) -->
+      <div class="tile">
+        <span class="state-label">Default</span>
+        <form class="searchbar" role="search" onsubmit="return false">
+          <span class="searchbar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          </span>
+          <input class="searchbar__input" type="search" placeholder="Search" aria-label="Search">
+          <button class="searchbar__submit" type="submit">Search</button>
+        </form>
+        <span class="state-desc">Live. Resting tint, hairline edge, soft layered shadow.</span>
+      </div>
+
+      <!-- Hover -->
+      <div class="tile">
+        <span class="state-label">Hover</span>
+        <form class="searchbar is-hover" role="search" onsubmit="return false">
+          <span class="searchbar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          </span>
+          <input class="searchbar__input" type="search" placeholder="Search" aria-label="Search example, hover">
+          <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+        </form>
+        <span class="state-desc">Shadow deepens to lift the surface a touch. No colour shift.</span>
+      </div>
+
+      <!-- Focus-visible -->
+      <div class="tile">
+        <span class="state-label">Focus-visible</span>
+        <form class="searchbar is-focus" role="search" onsubmit="return false">
+          <span class="searchbar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          </span>
+          <input class="searchbar__input" type="search" value="frosted panel" aria-label="Search example, focused">
+          <button class="searchbar__clear" type="button" aria-label="Clear search" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+          <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+        </form>
+        <span class="state-desc">Accent border and a 3px ring. Clear button appears once there is text.</span>
+      </div>
+
+      <!-- Pressed -->
+      <div class="tile">
+        <span class="state-label">Pressed</span>
+        <form class="searchbar is-pressed" role="search" onsubmit="return false">
+          <span class="searchbar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          </span>
+          <input class="searchbar__input" type="search" value="glass" aria-label="Search example, submitting">
+          <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+        </form>
+        <span class="state-desc">Submit dips by 1px and darkens on activation.</span>
+      </div>
+
+      <!-- Disabled -->
+      <div class="tile">
+        <span class="state-label">Disabled</span>
+        <form class="searchbar is-disabled" role="search" onsubmit="return false" aria-disabled="true">
+          <span class="searchbar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          </span>
+          <input class="searchbar__input" type="search" placeholder="Search unavailable" aria-label="Search, unavailable" disabled>
+          <button class="searchbar__submit" type="submit" disabled>Search</button>
+        </form>
+        <span class="state-desc">Frosting drops to a flat muted fill; controls read as inert.</span>
+      </div>
+
+      <!-- Loading -->
+      <div class="tile">
+        <span class="state-label">Loading</span>
+        <form class="searchbar" role="search" onsubmit="return false">
+          <span class="searchbar__icon" aria-hidden="true"><span class="spinner"></span></span>
+          <input class="searchbar__input" type="search" value="translucency" aria-label="Search, results loading">
+          <span role="status" class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Searching</span>
+          <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+        </form>
+        <span class="state-desc">Spinner takes the icon slot while results resolve. Rests still under reduced motion.</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ SIZE VARIANTS ============ -->
+  <section aria-labelledby="sizes-h">
+    <h2 id="sizes-h">Sizes</h2>
+    <p class="section-note">
+      Three heights for different densities: small for a toolbar, medium as the default, large for a
+      hero or empty-state search. Radius and type scale with the height.
+    </p>
+
+    <div class="tile">
+      <div class="stack">
+        <div>
+          <span class="state-label">Small</span>
+          <form class="searchbar searchbar--sm" role="search" onsubmit="return false">
+            <span class="searchbar__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            </span>
+            <input class="searchbar__input" type="search" placeholder="Search" aria-label="Search, small">
+            <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+          </form>
+        </div>
+
+        <div>
+          <span class="state-label">Medium (default)</span>
+          <form class="searchbar" role="search" onsubmit="return false">
+            <span class="searchbar__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            </span>
+            <input class="searchbar__input" type="search" placeholder="Search" aria-label="Search, medium">
+            <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+          </form>
+        </div>
+
+        <div>
+          <span class="state-label">Large</span>
+          <form class="searchbar searchbar--lg" role="search" onsubmit="return false">
+            <span class="searchbar__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            </span>
+            <input class="searchbar__input" type="search" placeholder="Search the library" aria-label="Search, large">
+            <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Glass register, inputs family. Frosting via <code>backdrop-filter: blur() saturate()</code> with a
+    tinted readability floor, a 1px top-edge highlight and a layered shadow. Falls back to an opaque
+    tinted surface where <code>backdrop-filter</code> is unsupported or where
+    <code>prefers-reduced-transparency</code> is set, and holds still under
+    <code>prefers-reduced-motion</code>. Light and dark carried entirely by tokens. Ink and fills use
+    alpha colours throughout, never the <code>opacity</code> property.
+  </p>
+
+</div>
+
+<script>
+  // Plain theme toggle. Cycles light and dark; nothing else depends on it.
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    var root = document.documentElement;
+    btn.addEventListener('click', function () {
+      var dark = root.getAttribute('data-theme') === 'dark';
+      // If unset, decide from the current computed scheme.
+      if (!root.getAttribute('data-theme')) {
+        dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      var next = dark ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      btn.setAttribute('aria-pressed', String(next === 'dark'));
+    });
+  })();
+</script>
+</body>
+</html>

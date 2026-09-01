@@ -1,0 +1,265 @@
+<!--
+  Launch button — press and lift-off state
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN script and utility classes (rewritten as plain CSS), Lucide icon
+  data attributes, the nested demo-preview document wrapper and its auto-centring script.
+  Added: a small requestAnimationFrame-driven launch sequence (shake, ignite, lift off,
+  reset) on click, so the "lift-off" half of the effect is actually demonstrated.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch Button</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 65%, #1a1712 0%, #0a0a0c 55%, #000000 100%);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hint {
+    position: absolute;
+    bottom: 8vh;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.35);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .launch-btn {
+    position: relative;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .glow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 1rem;
+    background: rgba(245, 158, 11, 0.4);
+    filter: blur(10px);
+    opacity: 0.4;
+    transition: opacity 0.5s ease;
+  }
+  .launch-btn:hover .glow {
+    opacity: 0.75;
+  }
+
+  .face {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(to bottom, #fde68a, #fcd34d, #f59e0b);
+    color: #451a03;
+    font-size: 1.125rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.5),
+      0 4px 0 #b45309,
+      0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .launch-btn:active .face {
+    transform: translateY(2px);
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.5),
+      0 2px 0 #b45309;
+  }
+
+  .face svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke: #451a03;
+    fill: rgba(69, 26, 3, 0.2);
+  }
+
+  /* launch sequence states, driven by JS toggling classes */
+  .launch-btn.shaking .face {
+    animation: shake 0.4s ease-in-out;
+  }
+  .launch-btn.lifting {
+    animation: liftoff 0.9s cubic-bezier(0.3, 0, 0.7, 1) forwards;
+  }
+  .launch-btn.lifting .glow {
+    animation: flare 0.9s ease-out forwards;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-2px, 1px) rotate(-1deg); }
+    40% { transform: translate(2px, -1px) rotate(1deg); }
+    60% { transform: translate(-2px, 0) rotate(-1deg); }
+    80% { transform: translate(2px, 1px) rotate(1deg); }
+  }
+
+  @keyframes liftoff {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    30% { transform: translateY(-6px) scale(1.02); opacity: 1; }
+    100% { transform: translateY(-70vh) scale(0.85); opacity: 0; }
+  }
+
+  @keyframes flare {
+    0% { opacity: 0.75; filter: blur(10px); }
+    20% { opacity: 1; filter: blur(18px); background: rgba(253, 224, 71, 0.9); }
+    100% { opacity: 0; filter: blur(30px); }
+  }
+
+  .trail {
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    background: #fbbf24;
+    pointer-events: none;
+    opacity: 0;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <button class="launch-btn" id="launchBtn" type="button">
+      <div class="glow"></div>
+      <div class="face">
+        <span>Initialise Launch</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+        </svg>
+      </div>
+    </button>
+    <div class="hint">Click to launch</div>
+  </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('launchBtn');
+      var canvas = document.createElement('canvas');
+      var stage = btn.parentElement;
+      canvas.style.position = 'absolute';
+      canvas.style.left = '0';
+      canvas.style.top = '0';
+      canvas.style.pointerEvents = 'none';
+      stage.appendChild(canvas);
+
+      function sizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.left = (-btn.offsetLeft) + 'px';
+      }
+      window.addEventListener('resize', sizeCanvas);
+
+      var ctx = canvas.getContext('2d');
+      var particles = [];
+      var running = false;
+
+      function spawnTrail(x, y) {
+        for (var i = 0; i < 2; i++) {
+          particles.push({
+            x: x + (Math.random() - 0.5) * 14,
+            y: y,
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: 1.2 + Math.random() * 1.4,
+            life: 1,
+            size: 3 + Math.random() * 3,
+            hue: 30 + Math.random() * 25
+          });
+        }
+      }
+
+      function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var i = particles.length - 1; i >= 0; i--) {
+          var p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.018;
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+          ctx.globalAlpha = Math.max(p.life, 0);
+          ctx.fillStyle = 'hsl(' + p.hue + ', 90%, 60%)';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        if (particles.length > 0 || running) {
+          requestAnimationFrame(loop);
+        }
+      }
+
+      var isAnimating = false;
+      btn.addEventListener('click', function () {
+        if (isAnimating) return;
+        isAnimating = true;
+        sizeCanvas();
+
+        btn.classList.add('shaking');
+        setTimeout(function () {
+          btn.classList.remove('shaking');
+          btn.classList.add('lifting');
+          running = true;
+
+          var rect = btn.getBoundingClientRect();
+          var stageRect = stage.getBoundingClientRect();
+          var startX = rect.left - stageRect.left + rect.width / 2;
+          var startY = rect.bottom - stageRect.top;
+          var t0 = performance.now();
+
+          requestAnimationFrame(loop);
+
+          var spawner = setInterval(function () {
+            var elapsed = performance.now() - t0;
+            var y = startY - Math.pow(elapsed / 900, 2) * (window.innerHeight * 0.7 * 0.9);
+            spawnTrail(startX, y);
+            if (elapsed > 900) {
+              clearInterval(spawner);
+              running = false;
+            }
+          }, 16);
+
+          setTimeout(function () {
+            btn.classList.remove('lifting');
+            isAnimating = false;
+          }, 1000);
+        }, 400);
+      });
+
+      sizeCanvas();
+    })();
+  </script>
+</body>
+</html>

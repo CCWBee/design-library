@@ -1,0 +1,340 @@
+<!--
+  Effect: portal-field (AEON) - depth portal / tunnel hero, warped glowing arc shader
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind CDN, Iconify icons, GSAP + ScrollTrigger text reveals, Google Fonts,
+  the "Establish Connection" auth-form marketing layout, and all remote script/font links.
+  Kept: the raw Three.js ShaderMaterial (simplex-noise warped arc glow) and a plain
+  dark/light toggle that swaps the shader's core/fringe colours, rebuilt in hand-written CSS.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Field</title>
+<script src="three.min.js"></script>
+<style>
+  :root {
+    --bg-base: #020202;
+    --bg-surface-1: rgba(255,255,255,0.015);
+    --bg-surface-2: rgba(255,255,255,0.04);
+    --text-primary: #F4F4F5;
+    --text-secondary: #A3A3A3;
+    --text-tech: #666666;
+    --border-glow: rgba(255,255,255,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    transition: background-color 0.8s cubic-bezier(0.16,1,0.3,1), color 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+  #webgl-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.85;
+    mix-blend-mode: screen;
+  }
+  #webgl-container canvas { display: block; }
+
+  .frame {
+    position: fixed;
+    inset: 2rem;
+    z-index: 1;
+    pointer-events: none;
+    border: 1px solid var(--border-glow);
+    transition: border-color 0.7s ease;
+  }
+  @media (min-width: 1024px) { .frame { inset: 3rem; } }
+  .frame .corner {
+    position: absolute;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-color: var(--text-secondary);
+    transition: border-color 0.5s ease;
+  }
+  .corner.tl { top: -1px; left: -1px; border-top: 1px solid; border-left: 1px solid; }
+  .corner.tr { top: -1px; right: -1px; border-top: 1px solid; border-right: 1px solid; }
+  .corner.bl { bottom: -1px; left: -1px; border-bottom: 1px solid; border-left: 1px solid; }
+  .corner.br { bottom: -1px; right: -1px; border-bottom: 1px solid; border-right: 1px solid; }
+
+  .controls {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  @media (min-width: 1024px) { .controls { top: 2.5rem; right: 2.5rem; } }
+  .tech-label {
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--text-tech);
+    text-transform: uppercase;
+    transition: color 0.5s ease;
+  }
+  #themeToggleBtn {
+    height: 2rem;
+    padding: 0 1rem;
+    border: 1px solid var(--border-glow);
+    background: var(--bg-surface-1);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    font-weight: 300;
+    border-radius: 2px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: background-color 0.3s ease, color 0.5s ease, border-color 0.5s ease;
+  }
+  #themeToggleBtn:hover { background: var(--bg-surface-2); }
+
+  .hero {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+    padding: 2rem;
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    transition: color 0.5s ease;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.5rem, 7vw, 6rem);
+    letter-spacing: -0.03em;
+    font-weight: 200;
+    line-height: 0.95;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    transition: color 0.5s ease;
+  }
+  p.sub {
+    max-width: 32rem;
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    transition: color 0.5s ease;
+  }
+</style>
+</head>
+<body>
+
+  <div id="webgl-container"></div>
+
+  <div class="frame">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+  </div>
+
+  <div class="controls">
+    <span class="tech-label">SYS-2.9</span>
+    <button id="themeToggleBtn">DARK</button>
+  </div>
+
+  <div class="hero">
+    <div class="eyebrow">Depth Portal</div>
+    <h1>Portal Field</h1>
+    <p class="sub">A warped, noise-driven ring of light rendered as a raw fragment shader in Three.js, drifting toward the pointer.</p>
+  </div>
+
+<script>
+  // Theme toggle: swaps CSS custom properties and the shader's core/fringe colours.
+  const body = document.body;
+  const themeBtn = document.getElementById('themeToggleBtn');
+  let isDark = true;
+
+  const themes = {
+    dark: {
+      '--bg-base': '#020202',
+      '--bg-surface-1': 'rgba(255,255,255,0.015)',
+      '--bg-surface-2': 'rgba(255,255,255,0.04)',
+      '--text-primary': '#F4F4F5',
+      '--text-secondary': '#A3A3A3',
+      '--text-tech': '#666666',
+      '--border-glow': 'rgba(255,255,255,0.08)',
+      shaderCore: '#FFFFFF',
+      shaderFringe: '#1e3a8a'
+    },
+    light: {
+      '--bg-base': '#F4F4F5',
+      '--bg-surface-1': 'rgba(0,0,0,0.02)',
+      '--bg-surface-2': 'rgba(0,0,0,0.05)',
+      '--text-primary': '#020202',
+      '--text-secondary': '#666666',
+      '--text-tech': '#A3A3A3',
+      '--border-glow': 'rgba(0,0,0,0.08)',
+      shaderCore: '#020202',
+      shaderFringe: '#94a3b8'
+    }
+  };
+
+  themeBtn.addEventListener('click', () => {
+    isDark = !isDark;
+    const t = isDark ? themes.dark : themes.light;
+    for (const [key, value] of Object.entries(t)) {
+      if (key.startsWith('--')) body.style.setProperty(key, value);
+    }
+    themeBtn.textContent = isDark ? 'DARK' : 'LIGHT';
+    if (typeof material !== 'undefined') {
+      material.uniforms.u_colorCore.value = new THREE.Color(t.shaderCore);
+      material.uniforms.u_colorFringe.value = new THREE.Color(t.shaderFringe);
+      material.uniforms.u_isLightMode.value = isDark ? 0.0 : 1.0;
+    }
+  });
+
+  // Ambient WebGL portal shader
+  const container = document.getElementById('webgl-container');
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+  camera.position.z = 1;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const geometry = new THREE.PlaneGeometry(2, 2);
+
+  const vertexShader = `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position, 1.0);
+    }
+  `;
+
+  const fragmentShader = `
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+    uniform vec3 u_colorCore;
+    uniform vec3 u_colorFringe;
+    uniform float u_isLightMode;
+    varying vec2 vUv;
+
+    vec2 hash( vec2 p ) {
+      p = vec2( dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)) );
+      return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+    }
+    float noise( in vec2 p ) {
+      const float K1 = 0.366025404;
+      const float K2 = 0.211324865;
+      vec2 i = floor( p + (p.x+p.y)*K1 );
+      vec2 a = p - i + (i.x+i.y)*K2;
+      vec2 o = (a.x>a.y) ? vec2(1.0,0.0) : vec2(0.0,1.0);
+      vec2 b = a - o + K2;
+      vec2 c = a - 1.0 + 2.0*K2;
+      vec3 h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+      vec3 n = h*h*h*h*vec3( dot(a,hash(i+0.0)), dot(b,hash(i+o)), dot(c,hash(i+1.0)));
+      return dot( n, vec3(70.0) );
+    }
+
+    float sdArc(vec2 p, vec2 center, float radius, float width, float warp) {
+      p.y += sin(p.x * 2.0 + u_time * 0.3) * warp;
+      p.x += noise(p * 1.5 + u_time * 0.1) * (warp * 0.8);
+      float d = length(p - center) - radius;
+      return abs(d) - width;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+      vec2 st = uv;
+      st.x *= u_resolution.x / u_resolution.y;
+
+      vec2 mouseOffset = (u_mouse - 0.5) * 0.05;
+      st += mouseOffset;
+
+      vec2 center = vec2(0.5, 0.5);
+
+      float d1 = sdArc(st, center, 0.6, 0.02, 0.15);
+      float d2 = sdArc(st, center, 0.65, 0.06, 0.2);
+
+      float coreGlow = exp(-d1 * 30.0);
+      float fringeGlow = exp(-d2 * 10.0);
+      float wash = smoothstep(1.5, -0.5, length(st - center)) * 0.15;
+
+      vec3 finalColor = vec3(0.0);
+      finalColor += u_colorCore * coreGlow;
+      finalColor += u_colorFringe * fringeGlow;
+      finalColor += u_colorFringe * wash * (sin(u_time * 0.5) * 0.2 + 0.8);
+
+      float alpha = clamp(coreGlow + fringeGlow + wash, 0.0, 1.0);
+      finalColor = vec3(1.0) - exp(-finalColor * 1.5);
+
+      if(u_isLightMode > 0.5) {
+        alpha = clamp((coreGlow * 1.2 + fringeGlow + wash * 0.4), 0.0, 0.4);
+      }
+
+      gl_FragColor = vec4(finalColor, alpha * 0.6);
+    }
+  `;
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      u_colorCore: { value: new THREE.Color(themes.dark.shaderCore) },
+      u_colorFringe: { value: new THREE.Color(themes.dark.shaderFringe) },
+      u_isLightMode: { value: 0.0 }
+    },
+    transparent: true,
+    blending: THREE.AdditiveBlending
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
+
+  let targetMouse = new THREE.Vector2(0.5, 0.5);
+  document.addEventListener('mousemove', (e) => {
+    targetMouse.x = e.clientX / window.innerWidth;
+    targetMouse.y = 1.0 - (e.clientY / window.innerHeight);
+  });
+
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    material.uniforms.u_time.value = clock.getElapsedTime();
+    material.uniforms.u_mouse.value.lerp(targetMouse, 0.03);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    renderer.setSize(width, height);
+    material.uniforms.u_resolution.value.set(width, height);
+  });
+</script>
+</body>
+</html>

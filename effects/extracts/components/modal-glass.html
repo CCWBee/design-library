@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<!--
+  Component exemplar: Modal / dialog, glass register.
+  Ontology cell: surfaces / modal-dialog / glass.
+  Self-contained, runs over file:// with no server, no build, no network.
+  House rules: British English, no em dashes, alpha colours only (never CSS opacity),
+  no pill/dot eyebrows, no rule directly under a heading, accessibility as a bar.
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modal · dialog (glass)</title>
+  <style>
+    /* ---------- Tokens: light theme defaults on bare :root ---------- */
+    :root {
+      color-scheme: light dark;
+
+      /* Page canvas (neutral) */
+      --page-bg: #eef0f3;
+      --ink: rgba(20, 24, 33, 0.92);
+      --ink-soft: rgba(20, 24, 33, 0.62);
+      --ink-faint: rgba(20, 24, 33, 0.42);
+      --hairline: rgba(20, 24, 33, 0.12);
+      --tile-edge: rgba(20, 24, 33, 0.10);
+
+      /* Glass surface (from glass/recipes.md, tuned for text-bearing panels) */
+      --glass-tint: rgba(255, 255, 255, 0.72);
+      --glass-fallback: rgba(255, 255, 255, 0.92);
+      --glass-blur: 18px;
+      --glass-saturate: 180%;
+      --glass-border: rgba(255, 255, 255, 0.66);
+      --glass-radius: 20px;
+      --glass-highlight: rgba(255, 255, 255, 0.14);
+      --glass-shadow:
+        0 1px 2px rgba(16, 24, 40, 0.10),
+        0 18px 44px rgba(16, 24, 40, 0.20);
+      --glass-text: rgba(20, 24, 33, 0.92);
+      --glass-text-soft: rgba(20, 24, 33, 0.64);
+
+      /* Actions */
+      --accent: #1d4ed8;
+      --accent-hover: #1a45c0;
+      --accent-active: #163aa6;
+      --on-accent: #ffffff;
+
+      --btn-ghost-tint: rgba(20, 24, 33, 0.05);
+      --btn-ghost-hover: rgba(20, 24, 33, 0.10);
+      --btn-ghost-active: rgba(20, 24, 33, 0.16);
+      --btn-ghost-border: rgba(20, 24, 33, 0.16);
+
+      --btn-disabled-bg: rgba(20, 24, 33, 0.06);
+      --btn-disabled-ink: rgba(20, 24, 33, 0.34);
+      --btn-disabled-border: rgba(20, 24, 33, 0.10);
+
+      --focus-ring: #1d4ed8;
+      --focus-halo: rgba(29, 78, 216, 0.28);
+
+      /* Backdrop tile: one muted gradient reused behind every specimen,
+         so the frosting reads without turning the sheet into decoration. */
+      --tile:
+        radial-gradient(120% 90% at 12% 8%, #cfd8ea 0%, rgba(207, 216, 234, 0) 55%),
+        radial-gradient(90% 80% at 88% 12%, #e6d6e8 0%, rgba(230, 214, 232, 0) 50%),
+        radial-gradient(120% 120% at 78% 96%, #cbe3dd 0%, rgba(203, 227, 221, 0) 55%),
+        linear-gradient(150deg, #dfe4ee 0%, #d3d9e6 100%);
+    }
+
+    /* ---------- Dark, when the OS asks and no manual light override ---------- */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --page-bg: #0d0f14;
+        --ink: rgba(240, 243, 248, 0.94);
+        --ink-soft: rgba(240, 243, 248, 0.64);
+        --ink-faint: rgba(240, 243, 248, 0.42);
+        --hairline: rgba(255, 255, 255, 0.12);
+        --tile-edge: rgba(255, 255, 255, 0.10);
+
+        --glass-tint: rgba(22, 26, 34, 0.62);
+        --glass-fallback: rgba(24, 28, 36, 0.94);
+        --glass-border: rgba(255, 255, 255, 0.16);
+        --glass-highlight: rgba(255, 255, 255, 0.06);
+        --glass-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.42),
+          0 18px 48px rgba(0, 0, 0, 0.58);
+        --glass-text: rgba(240, 243, 248, 0.94);
+        --glass-text-soft: rgba(240, 243, 248, 0.64);
+
+        --accent: #2563eb;
+        --accent-hover: #3b74f0;
+        --accent-active: #1e51c8;
+        --on-accent: #ffffff;
+
+        --btn-ghost-tint: rgba(255, 255, 255, 0.07);
+        --btn-ghost-hover: rgba(255, 255, 255, 0.12);
+        --btn-ghost-active: rgba(255, 255, 255, 0.18);
+        --btn-ghost-border: rgba(255, 255, 255, 0.18);
+
+        --btn-disabled-bg: rgba(255, 255, 255, 0.06);
+        --btn-disabled-ink: rgba(240, 243, 248, 0.34);
+        --btn-disabled-border: rgba(255, 255, 255, 0.10);
+
+        --focus-ring: #7aa2ff;
+        --focus-halo: rgba(122, 162, 255, 0.34);
+
+        --tile:
+          radial-gradient(120% 90% at 12% 8%, #26314a 0%, rgba(38, 49, 74, 0) 55%),
+          radial-gradient(90% 80% at 88% 12%, #3a2a44 0%, rgba(58, 42, 68, 0) 50%),
+          radial-gradient(120% 120% at 78% 96%, #1f3a35 0%, rgba(31, 58, 53, 0) 55%),
+          linear-gradient(150deg, #161a24 0%, #10141d 100%);
+      }
+    }
+
+    /* ---------- Manual toggle wins in both directions ---------- */
+    :root[data-theme="dark"] {
+      --page-bg: #0d0f14;
+      --ink: rgba(240, 243, 248, 0.94);
+      --ink-soft: rgba(240, 243, 248, 0.64);
+      --ink-faint: rgba(240, 243, 248, 0.42);
+      --hairline: rgba(255, 255, 255, 0.12);
+      --tile-edge: rgba(255, 255, 255, 0.10);
+
+      --glass-tint: rgba(22, 26, 34, 0.62);
+      --glass-fallback: rgba(24, 28, 36, 0.94);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --glass-highlight: rgba(255, 255, 255, 0.06);
+      --glass-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.42),
+        0 18px 48px rgba(0, 0, 0, 0.58);
+      --glass-text: rgba(240, 243, 248, 0.94);
+      --glass-text-soft: rgba(240, 243, 248, 0.64);
+
+      --accent: #2563eb;
+      --accent-hover: #3b74f0;
+      --accent-active: #1e51c8;
+      --on-accent: #ffffff;
+
+      --btn-ghost-tint: rgba(255, 255, 255, 0.07);
+      --btn-ghost-hover: rgba(255, 255, 255, 0.12);
+      --btn-ghost-active: rgba(255, 255, 255, 0.18);
+      --btn-ghost-border: rgba(255, 255, 255, 0.18);
+
+      --btn-disabled-bg: rgba(255, 255, 255, 0.06);
+      --btn-disabled-ink: rgba(240, 243, 248, 0.34);
+      --btn-disabled-border: rgba(255, 255, 255, 0.10);
+
+      --focus-ring: #7aa2ff;
+      --focus-halo: rgba(122, 162, 255, 0.34);
+
+      --tile:
+        radial-gradient(120% 90% at 12% 8%, #26314a 0%, rgba(38, 49, 74, 0) 55%),
+        radial-gradient(90% 80% at 88% 12%, #3a2a44 0%, rgba(58, 42, 68, 0) 50%),
+        radial-gradient(120% 120% at 78% 96%, #1f3a35 0%, rgba(31, 58, 53, 0) 55%),
+        linear-gradient(150deg, #161a24 0%, #10141d 100%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      background-color: var(--page-bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ---------- Page header ---------- */
+    .masthead {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 0 0 4px;
+    }
+
+    .cell-line {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.95rem;
+    }
+
+    .lede {
+      max-width: 62ch;
+      color: var(--ink-soft);
+      margin: 18px 0 0;
+    }
+
+    /* ---------- Section framing ---------- */
+    section { margin-top: 56px; }
+
+    h2 {
+      font-size: 1.12rem;
+      font-weight: 600;
+      margin: 0 0 4px;
+      letter-spacing: -0.005em;
+    }
+
+    .note {
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+      margin: 0 0 22px;
+      max-width: 62ch;
+    }
+
+    /* ---------- The glass panel (shared by live dialog and specimens) ---------- */
+    .panel {
+      position: relative;
+      border-radius: var(--glass-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      background-color: var(--glass-fallback);
+      background-image: linear-gradient(
+        to bottom,
+        var(--glass-highlight),
+        rgba(255, 255, 255, 0) 42%
+      );
+      color: var(--glass-text);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .panel {
+        background-color: var(--glass-tint);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      }
+    }
+
+    .panel__body { padding: 22px 24px 24px; }
+
+    .panel__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 8px;
+      padding-right: 40px;
+      color: var(--glass-text);
+    }
+
+    .panel__text {
+      margin: 0;
+      color: var(--glass-text-soft);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .panel__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    /* Close control, top-right of the panel */
+    .panel__close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background-color: transparent;
+      color: var(--glass-text-soft);
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease;
+    }
+    .panel__close:hover,
+    .panel__close.is-hover {
+      background-color: var(--btn-ghost-hover);
+      color: var(--glass-text);
+    }
+    .panel__close:focus-visible,
+    .panel__close.is-focus {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+    .panel__close svg { width: 18px; height: 18px; display: block; }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      appearance: none;
+      font: inherit;
+      font-weight: 500;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 18px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 140ms ease, border-color 140ms ease,
+                  color 140ms ease, transform 90ms ease;
+    }
+    .btn:active,
+    .btn.is-active { transform: translateY(1px); }
+
+    /* Primary: accent fill, label at full contrast */
+    .btn--primary {
+      background-color: var(--accent);
+      color: var(--on-accent);
+    }
+    .btn--primary:hover,
+    .btn--primary.is-hover { background-color: var(--accent-hover); }
+    .btn--primary:active,
+    .btn--primary.is-active { background-color: var(--accent-active); }
+
+    /* Secondary: frosted ghost capsule over the panel */
+    .btn--ghost {
+      background-color: var(--btn-ghost-tint);
+      border-color: var(--btn-ghost-border);
+      color: var(--glass-text);
+    }
+    .btn--ghost:hover,
+    .btn--ghost.is-hover { background-color: var(--btn-ghost-hover); }
+    .btn--ghost:active,
+    .btn--ghost.is-active { background-color: var(--btn-ghost-active); }
+
+    /* Focus ring: visible on every surface, both button kinds */
+    .btn:focus-visible,
+    .btn.is-focus {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px var(--focus-halo);
+    }
+
+    /* Disabled: dimmed with alpha tokens, never the opacity property */
+    .btn:disabled,
+    .btn.is-disabled {
+      background-color: var(--btn-disabled-bg);
+      border-color: var(--btn-disabled-border);
+      color: var(--btn-disabled-ink);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Loading: spinner replaces nothing, label stays, pointer off */
+    .btn.is-loading { cursor: progress; }
+    .btn .spinner {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      display: none;
+      animation: spin 720ms linear infinite;
+    }
+    .btn.is-loading .spinner { display: inline-block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Live trigger row ---------- */
+    .trigger-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* ---------- Native dialog (live example) ---------- */
+    dialog.modal {
+      padding: 0;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--glass-radius);
+      background-color: var(--glass-fallback);
+      background-image: linear-gradient(
+        to bottom, var(--glass-highlight), rgba(255, 255, 255, 0) 42%);
+      color: var(--glass-text);
+      box-shadow: var(--glass-shadow);
+      max-width: 440px;
+      width: calc(100% - 32px);
+      overflow: hidden;
+    }
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      dialog.modal {
+        background-color: var(--glass-tint);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      }
+    }
+    dialog.modal::backdrop {
+      background-color: rgba(16, 20, 28, 0.42);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    /* Literal ::backdrop colours per theme (var() is not reliably inherited here) */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) dialog.modal::backdrop {
+        background-color: rgba(0, 0, 0, 0.56);
+      }
+    }
+    :root[data-theme="dark"] dialog.modal::backdrop {
+      background-color: rgba(0, 0, 0, 0.56);
+    }
+
+    /* Behind the live dialog: the same muted tile, so the blur has something to bite */
+    .stage {
+      margin-top: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--tile-edge);
+      background: var(--tile);
+      padding: 20px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stage p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+      text-align: center;
+      max-width: 46ch;
+    }
+
+    /* ---------- Specimen tiles: a panel on the muted backdrop ---------- */
+    .specimen {
+      border-radius: 18px;
+      border: 1px solid var(--tile-edge);
+      background: var(--tile);
+      padding: 26px;
+    }
+    .specimen + .specimen { margin-top: 20px; }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+    .swatch {
+      border-radius: 16px;
+      border: 1px solid var(--tile-edge);
+      background: var(--tile);
+      padding: 22px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .swatch__label {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    .swatch__label span {
+      display: block;
+      font-weight: 400;
+      color: var(--ink-faint);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    /* Size variants at real size, no scaling */
+    .size-stack { display: flex; flex-direction: column; gap: 24px; }
+    .size-row { }
+    .size-caption {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      margin: 0 0 8px;
+    }
+    .panel--sm { max-width: 320px; }
+    .panel--md { max-width: 440px; }
+    .panel--lg { max-width: 640px; }
+    .panel--sm .panel__body { padding: 18px 18px 18px; }
+    .panel--lg .panel__body { padding: 28px 30px 30px; }
+    .panel--sm .panel__title { font-size: 1rem; }
+    .panel--lg .panel__title { font-size: 1.25rem; }
+
+    /* Loading modal specimen: body replaced by a spinner and a plain word */
+    .panel__loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--glass-text-soft);
+      font-size: 0.95rem;
+      padding: 8px 0 4px;
+    }
+    .panel__loading .spinner {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      animation: spin 720ms linear infinite;
+    }
+
+    /* ---------- Theme toggle ---------- */
+    .theme-toggle {
+      flex: none;
+      appearance: none;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink);
+      background-color: var(--btn-ghost-tint);
+      border: 1px solid var(--btn-ghost-border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: background-color 140ms ease;
+    }
+    .theme-toggle:hover { background-color: var(--btn-ghost-hover); }
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .footer {
+      margin-top: 64px;
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+      max-width: 66ch;
+    }
+    .footer h2 { color: var(--ink); font-size: 1rem; }
+    .footer ul { margin: 10px 0 0; padding-left: 18px; }
+    .footer li { margin: 4px 0; }
+
+    /* ---------- Reduced transparency: drop blur, keep hierarchy ---------- */
+    @media (prefers-reduced-transparency: reduce) {
+      .panel, dialog.modal {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background-color: var(--glass-fallback);
+      }
+      dialog.modal::backdrop {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background-color: rgba(16, 20, 28, 0.55);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) dialog.modal::backdrop {
+          background-color: rgba(0, 0, 0, 0.66);
+        }
+      }
+      :root[data-theme="dark"] dialog.modal::backdrop {
+        background-color: rgba(0, 0, 0, 0.66);
+      }
+    }
+
+    /* ---------- Reduced motion: no transitions, no spin ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="masthead">
+      <div>
+        <h1>Modal · dialog</h1>
+        <p class="cell-line">Family: surfaces · Register: glass</p>
+      </div>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-live="polite">Theme: system</button>
+    </header>
+
+    <p class="lede">
+      A frosted panel that keeps its backdrop present: the ground dims and blurs behind
+      it so the layer reads as floating above the page, not replacing it. Tint carries the
+      text contrast the blur removes. Everything below documents the surface, its controls
+      in every state, and the size variants.
+    </p>
+
+    <!-- LIVE EXAMPLE ------------------------------------------------------- -->
+    <section aria-labelledby="s-live">
+      <h2 id="s-live">Live example</h2>
+      <p class="note">
+        Opens a native dialog: focus moves in, Escape and the backdrop close it, and focus
+        returns to the trigger. The dim and blur sit on the backdrop behind the glass.
+      </p>
+      <div class="stage">
+        <div class="trigger-row">
+          <button type="button" class="btn btn--primary" id="openModal">Open dialog</button>
+          <p style="margin:0">Content sits on the tile so the frosting is visible when the panel is open.</p>
+        </div>
+      </div>
+
+      <dialog class="modal" id="demoModal" aria-labelledby="demoTitle" aria-describedby="demoDesc">
+        <button type="button" class="panel__close" id="closeModal" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M6 6l12 12M18 6L6 18"/>
+          </svg>
+        </button>
+        <div class="panel__body">
+          <h3 class="panel__title" id="demoTitle">Discard changes</h3>
+          <p class="panel__text" id="demoDesc">
+            Your edits have not been saved. Discarding returns the document to its last
+            saved version. This cannot be undone.
+          </p>
+          <div class="panel__actions">
+            <button type="button" class="btn btn--ghost" data-close>Keep editing</button>
+            <button type="button" class="btn btn--primary" data-close>Discard</button>
+          </div>
+        </div>
+      </dialog>
+    </section>
+
+    <!-- SURFACE ------------------------------------------------------------ -->
+    <section aria-labelledby="s-surface">
+      <h2 id="s-surface">Surface</h2>
+      <p class="note">
+        The default panel: a translucent tint over a live blur, a 1px top-edge highlight,
+        a hairline border, and a two-stop soft shadow. Shown at rest on the backdrop tile.
+      </p>
+      <div class="specimen">
+        <div class="panel panel--md" style="margin:0 auto">
+          <button type="button" class="panel__close" aria-label="Close" tabindex="-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
+          <div class="panel__body">
+            <h3 class="panel__title">Panel title</h3>
+            <p class="panel__text">
+              Body text sits on the tinted film, not on raw blur. The tint is heavier on a
+              text-bearing panel than on a purely decorative one, so type clears its contrast floor.
+            </p>
+            <div class="panel__actions">
+              <button type="button" class="btn btn--ghost" tabindex="-1">Cancel</button>
+              <button type="button" class="btn btn--primary" tabindex="-1">Confirm</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACTION STATES ------------------------------------------------------ -->
+    <section aria-labelledby="s-states">
+      <h2 id="s-states">Action states</h2>
+      <p class="note">
+        Every state a modal control moves through, shown side by side. The swatches reuse the
+        exact selectors of the live pseudo-classes, so they cannot drift from real behaviour.
+      </p>
+      <div class="specimen">
+        <div class="swatch-grid">
+          <div class="swatch">
+            <span class="swatch__label">Default<span>at rest</span></span>
+            <button type="button" class="btn btn--primary" tabindex="-1">Confirm</button>
+            <button type="button" class="btn btn--ghost" tabindex="-1">Cancel</button>
+          </div>
+          <div class="swatch">
+            <span class="swatch__label">Hover<span>pointer over</span></span>
+            <button type="button" class="btn btn--primary is-hover" tabindex="-1">Confirm</button>
+            <button type="button" class="btn btn--ghost is-hover" tabindex="-1">Cancel</button>
+          </div>
+          <div class="swatch">
+            <span class="swatch__label">Focus visible<span>keyboard ring</span></span>
+            <button type="button" class="btn btn--primary is-focus" tabindex="-1">Confirm</button>
+            <button type="button" class="btn btn--ghost is-focus" tabindex="-1">Cancel</button>
+          </div>
+          <div class="swatch">
+            <span class="swatch__label">Pressed<span>active</span></span>
+            <button type="button" class="btn btn--primary is-active" tabindex="-1">Confirm</button>
+            <button type="button" class="btn btn--ghost is-active" tabindex="-1">Cancel</button>
+          </div>
+          <div class="swatch">
+            <span class="swatch__label">Disabled<span>not available</span></span>
+            <button type="button" class="btn btn--primary" tabindex="-1" disabled>Confirm</button>
+            <button type="button" class="btn btn--ghost" tabindex="-1" disabled>Cancel</button>
+          </div>
+          <div class="swatch">
+            <span class="swatch__label">Loading<span>action pending</span></span>
+            <button type="button" class="btn btn--primary is-loading" tabindex="-1" aria-busy="true">
+              <span class="spinner" aria-hidden="true"></span>Saving
+            </button>
+            <button type="button" class="btn btn--ghost" tabindex="-1" disabled>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOADING MODAL ------------------------------------------------------ -->
+    <section aria-labelledby="s-loading">
+      <h2 id="s-loading">Loading state</h2>
+      <p class="note">
+        The dialog type carries a loading state of its own: while content is fetched the body
+        is replaced by a spinner and a plain word, with the panel chrome held in place.
+      </p>
+      <div class="specimen">
+        <div class="panel panel--md" style="margin:0 auto">
+          <button type="button" class="panel__close" aria-label="Close" tabindex="-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
+          <div class="panel__body">
+            <h3 class="panel__title">Preparing document</h3>
+            <div class="panel__loading" role="status">
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Loading</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIZE VARIANTS ------------------------------------------------------ -->
+    <section aria-labelledby="s-sizes">
+      <h2 id="s-sizes">Size variants</h2>
+      <p class="note">
+        Three widths at real size, no scaling: a compact confirmation, the default dialog,
+        and a wide sheet for richer content. Radius and hairline are constant across sizes.
+      </p>
+      <div class="specimen">
+        <div class="size-stack">
+          <div class="size-row">
+            <p class="size-caption">Small · 320px · a terse confirm</p>
+            <div class="panel panel--sm">
+              <div class="panel__body">
+                <h3 class="panel__title">Delete file</h3>
+                <p class="panel__text">This removes the file for everyone.</p>
+                <div class="panel__actions">
+                  <button type="button" class="btn btn--ghost" tabindex="-1">Cancel</button>
+                  <button type="button" class="btn btn--primary" tabindex="-1">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="size-row">
+            <p class="size-caption">Medium · 440px · the default</p>
+            <div class="panel panel--md">
+              <button type="button" class="panel__close" aria-label="Close" tabindex="-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                  <path d="M6 6l12 12M18 6L6 18"/>
+                </svg>
+              </button>
+              <div class="panel__body">
+                <h3 class="panel__title">Rename workspace</h3>
+                <p class="panel__text">
+                  The new name is visible to everyone with access. Links to the workspace
+                  keep working.
+                </p>
+                <div class="panel__actions">
+                  <button type="button" class="btn btn--ghost" tabindex="-1">Cancel</button>
+                  <button type="button" class="btn btn--primary" tabindex="-1">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="size-row">
+            <p class="size-caption">Large · 640px · a content sheet</p>
+            <div class="panel panel--lg">
+              <button type="button" class="panel__close" aria-label="Close" tabindex="-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                  <path d="M6 6l12 12M18 6L6 18"/>
+                </svg>
+              </button>
+              <div class="panel__body">
+                <h3 class="panel__title">Export settings</h3>
+                <p class="panel__text">
+                  Choose the format and range before exporting. Larger sheets hold a short
+                  form or a summary; keep the same tint and edge so the material still reads
+                  as one glass surface. Beyond this width, prefer a full page over a modal.
+                </p>
+                <div class="panel__actions">
+                  <button type="button" class="btn btn--ghost" tabindex="-1">Cancel</button>
+                  <button type="button" class="btn btn--primary" tabindex="-1">Export</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <h2>Notes</h2>
+      <ul>
+        <li>Ontology cell: surfaces / modal-dialog / glass.</li>
+        <li>Colour and dimming are set with alpha values, never the CSS opacity property.</li>
+        <li>Focus is visible on both button kinds and the close control, on glass and on tile.</li>
+        <li>An @supports fallback swaps the blur for a near-opaque tint where backdrop-filter is absent.</li>
+        <li>prefers-reduced-transparency drops the blur and keeps a plain dim; prefers-reduced-motion stills the spinner and transitions.</li>
+      </ul>
+    </footer>
+  </main>
+
+  <script>
+    // Theme toggle: system, then explicit light and dark.
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+      var order = ['system', 'light', 'dark'];
+      var i = 0;
+      function apply() {
+        var mode = order[i];
+        if (mode === 'system') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', mode);
+        btn.textContent = 'Theme: ' + mode;
+      }
+      btn.addEventListener('click', function () {
+        i = (i + 1) % order.length;
+        apply();
+      });
+    })();
+
+    // Live dialog wiring.
+    (function () {
+      var dlg = document.getElementById('demoModal');
+      var open = document.getElementById('openModal');
+      if (!dlg || !open) return;
+      open.addEventListener('click', function () {
+        if (typeof dlg.showModal === 'function') dlg.showModal();
+        else dlg.setAttribute('open', '');
+      });
+      dlg.addEventListener('click', function (e) {
+        // Click on the backdrop (the dialog element itself) closes it.
+        if (e.target === dlg) dlg.close();
+      });
+      dlg.querySelectorAll('[data-close], #closeModal').forEach(function (el) {
+        el.addEventListener('click', function () { dlg.close(); });
+      });
+    })();
+  </script>
+</body>
+</html>

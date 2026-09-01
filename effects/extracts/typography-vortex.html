@@ -1,0 +1,525 @@
+<!--
+  Typography Vortex
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: React component wrapper (TypographyVortexCanvas.tsx), TypeScript types, product/brand phrase
+  text (replaced with a neutral placeholder), Tailwind scaffolding, ThreeUI Fragment Mono custom font.
+  Kept: the concentric rotating rings of orbiting characters, dissolve particle effect that samples the
+  rendered glyph pixels into drifting dust, draw-in vortex burst, and ambient edge drift, all rendered
+  with plain Canvas2D (no WebGL, no external library).
+
+  Re-localisation fix (renders at rest): the original deferred its entire first paint to a
+  requestAnimationFrame callback and gated the loop behind IntersectionObserver plus document.hidden.
+  In a background, occluded or headless tab the browser suspends rAF, so the loop never ran once and the
+  canvas stayed blank over the page background; the distinctive dissolve/dust motion was also gated
+  behind the pointer, so even a running static page read as quiet. Fixed here with a synchronous first
+  draw before the loop starts, an ungated self-driving loop, and an autonomous drifting virtual pointer
+  that demonstrates the dissolve and dust with no interaction and yields to a real pointer.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typography Vortex</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #151515;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  canvas:focus { outline: none; }
+  canvas:focus-visible {
+    outline: 2px solid rgba(150, 190, 255, 0.9);
+    outline-offset: -3px;
+  }
+  .hint {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(214, 214, 209, 0.62);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .hint { color: rgba(224, 224, 219, 0.92); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hint::after { content: ""; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="vortex-canvas" tabindex="0" aria-label="Typography vortex, a slowly rotating field of orbiting characters"></canvas>
+</div>
+<div class="hint" id="hint">Move to dissolve &middot; click to draw in</div>
+<script>
+(function () {
+  "use strict";
+
+  var OPTIONS = {
+    mode: "dark",
+    phrase: "FIELD NOTES / SIGNAL AND NOISE / ",
+    speed: 1,
+    ringGrowth: 1.21,
+    opacity: 1,
+    dissolveRadius: 1,
+    particleAmount: 1,
+    suctionDuration: 920,
+  };
+
+  var host = document.getElementById("stage");
+  var canvas = document.getElementById("vortex-canvas");
+  var hintEl = document.getElementById("hint");
+  var context = canvas.getContext("2d");
+  var layer = document.createElement("canvas");
+  var layerContext = layer.getContext("2d", { willReadFrequently: true });
+  if (!context || !layerContext) return;
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reducedTransparency = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+  var inkBoost = reducedTransparency ? 1.4 : 1;
+  var pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  var pointer = { x: 0, y: 0, inside: false };
+  var suction = { x: 0, y: 0, started: 0, until: 0 };
+  var lastUserInput = -1e9;
+  var width = 0;
+  var height = 0;
+  var rings = [];
+  var strays = [];
+  var particles = [];
+  var dissolve = 0;
+  var lastSpawn = 0;
+  var lastAmbientSpawn = 0;
+  var lastTime = 0;
+  var frame = 0;
+  var renderSignature = "";
+
+  if (reduced && hintEl) hintEl.textContent = "Typography vortex, motion reduced";
+
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function lerp(from, to, amount) { return from + (to - from) * amount; }
+  function alpha(value) { return clamp(value * inkBoost, 0, 1); }
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      var value = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value;
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function userActive(time) { return time - lastUserInput < 2600; }
+
+  function buildRings() {
+    var options = OPTIONS;
+    var phrase = options.phrase || "FIELD NOTES / SIGNAL AND NOISE / ";
+    var random = mulberry32(7 * 17 + 3);
+    var fontFamily = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace';
+    var ringPixelRatio = Math.max(pixelRatio, 1.5);
+    var maximumRadius = Math.hypot(Math.max(width * 0.55, width * 0.48), Math.max(height * 0.52, height * 0.5)) + 40;
+    rings = [];
+    var radius = Math.max(26, width * 0.038);
+    var index = 0;
+    while (radius < maximumRadius) {
+      var sparse = index % 3 === 2;
+      var ringBase = {
+        radius: radius,
+        fontSize: clamp(7 + radius * 0.015, 7, 17),
+        alpha: alpha(clamp(0.34 + radius / maximumRadius, 0.36, 0.92) * (sparse ? 0.72 : 1) * options.opacity),
+        speed: (0.05 + 40 / (radius + 60)) * 0.35,
+        offset: random() * Math.PI * 2,
+        spacing: sparse ? 2.4 + random() * 1.2 : 1.02 + random() * 0.14,
+        wobble: random() * Math.PI * 2,
+      };
+      var size = Math.ceil((ringBase.radius + ringBase.fontSize * 2) * 2);
+      var bitmap = document.createElement("canvas");
+      bitmap.width = bitmap.height = Math.ceil(size * ringPixelRatio);
+      var bitmapContext = bitmap.getContext("2d");
+      if (!bitmapContext) break;
+      bitmapContext.scale(ringPixelRatio, ringPixelRatio);
+      bitmapContext.translate(size / 2, size / 2);
+      bitmapContext.font = ringBase.fontSize + "px " + fontFamily;
+      bitmapContext.textAlign = "center";
+      bitmapContext.textBaseline = "middle";
+      var ink = options.mode === "light" ? "42,44,52" : "211,211,206";
+      bitmapContext.fillStyle = "rgba(" + ink + "," + ringBase.alpha + ")";
+      var step = (ringBase.fontSize * 0.62 * ringBase.spacing) / ringBase.radius;
+      var count = Math.max(4, Math.floor((Math.PI * 2) / step));
+      var actualStep = (Math.PI * 2) / count;
+      for (var characterIndex = 0; characterIndex < count; characterIndex += 1) {
+        var angle = characterIndex * actualStep;
+        var character = phrase[characterIndex % phrase.length];
+        if (character === " ") continue;
+        bitmapContext.save();
+        bitmapContext.translate(Math.cos(angle) * ringBase.radius, Math.sin(angle) * ringBase.radius);
+        bitmapContext.rotate(angle + Math.PI / 2);
+        bitmapContext.fillText(character, 0, 0);
+        bitmapContext.restore();
+      }
+      ringBase.bitmap = bitmap;
+      ringBase.size = size;
+      rings.push(ringBase);
+      radius *= Math.max(1.08, options.ringGrowth);
+      index += 1;
+    }
+
+    strays = [];
+    for (var strayIndex = 0; strayIndex < 34; strayIndex += 1) {
+      strays.push({
+        radius: 30 + random() * (maximumRadius - 60),
+        angle: random() * Math.PI * 2,
+        speed: (random() - 0.5) * 0.06,
+        character: phrase[(random() * phrase.length) | 0],
+        alpha: alpha((0.18 + random() * 0.3) * options.opacity),
+        fontSize: 8 + random() * 6,
+      });
+    }
+  }
+
+  function resize() {
+    var bounds = host.getBoundingClientRect();
+    width = Math.max(1, bounds.width || window.innerWidth || document.documentElement.clientWidth || 800);
+    height = Math.max(1, bounds.height || window.innerHeight || document.documentElement.clientHeight || 600);
+    canvas.width = Math.round(width * pixelRatio);
+    canvas.height = Math.round(height * pixelRatio);
+    layer.width = Math.round(width * pixelRatio);
+    layer.height = Math.round(height * pixelRatio);
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    layerContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    particles = [];
+    renderSignature = "";
+  }
+
+  function spawnPointerDust(time, radius) {
+    var options = OPTIONS;
+    if (reduced || time < suction.until || !pointer.inside || dissolve < 0.08 || time - lastSpawn < 44) return;
+    lastSpawn = time;
+    var x0 = Math.max(0, Math.floor((pointer.x - radius) * pixelRatio));
+    var y0 = Math.max(0, Math.floor((pointer.y - radius) * pixelRatio));
+    var x1 = Math.min(layer.width, Math.ceil((pointer.x + radius) * pixelRatio));
+    var y1 = Math.min(layer.height, Math.ceil((pointer.y + radius) * pixelRatio));
+    if (x1 <= x0 || y1 <= y0) return;
+    var sampleWidth = x1 - x0;
+    var sampleHeight = y1 - y0;
+    var pixels = layerContext.getImageData(x0, y0, sampleWidth, sampleHeight).data;
+    var sampleStep = Math.max(4, Math.round(4.5 * pixelRatio));
+    var spawnLimit = Math.max(1, Math.round(44 * options.particleAmount));
+    var spawned = 0;
+    for (var y = 0; y < sampleHeight && spawned < spawnLimit; y += sampleStep) {
+      for (var x = 0; x < sampleWidth && spawned < spawnLimit; x += sampleStep) {
+        var pixelIndex = (y * sampleWidth + x) * 4;
+        var a = pixels[pixelIndex + 3];
+        if (a < 34 || Math.random() > 0.34) continue;
+        var particleX = (x0 + x) / pixelRatio;
+        var particleY = (y0 + y) / pixelRatio;
+        var deltaX = particleX - pointer.x;
+        var deltaY = particleY - pointer.y;
+        var distance = Math.hypot(deltaX, deltaY);
+        if (distance > radius || distance < radius * 0.16) continue;
+        var normalX = deltaX / Math.max(1, distance);
+        var normalY = deltaY / Math.max(1, distance);
+        var burst = 0.35 + Math.random() * 1.35;
+        var tangent = (Math.random() - 0.5) * 1.4;
+        particles.push({
+          x: particleX,
+          y: particleY,
+          velocityX: normalX * burst - normalY * tangent + (Math.random() - 0.5) * 0.35,
+          velocityY: normalY * burst + normalX * tangent - 0.15 + Math.random() * 0.55,
+          size: 0.65 + Math.random() * 1.55,
+          life: 560 + Math.random() * 620,
+          maxLife: 1180,
+          phase: Math.random() * Math.PI * 2,
+          spin: Math.random() > 0.5 ? 1 : -1,
+          color: pixels[pixelIndex] + "," + pixels[pixelIndex + 1] + "," + pixels[pixelIndex + 2],
+          sucked: false,
+        });
+        spawned += 1;
+      }
+    }
+    var maximum = Math.max(1, Math.round(720 * options.particleAmount));
+    if (particles.length > maximum) particles.splice(0, particles.length - maximum);
+  }
+
+  function spawnAmbientDust(time, ambientWidth) {
+    var options = OPTIONS;
+    if (reduced || time < suction.until || time - lastAmbientSpawn < 115) return;
+    lastAmbientSpawn = time;
+    var sampleWidth = Math.min(width, ambientWidth * 1.12);
+    var pixelWidth = Math.max(1, Math.floor(sampleWidth * pixelRatio));
+    var pixelHeight = Math.max(1, Math.floor(height * pixelRatio));
+    var pixels = layerContext.getImageData(0, 0, pixelWidth, pixelHeight).data;
+    var spawnLimit = Math.max(1, Math.round(16 * options.particleAmount));
+    var spawned = 0;
+    for (var attempt = 0; attempt < 520 && spawned < spawnLimit; attempt += 1) {
+      var x = (Math.random() * pixelWidth) | 0;
+      var y = (Math.random() * pixelHeight) | 0;
+      var pixelIndex = (y * pixelWidth + x) * 4;
+      if (pixels[pixelIndex + 3] < 32) continue;
+      var particleX = x / pixelRatio;
+      var particleY = y / pixelRatio;
+      var edge = clamp(particleX / sampleWidth, 0, 1);
+      particles.push({
+        x: particleX,
+        y: particleY,
+        velocityX: 0.18 + Math.random() * 0.8 + edge * 0.35,
+        velocityY: (Math.random() - 0.5) * 0.8,
+        size: 0.55 + Math.random() * 1.35,
+        life: 620 + Math.random() * 520,
+        maxLife: 1140,
+        phase: Math.random() * Math.PI * 2,
+        spin: Math.random() > 0.5 ? 1 : -1,
+        color: pixels[pixelIndex] + "," + pixels[pixelIndex + 1] + "," + pixels[pixelIndex + 2],
+        sucked: false,
+      });
+      spawned += 1;
+    }
+    var maximum = Math.max(1, Math.round(720 * options.particleAmount));
+    if (particles.length > maximum) particles.splice(0, particles.length - maximum);
+  }
+
+  function updateDust(time, deltaTime) {
+    var options = OPTIONS;
+    var step = clamp(deltaTime / 16.67, 0.25, 3);
+    var suctionActive = !reduced && time < suction.until;
+    var alive = [];
+    for (var i = 0; i < particles.length; i += 1) {
+      var particle = particles[i];
+      particle.life -= deltaTime;
+      if (particle.life <= 0 || (particle.sucked && !suctionActive)) continue;
+      var distanceToSink = Infinity;
+      if (suctionActive && particle.sucked) {
+        var deltaX = suction.x - particle.x;
+        var deltaY = suction.y - particle.y;
+        distanceToSink = Math.hypot(deltaX, deltaY);
+        if (distanceToSink < 5) continue;
+        var targetSpeed = clamp(distanceToSink * 0.078, 3.2, 28);
+        var pull = 1 - Math.pow(0.76, step);
+        particle.velocityX = lerp(particle.velocityX, (deltaX / distanceToSink) * targetSpeed, pull);
+        particle.velocityY = lerp(particle.velocityY, (deltaY / distanceToSink) * targetSpeed, pull);
+      } else {
+        var swirl = Math.sin(time * 0.0024 + particle.phase) * 0.018 * particle.spin;
+        particle.velocityX += Math.cos(particle.phase + time * 0.0017) * 0.012 * step - swirl * particle.velocityY;
+        particle.velocityY += 0.018 * step + swirl * particle.velocityX;
+        particle.velocityX *= Math.pow(0.987, step);
+        particle.velocityY *= Math.pow(0.991, step);
+      }
+      particle.x += particle.velocityX * step;
+      particle.y += particle.velocityY * step;
+      var sinkFade = suctionActive && particle.sucked ? clamp(distanceToSink / 42, 0.12, 1) : 1;
+      var a = clamp(particle.life / Math.min(particle.maxLife, 820), 0, 1) * sinkFade * options.opacity;
+      context.fillStyle = "rgba(" + particle.color + "," + alpha(a * 0.88) + ")";
+      var size = particle.size * (0.5 + a * 0.5);
+      context.fillRect(particle.x - size * 0.5, particle.y - size * 0.5, size, size);
+      alive.push(particle);
+    }
+    particles = alive;
+    if (suctionActive) {
+      var progress = clamp((time - suction.started) / (suction.until - suction.started), 0, 1);
+      context.save();
+      var suctionInk = options.mode === "light" ? "42,44,52" : "218,218,212";
+      var suctionCore = options.mode === "light" ? "28,30,38" : "226,226,220";
+      context.strokeStyle = "rgba(" + suctionInk + "," + alpha((1 - progress) * 0.34 * options.opacity) + ")";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.arc(suction.x, suction.y, 5 + progress * 22, 0, Math.PI * 2);
+      context.stroke();
+      context.fillStyle = "rgba(" + suctionCore + "," + alpha((1 - progress) * 0.62 * options.opacity) + ")";
+      context.fillRect(suction.x - 1, suction.y - 1, 2, 2);
+      context.restore();
+    }
+  }
+
+  function draw(time) {
+    var options = OPTIONS;
+    var isLight = options.mode === "light";
+    var signature = options.mode + "|" + options.phrase + "|" + options.ringGrowth + "|" + options.opacity + "|" + width + "|" + height;
+    if (signature !== renderSignature) {
+      renderSignature = signature;
+      buildRings();
+    }
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = isLight ? "#eef1f6" : "#151515";
+    context.fillRect(0, 0, width, height);
+    layerContext.clearRect(0, 0, width, height);
+    var deltaTime = Math.min(time - (lastTime || time), 100);
+    lastTime = time;
+
+    var centerX = width * 0.52;
+    var centerY = height * 0.485;
+
+    // Autonomous virtual pointer: with no recent real input, drift a pointer around the
+    // field so the dissolve and dust read at rest. A real pointer takes over instantly and
+    // the drift resumes after a short idle. Suppressed under reduced motion.
+    if (!reduced && !userActive(time)) {
+      var driftX = Math.min(width, height) * 0.30;
+      var driftY = Math.min(width, height) * 0.22;
+      pointer.x = clamp(centerX + Math.cos(time * 0.00035) * driftX, 0, width);
+      pointer.y = clamp(centerY + Math.sin(time * 0.00052) * driftY, 0, height);
+      pointer.inside = true;
+    }
+
+    var dissolveTarget = pointer.inside && !reduced ? 1 : 0;
+    dissolve = lerp(dissolve, dissolveTarget, 1 - Math.pow(0.78, deltaTime / 16.6));
+    if (dissolve < 0.002) dissolve = 0;
+    var seconds = reduced ? 0 : (time / 1000) * options.speed;
+    var guideInk = isLight ? "42,44,52" : "198,198,193";
+    var strayInk = isLight ? "48,50,58" : "188,188,183";
+
+    context.save();
+    context.translate(centerX, centerY);
+    context.strokeStyle = "rgba(" + guideInk + "," + alpha((isLight ? 0.1 : 0.065) * options.opacity) + ")";
+    context.lineWidth = 1;
+    context.setLineDash([1, 5]);
+    for (var i = 0; i < rings.length; i += 1) {
+      var ring = rings[i];
+      context.beginPath();
+      context.arc(0, 0, ring.radius * 1.115, 0, Math.PI * 2);
+      context.stroke();
+    }
+    context.restore();
+
+    layerContext.save();
+    layerContext.translate(centerX, centerY);
+    for (var r = 0; r < rings.length; r += 1) {
+      var ring2 = rings[r];
+      var base = ring2.offset + seconds * ring2.speed + Math.sin(seconds * 0.11 + ring2.wobble) * 0.02;
+      layerContext.save();
+      layerContext.rotate(base);
+      layerContext.drawImage(ring2.bitmap, -ring2.size / 2, -ring2.size / 2, ring2.size, ring2.size);
+      layerContext.restore();
+    }
+    var fontFamily = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace';
+    layerContext.textAlign = "center";
+    layerContext.textBaseline = "middle";
+    for (var s = 0; s < strays.length; s += 1) {
+      var stray = strays[s];
+      var strayAngle = stray.angle + seconds * stray.speed;
+      layerContext.font = stray.fontSize + "px " + fontFamily;
+      layerContext.fillStyle = "rgba(" + strayInk + "," + stray.alpha + ")";
+      layerContext.save();
+      layerContext.translate(Math.cos(strayAngle) * stray.radius, Math.sin(strayAngle) * stray.radius);
+      layerContext.rotate(strayAngle + Math.PI / 2);
+      layerContext.fillText(stray.character, 0, 0);
+      layerContext.restore();
+    }
+    layerContext.restore();
+
+    var ambientWidth = clamp(width * 0.22, 108, 180);
+    var radius = clamp(Math.min(width, height) * 0.24, 128, 196) * options.dissolveRadius;
+    spawnAmbientDust(time, ambientWidth);
+    spawnPointerDust(time, radius);
+
+    if (!reduced) {
+      layerContext.save();
+      layerContext.globalCompositeOperation = "destination-out";
+      var ambientMask = layerContext.createLinearGradient(0, 0, ambientWidth, 0);
+      ambientMask.addColorStop(0, "rgba(0,0,0,.98)");
+      ambientMask.addColorStop(0.34, "rgba(0,0,0,.88)");
+      ambientMask.addColorStop(0.72, "rgba(0,0,0,.36)");
+      ambientMask.addColorStop(1, "rgba(0,0,0,0)");
+      layerContext.fillStyle = ambientMask;
+      layerContext.fillRect(0, 0, ambientWidth, height);
+      layerContext.restore();
+    }
+
+    if (dissolve > 0.002) {
+      var maskedRadius = radius * (0.42 + dissolve * 0.58);
+      layerContext.save();
+      layerContext.globalCompositeOperation = "destination-out";
+      var mask = layerContext.createRadialGradient(pointer.x, pointer.y, maskedRadius * 0.06, pointer.x, pointer.y, maskedRadius);
+      mask.addColorStop(0, "rgba(0,0,0,1)");
+      mask.addColorStop(0.57, "rgba(0,0,0,.98)");
+      mask.addColorStop(0.84, "rgba(0,0,0,.42)");
+      mask.addColorStop(1, "rgba(0,0,0,0)");
+      layerContext.fillStyle = mask;
+      layerContext.beginPath();
+      layerContext.arc(pointer.x, pointer.y, maskedRadius, 0, Math.PI * 2);
+      layerContext.fill();
+      layerContext.restore();
+    }
+
+    context.drawImage(layer, 0, 0, layer.width, layer.height, 0, 0, width, height);
+    updateDust(time, deltaTime);
+    if (dissolve > 0.02) {
+      context.save();
+      var dissolveInk = isLight ? "42,44,52" : "210,210,205";
+      context.strokeStyle = "rgba(" + dissolveInk + "," + alpha((0.08 + dissolve * 0.13) * options.opacity) + ")";
+      context.lineWidth = 1;
+      context.setLineDash([2, 6]);
+      context.beginPath();
+      context.arc(pointer.x, pointer.y, radius * (0.42 + dissolve * 0.58), 0, Math.PI * 2);
+      context.stroke();
+      context.restore();
+    }
+  }
+
+  function animate(time) {
+    draw(time);
+    frame = requestAnimationFrame(animate);
+  }
+
+  function locatePointer(event) {
+    var bounds = host.getBoundingClientRect();
+    pointer.x = clamp(event.clientX - bounds.left, 0, bounds.width);
+    pointer.y = clamp(event.clientY - bounds.top, 0, bounds.height);
+    pointer.inside = true;
+    lastUserInput = performance.now();
+  }
+  function onPointerLeave() {
+    pointer.inside = false;
+    lastUserInput = performance.now();
+  }
+  function onPointerDown(event) {
+    locatePointer(event);
+    var options = OPTIONS;
+    if (reduced) return;
+    suction.x = pointer.x;
+    suction.y = pointer.y;
+    suction.started = performance.now();
+    suction.until = suction.started + options.suctionDuration;
+    for (var i = 0; i < particles.length; i += 1) {
+      particles[i].sucked = true;
+      particles[i].life = Math.max(particles[i].life, options.suctionDuration + 20);
+      particles[i].maxLife = Math.max(particles[i].maxLife, options.suctionDuration + 20);
+    }
+  }
+
+  var resizeObserver = new ResizeObserver(resize);
+  resizeObserver.observe(host);
+  window.addEventListener("resize", resize);
+
+  host.addEventListener("pointerenter", locatePointer);
+  host.addEventListener("pointermove", locatePointer);
+  host.addEventListener("pointerleave", onPointerLeave);
+  host.addEventListener("pointerdown", onPointerDown);
+
+  resize();
+  // Synchronous first paint: the rings exist on the canvas from time zero, so the effect
+  // renders even in a context where requestAnimationFrame is suspended (background or
+  // headless tab). The self-driving loop then takes over for animation.
+  draw(performance.now());
+  frame = requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card · Glass</title>
+<!--
+  Reference exemplar: an interactive glass card (family: surfaces, register: glass).
+  Self-contained, runs from file:// with no build, no server, no CDN, no remote refs.
+  Built to ../../ontology/register-rules.md (surfaces block plus the general glass rules)
+  and ../../glass/recipes.md. British English throughout; ink and fills set with alpha
+  colours, never the CSS opacity property.
+-->
+<style>
+  /* ---------------------------------------------------------------------------
+     Tokens: light defaults on :root, redefined for dark under the media query
+     and again under the manual [data-theme] toggle so the toggle wins both ways.
+     --------------------------------------------------------------------------- */
+  :root {
+    color-scheme: light dark;
+
+    /* Page canvas and ink (the calm spec sheet, outside the glass) */
+    --canvas: #f4f5f7;
+    --ink-1: rgb(17 20 26 / 92%);   /* primary text */
+    --ink-2: rgb(17 20 26 / 64%);   /* supporting text */
+    --ink-3: rgb(17 20 26 / 44%);   /* metadata, labels */
+    --hairline: rgb(17 20 26 / 12%);
+    --control-face: rgb(255 255 255 / 70%);
+    --control-face-hover: rgb(255 255 255 / 92%);
+
+    /* Glass material (content tier: the card carries text, so a heavier film) */
+    --glass-tint: rgb(255 255 255 / 72%);
+    --glass-tint-hover: rgb(255 255 255 / 82%);
+    --glass-tint-active: rgb(255 255 255 / 88%);
+    --glass-fallback: rgb(255 255 255 / 92%);
+    --glass-blur: 16px;
+    --glass-saturate: 180%;
+    --glass-border: rgb(255 255 255 / 65%);
+    --glass-highlight: rgb(255 255 255 / 55%);
+    --glass-radius: 18px;
+    --glass-shadow:
+      0 1px 2px rgb(16 24 40 / 8%),
+      0 12px 32px rgb(16 24 40 / 16%);
+    --glass-shadow-hover:
+      0 2px 4px rgb(16 24 40 / 10%),
+      0 18px 44px rgb(16 24 40 / 20%);
+
+    /* Ink on the glass surface */
+    --glass-ink-1: rgb(20 24 33 / 92%);
+    --glass-ink-2: rgb(20 24 33 / 66%);
+    --glass-ink-3: rgb(20 24 33 / 48%);
+
+    /* Focus ring, tuned for contrast on both the canvas and the glass */
+    --focus-ring: rgb(37 99 235 / 90%);
+
+    /* Skeleton rungs (alpha colour, animated instead of the opacity property) */
+    --skel-low: rgb(20 24 33 / 8%);
+    --skel-high: rgb(20 24 33 / 16%);
+    --skel-mid: rgb(20 24 33 / 12%);
+
+    /* Spacing rhythm */
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #0d0f13;
+      --ink-1: rgb(240 243 248 / 92%);
+      --ink-2: rgb(240 243 248 / 64%);
+      --ink-3: rgb(240 243 248 / 46%);
+      --hairline: rgb(255 255 255 / 14%);
+      --control-face: rgb(255 255 255 / 8%);
+      --control-face-hover: rgb(255 255 255 / 14%);
+
+      --glass-tint: rgb(20 24 32 / 66%);
+      --glass-tint-hover: rgb(28 33 44 / 74%);
+      --glass-tint-active: rgb(32 38 50 / 80%);
+      --glass-fallback: rgb(22 26 34 / 92%);
+      --glass-border: rgb(255 255 255 / 14%);
+      --glass-highlight: rgb(255 255 255 / 6%);
+      --glass-shadow:
+        0 1px 2px rgb(0 0 0 / 40%),
+        0 12px 36px rgb(0 0 0 / 55%);
+      --glass-shadow-hover:
+        0 2px 4px rgb(0 0 0 / 46%),
+        0 18px 48px rgb(0 0 0 / 62%);
+
+      --glass-ink-1: rgb(240 243 248 / 94%);
+      --glass-ink-2: rgb(240 243 248 / 68%);
+      --glass-ink-3: rgb(240 243 248 / 50%);
+
+      --focus-ring: rgb(125 176 255 / 95%);
+
+      --skel-low: rgb(255 255 255 / 8%);
+      --skel-high: rgb(255 255 255 / 16%);
+      --skel-mid: rgb(255 255 255 / 12%);
+    }
+  }
+
+  /* Manual toggle wins in both directions */
+  :root[data-theme="dark"] {
+    --canvas: #0d0f13;
+    --ink-1: rgb(240 243 248 / 92%);
+    --ink-2: rgb(240 243 248 / 64%);
+    --ink-3: rgb(240 243 248 / 46%);
+    --hairline: rgb(255 255 255 / 14%);
+    --control-face: rgb(255 255 255 / 8%);
+    --control-face-hover: rgb(255 255 255 / 14%);
+
+    --glass-tint: rgb(20 24 32 / 66%);
+    --glass-tint-hover: rgb(28 33 44 / 74%);
+    --glass-tint-active: rgb(32 38 50 / 80%);
+    --glass-fallback: rgb(22 26 34 / 92%);
+    --glass-border: rgb(255 255 255 / 14%);
+    --glass-highlight: rgb(255 255 255 / 6%);
+    --glass-shadow:
+      0 1px 2px rgb(0 0 0 / 40%),
+      0 12px 36px rgb(0 0 0 / 55%);
+    --glass-shadow-hover:
+      0 2px 4px rgb(0 0 0 / 46%),
+      0 18px 48px rgb(0 0 0 / 62%);
+
+    --glass-ink-1: rgb(240 243 248 / 94%);
+    --glass-ink-2: rgb(240 243 248 / 68%);
+    --glass-ink-3: rgb(240 243 248 / 50%);
+
+    --focus-ring: rgb(125 176 255 / 95%);
+
+    --skel-low: rgb(255 255 255 / 8%);
+    --skel-high: rgb(255 255 255 / 16%);
+    --skel-mid: rgb(255 255 255 / 12%);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-5) var(--s-7);
+  }
+
+  /* ---- Document header ---------------------------------------------------- */
+  .masthead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--s-6);
+  }
+
+  .masthead h1 {
+    margin: 0 0 var(--s-2);
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+
+  .masthead .cell {
+    margin: 0 0 var(--s-2);
+    font-size: 0.82rem;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+  }
+
+  .masthead p {
+    margin: 0;
+    max-width: 40rem;
+    color: var(--ink-2);
+  }
+
+  /* Plain theme toggle, no pill styling */
+  .theme-toggle {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-3);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink-1);
+    background-color: var(--control-face);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 160ms ease;
+  }
+  .theme-toggle:hover { background-color: var(--control-face-hover); }
+  .theme-toggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* ---- Section scaffolding ------------------------------------------------ */
+  .section { margin-top: var(--s-7); }
+
+  .section > h2 {
+    margin: 0 0 var(--s-1);
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  /* No border rule beneath the heading; whitespace does the separating. */
+  .section > .note {
+    margin: 0 0 var(--s-5);
+    max-width: 40rem;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--s-5);
+  }
+
+  /* A specimen well: a soft contained backdrop so the frost is visible,
+     while the page canvas itself stays plain and calm. */
+  .well {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .stage {
+    position: relative;
+    padding: var(--s-4);
+    border-radius: 16px;
+    border: 1px solid var(--hairline);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  /* The backdrop the glass blurs: a quiet abstract gradient field, contained. */
+  .stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(60% 70% at 22% 18%, rgb(99 102 241 / 55%), transparent 60%),
+      radial-gradient(55% 65% at 82% 30%, rgb(236 72 153 / 42%), transparent 62%),
+      radial-gradient(70% 80% at 60% 92%, rgb(45 212 191 / 42%), transparent 60%),
+      linear-gradient(140deg, #dfe4ee, #c3ccdd);
+  }
+  :root[data-theme="dark"] .stage::before,
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .stage::before {
+      background:
+        radial-gradient(60% 70% at 22% 18%, rgb(99 102 241 / 60%), transparent 60%),
+        radial-gradient(55% 65% at 82% 30%, rgb(236 72 153 / 45%), transparent 62%),
+        radial-gradient(70% 80% at 60% 92%, rgb(45 212 191 / 40%), transparent 60%),
+        linear-gradient(140deg, #1a1f2e, #10141d);
+    }
+  }
+
+  .caption {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .caption .name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink-1);
+  }
+  .caption .desc {
+    font-size: 0.82rem;
+    color: var(--ink-3);
+  }
+
+  /* ---------------------------------------------------------------------------
+     The glass card itself. An interactive surface, so it is a real <button>:
+     disabled and focus semantics are genuine, not painted. Forced-state helper
+     classes share every declaration with the live pseudo-classes so the
+     documented states never drift from the real ones.
+     --------------------------------------------------------------------------- */
+  .card {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: var(--glass-ink-1);
+    cursor: pointer;
+    padding: var(--s-4);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--glass-radius);
+    box-shadow: var(--glass-shadow);
+    /* Base tier: opaque-enough fallback surface (upgraded to blur below). */
+    background-color: var(--glass-fallback);
+    /* 1px top-edge highlight that sells the glass without a second element. */
+    background-image: linear-gradient(
+      to bottom,
+      var(--glass-highlight),
+      rgb(255 255 255 / 0%) 42%
+    );
+    transition:
+      background-color 180ms ease,
+      box-shadow 200ms ease,
+      transform 160ms ease;
+  }
+
+  /* Tier 2: live blur where the browser supports it. */
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card {
+      background-color: var(--glass-tint);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+  }
+
+  .card__title {
+    margin: 0 0 var(--s-1);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--glass-ink-1);
+  }
+  .card__body {
+    margin: 0 0 var(--s-3);
+    font-size: 0.92rem;
+    color: var(--glass-ink-2);
+  }
+  .card__meta {
+    font-size: 0.8rem;
+    color: var(--glass-ink-3);
+  }
+
+  /* Hover: tint bump, shadow lift and a small transform. The backdrop-filter is
+     never transitioned (it would force per-frame recompositing). */
+  .card:hover,
+  .card.is-hover {
+    background-color: var(--glass-tint-hover);
+    box-shadow: var(--glass-shadow-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Focus-visible: a clearly visible ring on both themes. */
+  .card:focus-visible,
+  .card.is-focus {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  /* Active / pressed: fuller tint, settles down and in. */
+  .card:active,
+  .card.is-active {
+    background-color: var(--glass-tint-active);
+    box-shadow: var(--glass-shadow);
+    transform: translateY(0) scale(0.992);
+  }
+
+  /* Disabled: reduced-alpha ink and tint (never the opacity property),
+     no pointer, no lift. */
+  .card:disabled,
+  .card.is-disabled {
+    cursor: not-allowed;
+    background-color: var(--glass-tint);
+    box-shadow: var(--glass-shadow);
+    transform: none;
+    color: var(--glass-ink-3);
+  }
+  .card:disabled .card__title,
+  .card.is-disabled .card__title { color: var(--glass-ink-2); }
+  .card:disabled .card__body,
+  .card:disabled .card__meta,
+  .card.is-disabled .card__body,
+  .card.is-disabled .card__meta { color: var(--glass-ink-3); }
+
+  /* Loading: skeleton lines that pulse between two alpha rungs (the colour is
+     animated, not the opacity property). No shimmer sweep. */
+  .card.is-loading { cursor: progress; }
+  .card.is-loading .card__title,
+  .card.is-loading .card__body,
+  .card.is-loading .card__meta { visibility: hidden; }
+
+  .skeleton {
+    display: grid;
+    gap: var(--s-2);
+  }
+  .skeleton span {
+    display: block;
+    height: 0.7rem;
+    border-radius: 5px;
+    background-color: var(--skel-mid);
+    animation: skel-pulse 1.5s ease-in-out infinite;
+  }
+  .skeleton span:nth-child(1) { width: 62%; height: 0.95rem; }
+  .skeleton span:nth-child(2) { width: 100%; animation-delay: 0.15s; }
+  .skeleton span:nth-child(3) { width: 88%; animation-delay: 0.3s; }
+  .skeleton span:nth-child(4) { width: 40%; margin-top: var(--s-2); animation-delay: 0.45s; }
+
+  @keyframes skel-pulse {
+    0%, 100% { background-color: var(--skel-low); }
+    50%      { background-color: var(--skel-high); }
+  }
+
+  /* ---- Size variants ------------------------------------------------------ */
+  .card--sm { padding: var(--s-3); border-radius: 14px; }
+  .card--sm .card__title { font-size: 0.95rem; }
+  .card--sm .card__body { font-size: 0.85rem; margin-bottom: var(--s-2); }
+
+  .card--lg { padding: var(--s-5); border-radius: 22px; }
+  .card--lg .card__title { font-size: 1.25rem; margin-bottom: var(--s-2); }
+  .card--lg .card__body { font-size: 1rem; }
+
+  /* ---------------------------------------------------------------------------
+     Accessibility fallbacks layered on top of the @supports tier.
+     --------------------------------------------------------------------------- */
+  @media (prefers-reduced-transparency: reduce) {
+    .card {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background-color: var(--glass-fallback);
+    }
+    .card:hover, .card.is-hover,
+    .card:active, .card.is-active { background-color: var(--glass-fallback); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .theme-toggle { transition: none; }
+    .card:hover, .card.is-hover { transform: none; }
+    .card:active, .card.is-active { transform: none; }
+    .skeleton span {
+      animation: none;
+      background-color: var(--skel-mid); /* rest at the mid rung */
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <div>
+        <p class="cell">surfaces · card · glass</p>
+        <h1>Glass card</h1>
+        <p>
+          A frosted, interactive surface that keeps its backdrop present: translucent tint over
+          <code>backdrop-filter</code>, a hairline edge, a 1px top highlight and a soft layered
+          shadow. Each specimen sits in its own contained well so the frost is visible while the
+          page itself stays a plain, neutral spec sheet.
+        </p>
+      </div>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="false">
+        <span id="themeToggleLabel">Dark theme</span>
+      </button>
+    </header>
+
+    <!-- Live specimen: responds to real pointer and keyboard input. -->
+    <section class="section" aria-labelledby="live-h">
+      <h2 id="live-h">Live specimen</h2>
+      <p class="note">
+        This one is interactive. Hover it, tab to it for the focus ring, and press it. The states
+        below force each condition so the sheet documents itself.
+      </p>
+      <div class="grid">
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption">
+            <span class="name">Interactive</span>
+            <span class="desc">Real hover, focus-visible and pressed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- State checklist: forced classes share every rule with the pseudo-classes. -->
+    <section class="section" aria-labelledby="states-h">
+      <h2 id="states-h">States</h2>
+      <p class="note">Default, hover, focus-visible, pressed, disabled and loading.</p>
+      <div class="grid">
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Default</span><span class="desc">Resting surface</span></div>
+        </div>
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card is-hover">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Hover</span><span class="desc">Tint bump and lift</span></div>
+        </div>
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card is-focus">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Focus-visible</span><span class="desc">Visible ring, offset</span></div>
+        </div>
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card is-active">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Pressed</span><span class="desc">Fuller tint, settles in</span></div>
+        </div>
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card" disabled>
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Disabled</span><span class="desc">Reduced-alpha ink, no lift</span></div>
+        </div>
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card is-loading" aria-busy="true" aria-label="Loading harbour readings">
+              <div class="skeleton" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Loading</span><span class="desc">Alpha pulse, no shimmer</span></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Size variants. -->
+    <section class="section" aria-labelledby="sizes-h">
+      <h2 id="sizes-h">Sizes</h2>
+      <p class="note">Small, standard and large: padding, radius and type scale together.</p>
+      <div class="grid">
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card card--sm">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Small</span><span class="desc">Dense lists and rails</span></div>
+        </div>
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Standard</span><span class="desc">The default</span></div>
+        </div>
+
+        <div class="well">
+          <div class="stage">
+            <button type="button" class="card card--lg">
+              <h3 class="card__title">Harbour readings</h3>
+              <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge, with the next high water forecast alongside.</p>
+              <span class="card__meta">Updated 14:00</span>
+            </button>
+          </div>
+          <div class="caption"><span class="name">Large</span><span class="desc">Feature and hero surfaces</span></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Plain theme toggle. Sets data-theme so the manual choice wins over the OS
+    // preference in both directions; no persistence needed for a reference sheet.
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+      var label = document.getElementById('themeToggleLabel');
+
+      function currentIsDark() {
+        var attr = root.getAttribute('data-theme');
+        if (attr === 'dark') return true;
+        if (attr === 'light') return false;
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+
+      function sync() {
+        var dark = currentIsDark();
+        label.textContent = dark ? 'Light theme' : 'Dark theme';
+        btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+      }
+
+      btn.addEventListener('click', function () {
+        root.setAttribute('data-theme', currentIsDark() ? 'light' : 'dark');
+        sync();
+      });
+
+      sync();
+    })();
+  </script>
+</body>
+</html>

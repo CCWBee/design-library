@@ -1,0 +1,611 @@
+<!--
+  Switch / toggle · tactile register · selection family
+  Reference exemplar for the design library. Self-contained, runs over file:// by double-click.
+  No CDN, no build, no remote refs. British English. Alpha colours only (never CSS opacity).
+  The tactile switch: a recessed track and a raised glossy knob whose shadow travels as it slides.
+-->
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Switch · Tactile</title>
+<style>
+  /* ---- Tokens: light ---- */
+  :root {
+    color-scheme: light;
+
+    --canvas:        #eef0f3;
+    --panel:         #ffffff;
+    --hairline:      rgb(17 20 24 / 8%);
+
+    --ink:           rgb(17 20 24 / 92%);
+    --ink-soft:      rgb(17 20 24 / 64%);
+    --ink-faint:     rgb(17 20 24 / 44%);
+
+    /* Recessed track (off) */
+    --track-off:         #d7dbe0;
+    --track-off-lip-top: rgb(17 20 24 / 22%);   /* inner shade, top edge */
+    --track-off-lip-bot: rgb(255 255 255 / 85%);/* inner light, bottom lip */
+
+    /* Accent track (on) */
+    --accent:            #2c9c46;
+    --accent-hi:         #3fb85b;
+    --accent-lip-top:    rgb(9 46 20 / 40%);
+    --accent-lip-bot:    rgb(255 255 255 / 34%);
+
+    /* Raised glossy knob */
+    --knob-top:      #ffffff;
+    --knob-bot:      #e6e9ee;
+    --knob-gloss:    rgb(255 255 255 / 90%);
+    --knob-edge:     rgb(17 20 24 / 10%);
+    --knob-drop:     rgb(17 20 24 / 26%);   /* travelling drop shadow */
+    --knob-drop-2:   rgb(17 20 24 / 14%);
+
+    --ring:          rgb(44 156 70 / 42%);  /* focus-visible */
+
+    --radius-card:   14px;
+  }
+
+  /* ---- Tokens: dark (system default) ---- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+
+      --canvas:        #16181c;
+      --panel:         #20242b;
+      --hairline:      rgb(255 255 255 / 10%);
+
+      --ink:           rgb(237 240 244 / 92%);
+      --ink-soft:      rgb(237 240 244 / 62%);
+      --ink-faint:     rgb(237 240 244 / 42%);
+
+      --track-off:         #2b3037;
+      --track-off-lip-top: rgb(0 0 0 / 55%);
+      --track-off-lip-bot: rgb(255 255 255 / 12%);
+
+      --accent:            #2fa84e;
+      --accent-hi:         #46c266;
+      --accent-lip-top:    rgb(0 0 0 / 45%);
+      --accent-lip-bot:    rgb(255 255 255 / 20%);
+
+      --knob-top:      #f3f5f8;
+      --knob-bot:      #c9cfd7;
+      --knob-gloss:    rgb(255 255 255 / 80%);
+      --knob-edge:     rgb(0 0 0 / 28%);
+      --knob-drop:     rgb(0 0 0 / 55%);
+      --knob-drop-2:   rgb(0 0 0 / 34%);
+
+      --ring:          rgb(70 194 102 / 52%);
+    }
+  }
+
+  /* ---- Tokens: dark (explicit toggle) ---- */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --canvas:        #16181c;
+    --panel:         #20242b;
+    --hairline:      rgb(255 255 255 / 10%);
+
+    --ink:           rgb(237 240 244 / 92%);
+    --ink-soft:      rgb(237 240 244 / 62%);
+    --ink-faint:     rgb(237 240 244 / 42%);
+
+    --track-off:         #2b3037;
+    --track-off-lip-top: rgb(0 0 0 / 55%);
+    --track-off-lip-bot: rgb(255 255 255 / 12%);
+
+    --accent:            #2fa84e;
+    --accent-hi:         #46c266;
+    --accent-lip-top:    rgb(0 0 0 / 45%);
+    --accent-lip-bot:    rgb(255 255 255 / 20%);
+
+    --knob-top:      #f3f5f8;
+    --knob-bot:      #c9cfd7;
+    --knob-gloss:    rgb(255 255 255 / 80%);
+    --knob-edge:     rgb(0 0 0 / 28%);
+    --knob-drop:     rgb(0 0 0 / 55%);
+    --knob-drop-2:   rgb(0 0 0 / 34%);
+
+    --ring:          rgb(70 194 102 / 52%);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    padding: clamp(24px, 5vw, 64px);
+  }
+
+  .sheet { max-width: 880px; margin: 0 auto; }
+
+  /* ---- Header ---- */
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-size: clamp(24px, 4vw, 32px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+  }
+  .lede {
+    max-width: 62ch;
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  .theme-btn {
+    flex: none;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: 9px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .theme-btn:hover { color: var(--ink); }
+  .theme-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  /* ---- Section titles ---- */
+  h2 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 44px 0 18px;
+  }
+
+  /* ---- Grid of spec cells ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .cell {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    padding: 26px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .cell .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+  }
+  .cell .name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .cell .note {
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-align: center;
+    margin-top: -10px;
+  }
+
+  /* Size-variant row wants a little more room */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 30px;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    padding: 28px 26px;
+  }
+  .row .unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .row .unit .name { font-size: 12px; color: var(--ink-faint); }
+
+  /* A control paired with its label, as used in real UI */
+  .field {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .field .label { font-size: 14px; color: var(--ink); }
+
+  /* ============================================================
+     THE SWITCH
+     ============================================================ */
+  .switch {
+    /* size knobs (medium default) */
+    --w: 52px;
+    --h: 30px;
+    --pad: 3px;
+    --knob: calc(var(--h) - var(--pad) * 2);
+    --travel: calc(var(--w) - var(--knob) - var(--pad) * 2);
+
+    position: relative;
+    display: inline-block;
+    width: var(--w);
+    height: var(--h);
+    flex: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    border-radius: 999px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .switch.sm { --w: 42px; --h: 25px; --pad: 3px; }
+  .switch.lg { --w: 64px; --h: 37px; --pad: 4px; }
+
+  /* Recessed track */
+  .track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: var(--track-off);
+    box-shadow:
+      inset 0 2px 3px var(--track-off-lip-top),
+      inset 0 -1px 1px var(--track-off-lip-bot),
+      inset 0 0 0 1px rgb(17 20 24 / 6%);
+    transition: background-color 220ms cubic-bezier(.4,.1,.2,1),
+                box-shadow 220ms ease;
+  }
+
+  /* Raised glossy knob */
+  .knob {
+    position: absolute;
+    top: var(--pad);
+    left: var(--pad);
+    width: var(--knob);
+    height: var(--knob);
+    border-radius: 50%;
+    background: linear-gradient(180deg, var(--knob-top) 0%, var(--knob-bot) 100%);
+    box-shadow:
+      0 2px 4px var(--knob-drop),
+      0 1px 1px var(--knob-drop-2),
+      inset 0 1px 1px var(--knob-gloss),
+      inset 0 -1px 2px var(--knob-edge),
+      0 0 0 1px var(--knob-edge);
+    transition: transform 240ms cubic-bezier(.34,1.4,.5,1),
+                box-shadow 200ms ease,
+                width 200ms ease, height 200ms ease, top 200ms ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Gloss cap on the knob */
+  .knob::after {
+    content: "";
+    position: absolute;
+    top: 14%;
+    left: 16%;
+    width: 60%;
+    height: 42%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 50%, var(--knob-gloss), transparent 72%);
+    pointer-events: none;
+  }
+
+  /* ON state */
+  .switch[aria-checked="true"] .track {
+    background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+    box-shadow:
+      inset 0 2px 3px var(--accent-lip-top),
+      inset 0 -1px 1px var(--accent-lip-bot),
+      inset 0 0 0 1px rgb(9 46 20 / 18%);
+  }
+  .switch[aria-checked="true"] .knob {
+    transform: translateX(var(--travel));
+  }
+
+  /* Hover: knob lifts a touch (real + forced-preview class) */
+  .switch:hover:not([disabled]) .knob,
+  .switch.is-hover .knob {
+    box-shadow:
+      0 4px 8px var(--knob-drop),
+      0 2px 3px var(--knob-drop-2),
+      inset 0 1px 1px var(--knob-gloss),
+      inset 0 -1px 2px var(--knob-edge),
+      0 0 0 1px var(--knob-edge);
+  }
+
+  /* Focus-visible: a ring on the track (real + forced-preview) */
+  .switch:focus-visible { outline: none; }
+  .switch:focus-visible .track,
+  .switch.is-focus .track {
+    box-shadow:
+      inset 0 2px 3px var(--track-off-lip-top),
+      inset 0 -1px 1px var(--track-off-lip-bot),
+      0 0 0 3px var(--ring);
+  }
+  .switch[aria-checked="true"]:focus-visible .track,
+  .switch[aria-checked="true"].is-focus .track {
+    box-shadow:
+      inset 0 2px 3px var(--accent-lip-top),
+      inset 0 -1px 1px var(--accent-lip-bot),
+      0 0 0 3px var(--ring);
+  }
+
+  /* Active / pressed: the knob squashes into the well */
+  .switch:active:not([disabled]) .knob,
+  .switch.is-active .knob {
+    width: calc(var(--knob) + 3px);
+    box-shadow:
+      0 1px 2px var(--knob-drop),
+      inset 0 1px 1px var(--knob-gloss),
+      inset 0 -1px 2px var(--knob-edge),
+      0 0 0 1px var(--knob-edge);
+  }
+
+  /* Disabled: flattened, no depth cues, cursor blocked */
+  .switch[disabled] {
+    cursor: not-allowed;
+  }
+  .switch[disabled] .track {
+    background: var(--track-off);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .switch[disabled][aria-checked="true"] .track {
+    background: color-mix(in srgb, var(--accent) 42%, var(--track-off));
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .switch[disabled] .knob {
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--knob-top) 70%, var(--track-off)),
+      color-mix(in srgb, var(--knob-bot) 70%, var(--track-off)));
+    box-shadow: 0 1px 1px var(--knob-drop-2), 0 0 0 1px var(--knob-edge);
+  }
+  .switch[disabled] .knob::after { background: none; }
+  .switch[disabled] .field-tint { color: var(--ink-faint); }
+
+  /* Loading: spinner in the knob, control busy */
+  .switch[aria-busy="true"] { cursor: progress; }
+  .spinner {
+    width: 56%;
+    height: 56%;
+    display: none;
+  }
+  .switch[aria-busy="true"] .spinner { display: block; }
+  .spinner circle {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3.4;
+    stroke-linecap: round;
+    stroke-dasharray: 44 90;
+    transform-origin: center;
+    animation: spin 900ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    margin-top: 52px;
+    padding-top: 22px;
+    border-top: 1px solid var(--hairline);
+    color: var(--ink-faint);
+    font-size: 12.5px;
+  }
+  footer code {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    color: var(--ink-soft);
+  }
+
+  /* Reduced motion: keep the state change, drop the movement */
+  @media (prefers-reduced-motion: reduce) {
+    .track, .knob { transition: none; }
+    .spinner circle { animation: none; stroke-dasharray: 90 44; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="head">
+    <div>
+      <p class="eyebrow">Selection family</p>
+      <h1>Switch · tactile</h1>
+      <p class="lede">A binary control with measured physical depth: the track sits recessed into the
+        surface, the knob is raised and glossy, and its shadow travels as it slides. Depth here reads
+        the affordance, it does not decorate. Every state below is live: click a switch, or tab to it
+        and press space.</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-live="polite">Dark theme</button>
+  </div>
+
+  <h2>States</h2>
+  <div class="grid" id="stateGrid">
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Default, off"></button>
+      </div>
+      <div class="name">Default · off</div>
+      <div class="note">Recessed track, raised knob</div>
+    </div>
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Default, on"></button>
+      </div>
+      <div class="name">Default · on</div>
+      <div class="note">Accent fill, knob at travel</div>
+    </div>
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch is-hover" type="button" role="switch" aria-checked="false" aria-label="Hover preview" tabindex="-1"></button>
+      </div>
+      <div class="name">Hover</div>
+      <div class="note">Knob lifts, shadow deepens</div>
+    </div>
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch is-focus" type="button" role="switch" aria-checked="true" aria-label="Focus preview" tabindex="-1"></button>
+      </div>
+      <div class="name">Focus-visible</div>
+      <div class="note">Ring on the track</div>
+    </div>
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch is-active" type="button" role="switch" aria-checked="false" aria-label="Pressed preview" tabindex="-1"></button>
+      </div>
+      <div class="name">Pressed</div>
+      <div class="note">Knob squashes into the well</div>
+    </div>
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Disabled, off" disabled></button>
+      </div>
+      <div class="name">Disabled · off</div>
+      <div class="note">Depth cues removed</div>
+    </div>
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Disabled, on" disabled></button>
+      </div>
+      <div class="name">Disabled · on</div>
+      <div class="note">Muted accent, flat</div>
+    </div>
+
+    <div class="cell">
+      <div class="stage">
+        <button class="switch" type="button" role="switch" aria-checked="true" aria-busy="true" aria-label="Loading">
+          <span class="track"></span>
+          <span class="knob">
+            <svg class="spinner" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+          </span>
+        </button>
+      </div>
+      <div class="name">Loading</div>
+      <div class="note">Spinner in the knob while a change settles</div>
+    </div>
+
+  </div>
+
+  <h2>Size variants</h2>
+  <div class="row">
+    <div class="unit">
+      <button class="switch sm" type="button" role="switch" aria-checked="true" aria-label="Small"></button>
+      <span class="name">Small</span>
+    </div>
+    <div class="unit">
+      <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Medium"></button>
+      <span class="name">Medium</span>
+    </div>
+    <div class="unit">
+      <button class="switch lg" type="button" role="switch" aria-checked="true" aria-label="Large"></button>
+      <span class="name">Large</span>
+    </div>
+  </div>
+
+  <h2>In context</h2>
+  <div class="row">
+    <label class="field">
+      <button class="switch" type="button" role="switch" aria-checked="true" id="ctx1"></button>
+      <span class="label" id="ctx1lbl">Notify me by email</span>
+    </label>
+    <label class="field">
+      <button class="switch" type="button" role="switch" aria-checked="false" id="ctx2"></button>
+      <span class="label" id="ctx2lbl">Two-factor prompts</span>
+    </label>
+  </div>
+
+  <footer>
+    Ontology cell: <code>selection / switch / tactile</code>. Ink and fills are set with alpha
+    colours throughout, never the CSS opacity property. Honours prefers-reduced-motion and
+    prefers-colour-scheme, with a manual theme toggle.
+  </footer>
+
+</div>
+
+<script>
+  // Every interactive switch flips aria-checked; label preview cells are not wired.
+  document.querySelectorAll('.switch').forEach(function (sw) {
+    if (sw.hasAttribute('disabled') || sw.getAttribute('aria-busy') === 'true') return;
+    // The preview cells (is-hover/is-focus/is-active) are documentation only.
+    if (sw.classList.contains('is-hover') || sw.classList.contains('is-focus') || sw.classList.contains('is-active')) return;
+
+    // Ensure the internal parts exist (cells authored without them get them here).
+    if (!sw.querySelector('.track')) {
+      var t = document.createElement('span'); t.className = 'track';
+      var k = document.createElement('span'); k.className = 'knob';
+      sw.appendChild(t); sw.appendChild(k);
+    }
+    function toggle() {
+      var on = sw.getAttribute('aria-checked') === 'true';
+      sw.setAttribute('aria-checked', String(!on));
+    }
+    sw.addEventListener('click', toggle);
+    sw.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  // Give the static (part-less) preview + non-interactive switches their track/knob too.
+  document.querySelectorAll('.switch').forEach(function (sw) {
+    if (!sw.querySelector('.track')) {
+      var t = document.createElement('span'); t.className = 'track';
+      var k = document.createElement('span'); k.className = 'knob';
+      sw.appendChild(t); sw.appendChild(k);
+    }
+  });
+
+  // Theme toggle: cycles the explicit data-theme, falling back to system on first click.
+  var root = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  function systemDark() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function label() {
+    var t = root.getAttribute('data-theme');
+    var dark = t ? t === 'dark' : systemDark();
+    btn.textContent = dark ? 'Light theme' : 'Dark theme';
+  }
+  btn.addEventListener('click', function () {
+    var t = root.getAttribute('data-theme');
+    var dark = t ? t === 'dark' : systemDark();
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    label();
+  });
+  label();
+</script>
+</body>
+</html>

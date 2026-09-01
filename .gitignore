@@ -1,0 +1,16 @@
+# Kept local, not redistributed in this public repository
+
+# Apple's copyrighted Liquid Glass documentation code (reference only, kept on disk)
+glass/liquid-glass/apple/
+
+# The full glass bible, provenance unsettled. The distilled bible.md is authored and is committed.
+glass/bible-full.md
+
+# Generated build artifact: the static gallery manifest is regenerated on deploy
+gallery/public/index.json
+
+# Python and OS noise
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

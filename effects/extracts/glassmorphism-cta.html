@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  Effect: Glassmorphism CTA (shimmering glass call-to-action button)
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: CDN Tailwind, remote Supabase headshot image, Lucide/Iconify markup,
+  data-element-locator attributes, and the preview auto-centring script; Tailwind
+  utilities rewritten as plain hand-written CSS; headshot replaced with a neutral
+  CSS gradient avatar placeholder.
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glassmorphism CTA</title>
+  <style>
+    :root {
+      --spread: 90deg;
+      --shimmer-color: rgba(255, 255, 255, 0.6);
+      --speed: 4s;
+      --cut: 1px;
+      --bg: rgba(255, 255, 255, 0.05);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: #ffffff;
+      background:
+        radial-gradient(1200px 800px at 50% 40%, #1a1c2e 0%, #0a0b14 55%, #000000 100%);
+      overflow: hidden;
+    }
+
+    /* Outer button shell: rounded pill that clips the rotating shimmer */
+    .cta {
+      position: relative;
+      display: inline-flex;
+      isolation: isolate;
+      cursor: pointer;
+      overflow: hidden;
+      border-radius: 9999px;
+      text-decoration: none;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 8px 40px rgba(129, 140, 248, 0.25);
+    }
+
+    .cta:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px 8px rgba(129, 140, 248, 0.35);
+    }
+
+    /* Rotating conic-gradient shimmer that sweeps the pill edge */
+    .cta__shimmer {
+      position: absolute;
+      inset: -200%;
+      width: 400%;
+      height: 400%;
+      animation: rotate-gradient var(--speed) linear infinite;
+    }
+
+    .cta__shimmer::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: conic-gradient(
+        from calc(270deg - (var(--spread) * 0.5)),
+        transparent 0,
+        var(--shimmer-color) var(--spread),
+        transparent var(--spread)
+      );
+    }
+
+    /* Frosted glass fill sitting just inside the shimmer edge */
+    .cta__glass {
+      position: absolute;
+      inset: var(--cut);
+      border-radius: 9999px;
+      background: var(--bg);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+
+    /* Content row */
+    .cta__content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #ffffff;
+      border-radius: 9999px;
+    }
+
+    /* Rotating border beam behind the inner dark plate */
+    .cta__beam {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200%;
+      height: 200%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      animation: border-beam 4s infinite linear;
+    }
+
+    /* Inner dark plate that gives the pill its solid body */
+    .cta__plate {
+      position: absolute;
+      inset: 1px;
+      border-radius: 9999px;
+      background: rgba(10, 11, 20, 0.8);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Neutral avatar placeholder (replaces the remote headshot) */
+    .cta__avatar {
+      position: relative;
+      z-index: 10;
+      width: 32px;
+      height: 32px;
+      border-radius: 9999px;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.85) 0 22%, transparent 23%),
+        radial-gradient(circle at 50% 92%, rgba(255, 255, 255, 0.85) 0 40%, transparent 41%),
+        linear-gradient(160deg, #6366f1, #8b5cf6);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    .cta__label {
+      position: relative;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    /* Trailing action chip with arrow */
+    .cta__chip {
+      position: relative;
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-left: 4px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .cta__chip svg {
+      width: 18px;
+      height: 18px;
+      color: #ffffff;
+    }
+
+    @keyframes rotate-gradient {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    @keyframes border-beam {
+      0%   { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cta__shimmer, .cta__beam { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#" class="cta" aria-label="Generate my site">
+    <span class="cta__shimmer" aria-hidden="true"></span>
+    <span class="cta__glass" aria-hidden="true"></span>
+    <span class="cta__content">
+      <span class="cta__beam" aria-hidden="true"></span>
+      <span class="cta__plate" aria-hidden="true"></span>
+      <span class="cta__avatar" aria-hidden="true"></span>
+      <span class="cta__label">Generate my site</span>
+      <span class="cta__chip" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/>
+          <path d="m14 7 3 3"/>
+          <path d="M5 6v4"/>
+          <path d="M19 14v4"/>
+          <path d="M10 2v2"/>
+          <path d="M7 8H3"/>
+          <path d="M21 16h-4"/>
+          <path d="M11 3H9"/>
+        </svg>
+      </span>
+    </span>
+  </a>
+</body>
+</html>

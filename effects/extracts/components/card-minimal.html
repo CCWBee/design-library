@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card · minimal</title>
+<style>
+  /* ---- Tokens: light is the base, dark redefines the same names ---- */
+  :root {
+    color-scheme: light dark;
+
+    --canvas:        #ffffff;
+    --sheet:         #ffffff;
+    --sunk:          rgb(0 0 0 / 4%);
+
+    --ink-1:         rgb(0 0 0 / 92%);   /* primary text */
+    --ink-2:         rgb(0 0 0 / 64%);   /* supporting text */
+    --ink-3:         rgb(0 0 0 / 44%);   /* metadata */
+
+    --line:          rgb(0 0 0 / 10%);   /* hairline border */
+    --line-strong:   rgb(0 0 0 / 18%);   /* border on hover */
+    --fill-hover:    rgb(0 0 0 / 4%);
+    --fill-press:    rgb(0 0 0 / 9%);
+
+    --ring:          rgb(0 0 0 / 80%);   /* focus-visible ring */
+
+    --skeleton:      rgb(0 0 0 / 8%);
+
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+
+    --r-md: 8px; --r-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:      #0e0e10;
+      --sheet:       #161618;
+      --sunk:        rgb(255 255 255 / 4%);
+
+      --ink-1:       rgb(255 255 255 / 92%);
+      --ink-2:       rgb(255 255 255 / 66%);
+      --ink-3:       rgb(255 255 255 / 46%);
+
+      --line:        rgb(255 255 255 / 14%);
+      --line-strong: rgb(255 255 255 / 24%);
+      --fill-hover:  rgb(255 255 255 / 6%);
+      --fill-press:  rgb(255 255 255 / 11%);
+
+      --ring:        rgb(255 255 255 / 88%);
+
+      --skeleton:    rgb(255 255 255 / 10%);
+    }
+  }
+
+  /* Explicit toggle wins in both directions */
+  :root[data-theme="dark"] {
+    --canvas:      #0e0e10;
+    --sheet:       #161618;
+    --sunk:        rgb(255 255 255 / 4%);
+    --ink-1:       rgb(255 255 255 / 92%);
+    --ink-2:       rgb(255 255 255 / 66%);
+    --ink-3:       rgb(255 255 255 / 46%);
+    --line:        rgb(255 255 255 / 14%);
+    --line-strong: rgb(255 255 255 / 24%);
+    --fill-hover:  rgb(255 255 255 / 6%);
+    --fill-press:  rgb(255 255 255 / 11%);
+    --ring:        rgb(255 255 255 / 88%);
+    --skeleton:    rgb(255 255 255 / 10%);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-5) var(--s-8);
+  }
+
+  /* ---- Spec sheet header ---- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    flex-wrap: wrap;
+  }
+
+  .masthead h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .masthead .cell {
+    color: var(--ink-3);
+    font-size: 0.85rem;
+    margin-top: var(--s-2);
+  }
+
+  .lede {
+    color: var(--ink-2);
+    max-width: 40rem;
+    margin: var(--s-4) 0 0;
+  }
+
+  /* Plain theme toggle, no chrome beyond a hairline control */
+  .toggle {
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: var(--sheet);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease;
+  }
+  .toggle:hover { background: var(--fill-hover); border-color: var(--line-strong); }
+  .toggle:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* ---- Section rhythm: whitespace, one hairline chapter rule at most ---- */
+  section { margin-top: var(--s-8); }
+
+  .section-head {
+    font-size: 0.8rem;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-4);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--s-4);
+  }
+
+  /* Each specimen labelled beneath, bound to its card by a small gap */
+  .specimen { display: flex; flex-direction: column; }
+  .specimen > .label {
+    margin-top: var(--s-2);
+    font-size: 0.8rem;
+    color: var(--ink-3);
+  }
+  .specimen > .note {
+    font-size: 0.78rem;
+    color: var(--ink-3);
+    margin-top: 2px;
+  }
+
+  /* ============================================================
+     THE COMPONENT: card, minimal register, family surfaces
+     A hairline-bordered sheet. Interactive variant reacts to
+     pointer, keyboard and press. No shadow by default; elevation
+     is opt-in and only when it encodes "this floats above".
+     ============================================================ */
+  .card {
+    background: var(--sheet);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: var(--s-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  .card .kicker { color: var(--ink-3); font-size: 0.78rem; }
+  .card .title  { color: var(--ink-1); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+  .card .body   { color: var(--ink-2); font-size: 0.9rem; margin: 0; }
+
+  /* Interactive card: a full card acting as one control (link/button-like) */
+  .card--action {
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    width: 100%;
+    color: inherit;
+    transition:
+      background 160ms ease,
+      border-color 160ms ease,
+      transform 160ms ease-out;
+  }
+  .card--action:hover {
+    background: var(--fill-hover);
+    border-color: var(--line-strong);
+  }
+  .card--action:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .card--action:active {
+    background: var(--fill-press);
+    transform: translateY(1px);
+  }
+  .card--action:disabled,
+  .card--action[aria-disabled="true"] {
+    cursor: not-allowed;
+    background: var(--sunk);
+    border-color: var(--line);
+  }
+  /* Disabled ink sits on lower rungs via alpha, never the opacity property */
+  .card--action:disabled .title,
+  .card--action[aria-disabled="true"] .title { color: var(--ink-3); }
+  .card--action:disabled .body,
+  .card--action:disabled .kicker,
+  .card--action[aria-disabled="true"] .body,
+  .card--action[aria-disabled="true"] .kicker { color: var(--ink-3); }
+
+  /* Elevated variant: opt-in, a barely-visible neutral shadow, no glow */
+  .card--raised {
+    border-color: transparent;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 6px 16px rgb(0 0 0 / 6%);
+  }
+  :root[data-theme="dark"] .card--raised {
+    border-color: var(--line);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 20px rgb(0 0 0 / 32%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .card--raised {
+      border-color: var(--line);
+      box-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 20px rgb(0 0 0 / 32%);
+    }
+  }
+
+  /* Size variants: padding and radius scale, hierarchy holds */
+  .card--sm { padding: var(--s-3); border-radius: var(--r-md); gap: var(--s-1); }
+  .card--sm .title { font-size: 0.95rem; }
+  .card--lg { padding: var(--s-5); gap: var(--s-3); }
+  .card--lg .title { font-size: 1.2rem; }
+
+  /* Loading: skeleton lines pulse opacity slowly, never a shimmer sweep */
+  .card[aria-busy="true"] { pointer-events: none; }
+  .skeleton {
+    background: var(--skeleton);
+    border-radius: 6px;
+    height: 0.8rem;
+    animation: pulse 1600ms ease-in-out infinite;
+  }
+  .skeleton.line-title { height: 1rem; width: 55%; }
+  .skeleton.line-1 { width: 100%; }
+  .skeleton.line-2 { width: 80%; }
+  @keyframes pulse {
+    0%, 100% { background: var(--skeleton); }
+    50%      { background: color-mix(in srgb, var(--skeleton) 45%, transparent); }
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card--action, .toggle { transition: background 120ms ease, border-color 120ms ease; }
+    .card--action:active { transform: none; }
+    .skeleton { animation: none; }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    /* Nothing here relies on translucency for legibility; sheets stay solid. */
+    :root { --sheet: #ffffff; }
+    :root[data-theme="dark"] { --sheet: #161618; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="masthead">
+    <div>
+      <h1>Card</h1>
+      <div class="cell">surfaces · card · minimal</div>
+    </div>
+    <button class="toggle" id="themeToggle" type="button" aria-live="polite">Theme: system</button>
+  </header>
+
+  <p class="lede">
+    A hairline sheet that holds one idea. Structure comes from space and a single 10% border, not
+    from shadow. The interactive variant behaves as one control: it hovers, takes a visible focus
+    ring, presses, disables and loads.
+  </p>
+
+  <!-- STATES: interactive card -->
+  <section>
+    <h2 class="section-head">States</h2>
+    <div class="grid">
+
+      <div class="specimen">
+        <button class="card card--action" type="button">
+          <span class="kicker">Project</span>
+          <span class="title">Harbour survey</span>
+          <span class="body">Tidal readings for the week of 18 August.</span>
+        </button>
+        <span class="label">Default</span>
+      </div>
+
+      <div class="specimen">
+        <button class="card card--action" type="button" style="background:var(--fill-hover);border-color:var(--line-strong);">
+          <span class="kicker">Project</span>
+          <span class="title">Harbour survey</span>
+          <span class="body">Tidal readings for the week of 18 August.</span>
+        </button>
+        <span class="label">Hover</span>
+        <span class="note">Fill lifts one rung, border strengthens.</span>
+      </div>
+
+      <div class="specimen">
+        <button class="card card--action" type="button" style="outline:2px solid var(--ring);outline-offset:2px;">
+          <span class="kicker">Project</span>
+          <span class="title">Harbour survey</span>
+          <span class="body">Tidal readings for the week of 18 August.</span>
+        </button>
+        <span class="label">Focus-visible</span>
+        <span class="note">Tab to the live cards to see the real ring.</span>
+      </div>
+
+      <div class="specimen">
+        <button class="card card--action" type="button" style="background:var(--fill-press);transform:translateY(1px);">
+          <span class="kicker">Project</span>
+          <span class="title">Harbour survey</span>
+          <span class="body">Tidal readings for the week of 18 August.</span>
+        </button>
+        <span class="label">Pressed</span>
+        <span class="note">Fill deepens, surface sinks 1px.</span>
+      </div>
+
+      <div class="specimen">
+        <button class="card card--action" type="button" aria-disabled="true" disabled>
+          <span class="kicker">Project</span>
+          <span class="title">Harbour survey</span>
+          <span class="body">Tidal readings for the week of 18 August.</span>
+        </button>
+        <span class="label">Disabled</span>
+        <span class="note">Ink drops to metadata rung, not the opacity property.</span>
+      </div>
+
+      <div class="specimen">
+        <div class="card" aria-busy="true" aria-label="Loading project">
+          <span class="sr-only">Loading</span>
+          <span class="skeleton line-title" aria-hidden="true"></span>
+          <span class="skeleton line-1" aria-hidden="true"></span>
+          <span class="skeleton line-2" aria-hidden="true"></span>
+        </div>
+        <span class="label">Loading</span>
+        <span class="note">Slow opacity pulse, no shimmer sweep.</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SIZE VARIANTS -->
+  <section>
+    <h2 class="section-head">Size</h2>
+    <div class="grid">
+
+      <div class="specimen">
+        <button class="card card--action card--sm" type="button">
+          <span class="kicker">Note</span>
+          <span class="title">Compact</span>
+          <span class="body">Tighter padding for dense lists.</span>
+        </button>
+        <span class="label">Small</span>
+      </div>
+
+      <div class="specimen">
+        <button class="card card--action" type="button">
+          <span class="kicker">Note</span>
+          <span class="title">Default</span>
+          <span class="body">The working size for most surfaces.</span>
+        </button>
+        <span class="label">Default</span>
+      </div>
+
+      <div class="specimen">
+        <button class="card card--action card--lg" type="button">
+          <span class="kicker">Note</span>
+          <span class="title">Roomy</span>
+          <span class="body">More air for a single dominant card.</span>
+        </button>
+        <span class="label">Large</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SURFACE VARIANTS -->
+  <section>
+    <h2 class="section-head">Surface</h2>
+    <div class="grid">
+
+      <div class="specimen">
+        <div class="card">
+          <span class="kicker">Static</span>
+          <span class="title">Content sheet</span>
+          <p class="body">A plain container. No pointer behaviour, hairline border, one idea inside.</p>
+        </div>
+        <span class="label">Hairline (default)</span>
+      </div>
+
+      <div class="specimen">
+        <div class="card card--raised">
+          <span class="kicker">Static</span>
+          <span class="title">Elevated sheet</span>
+          <p class="body">Opt-in shadow, used only when the card genuinely floats above the page.</p>
+        </div>
+        <span class="label">Raised</span>
+        <span class="note">Elevation encodes behaviour, not polish.</span>
+      </div>
+
+      <div class="specimen">
+        <div class="card" style="background:var(--sunk);border-color:transparent;">
+          <span class="kicker">Static</span>
+          <span class="title">Sunken sheet</span>
+          <p class="body">A very light neutral fill for a grouped or inset region.</p>
+        </div>
+        <span class="label">Sunken fill</span>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("themeToggle");
+    var order = ["system", "light", "dark"];
+    var labels = { system: "Theme: system", light: "Theme: light", dark: "Theme: dark" };
+
+    var stored = null;
+    try { stored = localStorage.getItem("card-minimal-theme"); } catch (e) {}
+    var state = order.indexOf(stored) >= 0 ? stored : "system";
+
+    function apply() {
+      if (state === "system") { root.removeAttribute("data-theme"); }
+      else { root.setAttribute("data-theme", state); }
+      btn.textContent = labels[state];
+      try { localStorage.setItem("card-minimal-theme", state); } catch (e) {}
+    }
+
+    btn.addEventListener("click", function () {
+      state = order[(order.indexOf(state) + 1) % order.length];
+      apply();
+    });
+
+    apply();
+  })();
+</script>
+</body>
+</html>

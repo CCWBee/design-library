@@ -1,0 +1,422 @@
+<title>Text field · minimal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ---- Tokens: light (default) -------------------------------------- */
+  :root {
+    --canvas:        #ffffff;
+    --surface:       rgb(0 0 0 / 3%);
+    --ink:           rgb(0 0 0 / 88%);
+    --ink-2:         rgb(0 0 0 / 62%);
+    --ink-3:         rgb(0 0 0 / 44%);
+    --placeholder:   rgb(0 0 0 / 40%);
+
+    --field-bg:      #ffffff;
+    --field-bd:      rgb(0 0 0 / 20%);
+    --field-bd-hover:rgb(0 0 0 / 36%);
+    --field-bd-focus:rgb(0 0 0 / 78%);
+    --ring:          rgb(0 0 0 / 12%);
+
+    --disabled-bg:   rgb(0 0 0 / 3%);
+    --disabled-bd:   rgb(0 0 0 / 12%);
+    --disabled-ink:  rgb(0 0 0 / 34%);
+
+    --danger:        #b3261e;
+    --danger-bd:     rgb(179 38 30 / 60%);
+    --danger-ring:   rgb(179 38 30 / 16%);
+
+    --spinner-track: rgb(0 0 0 / 14%);
+    --spinner-head:  rgb(0 0 0 / 62%);
+
+    --s-1: 4px; --s-2: 8px; --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+    --r-md: 8px; --r-lg: 12px;
+  }
+
+  /* System-preference dark, guarded so the toggle can override it. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:        #101012;
+      --surface:       rgb(255 255 255 / 4%);
+      --ink:           rgb(255 255 255 / 90%);
+      --ink-2:         rgb(255 255 255 / 64%);
+      --ink-3:         rgb(255 255 255 / 46%);
+      --placeholder:   rgb(255 255 255 / 42%);
+
+      --field-bg:      rgb(255 255 255 / 4%);
+      --field-bd:      rgb(255 255 255 / 22%);
+      --field-bd-hover:rgb(255 255 255 / 40%);
+      --field-bd-focus:rgb(255 255 255 / 82%);
+      --ring:          rgb(255 255 255 / 16%);
+
+      --disabled-bg:   rgb(255 255 255 / 3%);
+      --disabled-bd:   rgb(255 255 255 / 12%);
+      --disabled-ink:  rgb(255 255 255 / 34%);
+
+      --danger:        #f2b8b5;
+      --danger-bd:     rgb(242 184 181 / 58%);
+      --danger-ring:   rgb(242 184 181 / 18%);
+
+      --spinner-track: rgb(255 255 255 / 16%);
+      --spinner-head:  rgb(255 255 255 / 66%);
+    }
+  }
+
+  /* Explicit dark via the toggle. */
+  :root[data-theme="dark"] {
+    --canvas:        #101012;
+    --surface:       rgb(255 255 255 / 4%);
+    --ink:           rgb(255 255 255 / 90%);
+    --ink-2:         rgb(255 255 255 / 64%);
+    --ink-3:         rgb(255 255 255 / 46%);
+    --placeholder:   rgb(255 255 255 / 42%);
+
+    --field-bg:      rgb(255 255 255 / 4%);
+    --field-bd:      rgb(255 255 255 / 22%);
+    --field-bd-hover:rgb(255 255 255 / 40%);
+    --field-bd-focus:rgb(255 255 255 / 82%);
+    --ring:          rgb(255 255 255 / 16%);
+
+    --disabled-bg:   rgb(255 255 255 / 3%);
+    --disabled-bd:   rgb(255 255 255 / 12%);
+    --disabled-ink:  rgb(255 255 255 / 34%);
+
+    --danger:        #f2b8b5;
+    --danger-bd:     rgb(242 184 181 / 58%);
+    --danger-ring:   rgb(242 184 181 / 18%);
+
+    --spinner-track: rgb(255 255 255 / 16%);
+    --spinner-head:  rgb(255 255 255 / 66%);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-4) var(--s-8);
+  }
+
+  /* ---- Header ------------------------------------------------------- */
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-7);
+  }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    font-variant: small-caps;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-2);
+  }
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 var(--s-3);
+  }
+  .lede {
+    margin: 0;
+    max-width: 40rem;
+    color: var(--ink-2);
+  }
+
+  .toggle {
+    flex: none;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: var(--field-bg);
+    border: 1px solid var(--field-bd);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    cursor: pointer;
+    transition: border-color 160ms ease, background-color 160ms ease;
+  }
+  .toggle:hover { border-color: var(--field-bd-hover); }
+  .toggle:focus-visible {
+    outline: none;
+    border-color: var(--field-bd-focus);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+
+  /* ---- Spec sections ------------------------------------------------ */
+  section { margin-top: var(--s-7); }
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--s-1);
+  }
+  .note { margin: 0 0 var(--s-4); color: var(--ink-3); font-size: 0.9rem; max-width: 40rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--s-5) var(--s-4);
+  }
+  .cell { min-width: 0; }
+  .cell > .caption {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--ink-3);
+    margin-bottom: var(--s-2);
+  }
+
+  /* ---- The field itself --------------------------------------------- */
+  .field { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
+  .field > label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+
+  .control { position: relative; display: flex; }
+
+  .input {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: var(--field-bg);
+    border: 1px solid var(--field-bd);
+    border-radius: var(--r-md);
+    padding: 10px var(--s-3);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  }
+  .input::placeholder { color: var(--placeholder); }
+  .input:hover:not(:disabled):not(:read-only) { border-color: var(--field-bd-hover); }
+  .input:focus-visible,
+  .input:focus {
+    outline: none;
+    border-color: var(--field-bd-focus);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .input:disabled {
+    background: var(--disabled-bg);
+    border-color: var(--disabled-bd);
+    color: var(--disabled-ink);
+    cursor: not-allowed;
+  }
+  .input:disabled::placeholder { color: var(--disabled-ink); }
+
+  /* Sizes */
+  .input.sm { padding: 7px var(--s-2); font-size: 0.9rem; border-radius: 6px; }
+  .input.lg { padding: 13px var(--s-4); font-size: 1.05rem; border-radius: var(--r-lg); }
+
+  /* Trailing slot (spinner / clear) */
+  .input.has-trailing { padding-right: 40px; }
+  .trailing {
+    position: absolute;
+    top: 50%;
+    right: var(--s-3);
+    transform: translateY(-50%);
+    display: flex;
+    color: var(--ink-3);
+    pointer-events: none;
+  }
+
+  /* Error */
+  .input.error { border-color: var(--danger-bd); }
+  .input.error:focus-visible,
+  .input.error:focus { box-shadow: 0 0 0 4px var(--danger-ring); }
+  .msg { font-size: 0.82rem; color: var(--ink-3); }
+  .msg.error { color: var(--danger); }
+
+  /* Loading spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--spinner-track);
+    border-top-color: var(--spinner-head);
+    animation: spin 720ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 60ms !important; }
+    .spinner { animation-duration: 1600ms; }
+  }
+
+  /* Focus demo: force the ring visible so the sheet documents itself. */
+  .input.demo-focus {
+    border-color: var(--field-bd-focus);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+
+  footer {
+    margin-top: var(--s-8);
+    color: var(--ink-3);
+    font-size: 0.85rem;
+  }
+  code {
+    font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", Menlo, monospace;
+    font-size: 0.85em;
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 5px;
+  }
+</style>
+
+<div class="page">
+  <header class="head">
+    <div>
+      <p class="eyebrow">Inputs · minimal register</p>
+      <h1>Text field</h1>
+      <p class="lede">A hairline field on the canvas. Generous inner padding, a label above,
+        and a focus ring that thickens the border rather than adding a colour. Ink and fills
+        are set with alpha, never the opacity property.</p>
+    </div>
+    <button class="toggle" id="theme" type="button" aria-pressed="false">Dark</button>
+  </header>
+
+  <section aria-labelledby="states-h">
+    <h2 id="states-h">States</h2>
+    <p class="note">The full lifecycle of the control. Focus and pressed are pinned open here so the
+      sheet reads without interaction; the live inputs below still respond to the pointer and keyboard.</p>
+    <div class="grid">
+      <div class="cell">
+        <span class="caption">Default</span>
+        <div class="field">
+          <label for="s-default">Full name</label>
+          <div class="control"><input class="input" id="s-default" type="text" placeholder="Jane Le Brun"></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="caption">Hover (pointer over)</span>
+        <div class="field">
+          <label for="s-hover">Full name</label>
+          <div class="control"><input class="input" id="s-hover" type="text" placeholder="Jane Le Brun"></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="caption">Focus-visible (ring pinned)</span>
+        <div class="field">
+          <label for="s-focus">Full name</label>
+          <div class="control"><input class="input demo-focus" id="s-focus" type="text" value="Jane Le Brun"></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="caption">Filled (value present)</span>
+        <div class="field">
+          <label for="s-filled">Full name</label>
+          <div class="control"><input class="input" id="s-filled" type="text" value="Jane Le Brun"></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="caption">Disabled</span>
+        <div class="field">
+          <label for="s-disabled">Full name</label>
+          <div class="control"><input class="input" id="s-disabled" type="text" value="Locked value" disabled></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="caption">Loading (async check)</span>
+        <div class="field">
+          <label for="s-loading">Username</label>
+          <div class="control">
+            <input class="input has-trailing" id="s-loading" type="text" value="jane.lb" aria-busy="true">
+            <span class="trailing"><span class="spinner" role="status" aria-label="Checking availability"></span></span>
+          </div>
+          <span class="msg">Checking availability</span>
+        </div>
+      </div>
+
+      <div class="cell">
+        <span class="caption">Error</span>
+        <div class="field">
+          <label for="s-error">Email address</label>
+          <div class="control"><input class="input error" id="s-error" type="email" value="jane@" aria-invalid="true" aria-describedby="s-error-msg"></div>
+          <span class="msg error" id="s-error-msg">Enter a complete email address.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="sizes-h">
+    <h2 id="sizes-h">Size variants</h2>
+    <p class="note">Three heights on the same 8px rhythm. Padding and radius scale together; the label
+      and ink stay constant so the family reads as one control.</p>
+    <div class="grid">
+      <div class="cell">
+        <span class="caption">Small</span>
+        <div class="field">
+          <label for="v-sm">Search</label>
+          <div class="control"><input class="input sm" id="v-sm" type="search" placeholder="Filter records"></div>
+        </div>
+      </div>
+      <div class="cell">
+        <span class="caption">Medium (default)</span>
+        <div class="field">
+          <label for="v-md">Search</label>
+          <div class="control"><input class="input" id="v-md" type="search" placeholder="Filter records"></div>
+        </div>
+      </div>
+      <div class="cell">
+        <span class="caption">Large</span>
+        <div class="field">
+          <label for="v-lg">Search</label>
+          <div class="control"><input class="input lg" id="v-lg" type="search" placeholder="Filter records"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="live-h">
+    <h2 id="live-h">Live sample</h2>
+    <p class="note">Type here to see hover, focus, and filled states behave. Keyboard focus draws the ring;
+      pointer hover lifts the border by one alpha rung.</p>
+    <div class="grid">
+      <div class="cell">
+        <div class="field">
+          <label for="live">Message subject</label>
+          <div class="control"><input class="input" id="live" type="text" placeholder="What is this about?"></div>
+          <span class="msg">Plain helper text sits at tertiary ink.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Ontology cell <code>inputs / text-field / minimal</code>. Self-contained over
+    <code>file://</code>: system font stack, no external references, no build step.
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("theme");
+    function prefersDark() {
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    function sync(isDark) {
+      root.setAttribute("data-theme", isDark ? "dark" : "light");
+      btn.textContent = isDark ? "Light" : "Dark";
+      btn.setAttribute("aria-pressed", String(isDark));
+    }
+    // Start from the current effective theme, then let the button take over.
+    sync(prefersDark());
+    btn.addEventListener("click", function () {
+      sync(root.getAttribute("data-theme") !== "dark");
+    });
+  })();
+</script>
