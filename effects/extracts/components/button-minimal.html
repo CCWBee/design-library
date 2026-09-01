@@ -340,7 +340,27 @@
     .wrap { padding: var(--s-6) var(--s-3); }
     h1 { font-size: 1.875rem; }
   }
+
+  /* ---- Gallery hero: the primary instance, alone on the canvas ---- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--canvas);
+    padding: var(--s-6) var(--s-4);
+  }
+  .hero .btn {
+    font-size: 1.25rem;
+    min-height: 60px;
+    padding: 0 32px;
+    border-radius: var(--r-lg);
+  }
 </style>
+
+<section class="hero" aria-hidden="true">
+  <button class="btn" type="button">Save changes</button>
+</section>
 
 <div class="wrap">
   <header>

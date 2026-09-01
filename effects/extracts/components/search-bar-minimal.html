@@ -293,7 +293,30 @@
     .search:focus-within,
     .search.is-focus { box-shadow: 0 0 0 2px var(--border-strong); }
   }
+
+  /* ---- Preview hero: the primary instance, alone on the canvas ------ */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-6) var(--s-4);
+    background: var(--canvas);
+  }
+  .hero .search { width: 100%; max-width: 34rem; }
 </style>
+
+<section class="hero" aria-hidden="true">
+  <form class="search" role="search" autocomplete="off" onsubmit="return false">
+    <span class="search__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+        <path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <input class="search__input" type="search" name="q" placeholder="Search the library" aria-label="Search the library" tabindex="-1">
+  </form>
+</section>
 
 <div class="wrap">
   <div class="topbar">

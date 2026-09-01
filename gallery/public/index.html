@@ -31,12 +31,15 @@
 
   <div class="toolbar" id="toolbar">
     <div class="toolbar-inner">
-      <div class="search">
-        <label class="visually-hidden" for="search">Search by name, register, type or family</label>
-        <input type="search" id="search" autocomplete="off" spellcheck="false"
-               placeholder="Search by name, register, type or family">
+      <div class="toolbar-top">
+        <div class="search">
+          <label class="visually-hidden" for="search">Search by name, group, register, type or family</label>
+          <input type="search" id="search" autocomplete="off" spellcheck="false"
+                 placeholder="Search by name, group, register or type">
+        </div>
+        <div class="filters filters-register" id="register-filters" role="group" aria-label="Filter by register"></div>
       </div>
-      <div class="filters" id="cat-filters" role="group" aria-label="Filter by category"></div>
+      <div class="filters filters-group" id="group-filters" role="group" aria-label="Filter by group"></div>
     </div>
     <div class="active-filter" id="active-filter" hidden>
       <span id="active-filter-text"></span>

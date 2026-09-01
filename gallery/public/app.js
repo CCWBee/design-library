@@ -7,13 +7,29 @@
 (function () {
   var DATA = null;
   var VIEW = 'gallery';
-  var FILTER = { text: '', category: 'all', ont: null };
+  var FILTER = { text: '', group: 'all', register: 'all', ont: null };
   var TEXT_CACHE = {}; // fileUrl -> Promise<string>
   var loadObs = null;
   var unloadObs = null;
   var lastFocus = null;
 
   var REGISTER_ORDER = ['minimal', 'glass', 'tactile', 'shader'];
+
+  // Display order for the group filter: component families first, then the
+  // effect themes, then the remaining categories. Groups not listed here sort
+  // after, alphabetically.
+  var GROUP_ORDER = [
+    'Actions', 'Inputs', 'Selection', 'Navigation', 'Surfaces', 'Feedback',
+    'Components',
+    'Glass and material', 'Orbs and spheres', 'Fields, particles and flow',
+    'Buttons and CTAs', 'Typography and text', 'Scenes and landscapes',
+    'Loaders and UI chrome', 'Effects',
+    'AI-native', 'Apple', 'Docs'
+  ];
+
+  // Chip element registries so counts and active state update without a rebuild.
+  var GROUP_CHIPS = {};      // group id -> { btn, count }
+  var REGISTER_CHIPS = {};   // register id -> { btn, count }
 
   // ---- small helpers ----------------------------------------------------
 
@@ -128,7 +144,8 @@
       .then(function (data) {
         DATA = data;
         DATA.items = DATA.items || [];
-        buildCategories();
+        buildGroupFilters();
+        buildRegisterFilters();
         buildLegend();
         renderOntology();
         applyFilters();
@@ -152,41 +169,95 @@
     box.appendChild(card);
   }
 
-  // ---- categories -------------------------------------------------------
+  // ---- group and register filters ---------------------------------------
 
-  function buildCategories() {
-    var wrap = $('cat-filters');
-    wrap.innerHTML = '';
-    var cats = [{ id: 'all', label: 'All', count: DATA.items.length }];
-    (DATA.categories || []).forEach(function (c) { cats.push(c); });
-
-    cats.forEach(function (c) {
-      var b = el('button', 'cat-btn');
-      b.type = 'button';
-      b.dataset.cat = c.id;
-      if (c.id === FILTER.category) b.classList.add('is-active');
-      b.setAttribute('aria-pressed', c.id === FILTER.category ? 'true' : 'false');
-      b.innerHTML = esc(c.label) + '<span class="cat-count">' + c.count + '</span>';
-      b.addEventListener('click', function () {
-        FILTER.category = c.id;
-        FILTER.ont = null;
-        Array.prototype.forEach.call(wrap.children, function (ch) {
-          var on = ch.dataset.cat === c.id;
-          ch.classList.toggle('is-active', on);
-          ch.setAttribute('aria-pressed', on ? 'true' : 'false');
-        });
-        applyFilters();
-      });
-      wrap.appendChild(b);
+  function orderedGroups() {
+    var present = {};
+    DATA.items.forEach(function (it) { present[it.group || 'Other'] = true; });
+    return Object.keys(present).sort(function (a, b) {
+      var ia = GROUP_ORDER.indexOf(a), ib = GROUP_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
     });
+  }
+
+  function presentRegisters() {
+    var present = {};
+    DATA.items.forEach(function (it) {
+      var r = it.meta && it.meta.register;
+      if (r) present[r] = true;
+    });
+    return REGISTER_ORDER.filter(function (r) { return present[r]; });
+  }
+
+  function makeChip(wrap, id, label, onPick, registry) {
+    var b = el('button', 'chip');
+    b.type = 'button';
+    b.dataset.val = id;
+    var text = document.createElement('span');
+    text.textContent = label;
+    var count = el('span', 'chip-count');
+    b.appendChild(text);
+    b.appendChild(count);
+    b.addEventListener('click', function () { onPick(id); });
+    wrap.appendChild(b);
+    registry[id] = { btn: b, count: count };
+  }
+
+  function buildGroupFilters() {
+    var wrap = $('group-filters');
+    wrap.innerHTML = '';
+    GROUP_CHIPS = {};
+    makeChip(wrap, 'all', 'All', pickGroup, GROUP_CHIPS);
+    orderedGroups().forEach(function (g) {
+      makeChip(wrap, g, g, pickGroup, GROUP_CHIPS);
+    });
+  }
+
+  function buildRegisterFilters() {
+    var wrap = $('register-filters');
+    wrap.innerHTML = '';
+    REGISTER_CHIPS = {};
+    var regs = presentRegisters();
+    if (!regs.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    makeChip(wrap, 'all', 'All registers', pickRegister, REGISTER_CHIPS);
+    regs.forEach(function (r) {
+      makeChip(wrap, r, cap(r), pickRegister, REGISTER_CHIPS);
+    });
+  }
+
+  function pickGroup(id) {
+    FILTER.group = id;
+    FILTER.ont = null;
+    applyFilters();
+  }
+
+  function pickRegister(id) {
+    FILTER.register = id;
+    FILTER.ont = null;
+    applyFilters();
   }
 
   // ---- filtering --------------------------------------------------------
 
   function itemHaystack(it) {
     var m = it.meta || {};
-    return [it.name, it.title, it.category, it.subgroup, m.register, m.type, m.family]
+    return [it.name, it.title, it.category, it.group, it.subgroup, m.register, m.type, m.family]
       .filter(Boolean).join(' ').toLowerCase();
+  }
+
+  function passText(it) {
+    return !FILTER.text || itemHaystack(it).indexOf(FILTER.text) !== -1;
+  }
+  function passGroup(it) {
+    return FILTER.group === 'all' || it.group === FILTER.group;
+  }
+  function passRegister(it) {
+    if (FILTER.register === 'all') return true;
+    return !!(it.meta && it.meta.register === FILTER.register);
   }
 
   function matches(it) {
@@ -195,17 +266,45 @@
       if (m.family !== FILTER.ont.family || m.type !== FILTER.ont.type || m.register !== FILTER.ont.register) {
         return false;
       }
-    } else if (FILTER.category !== 'all' && it.category !== FILTER.category) {
-      return false;
+      return passText(it);
     }
-    if (FILTER.text) {
-      if (itemHaystack(it).indexOf(FILTER.text) === -1) return false;
-    }
-    return true;
+    return passText(it) && passGroup(it) && passRegister(it);
+  }
+
+  function updateChip(entry, id, active, count) {
+    if (!entry) return;
+    entry.btn.classList.toggle('is-active', active);
+    entry.btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    entry.count.textContent = count;
+    entry.btn.classList.toggle('is-empty', count === 0 && id !== 'all');
+  }
+
+  function updateCounts() {
+    // Counts are live to the other filters: a group's count reflects the
+    // current search and register; a register's count reflects search and group.
+    var groupBase = DATA.items.filter(function (it) { return passText(it) && passRegister(it); });
+    var groupCounts = {};
+    groupBase.forEach(function (it) { groupCounts[it.group] = (groupCounts[it.group] || 0) + 1; });
+    Object.keys(GROUP_CHIPS).forEach(function (id) {
+      var count = id === 'all' ? groupBase.length : (groupCounts[id] || 0);
+      updateChip(GROUP_CHIPS[id], id, FILTER.group === id && !FILTER.ont, count);
+    });
+
+    var regBase = DATA.items.filter(function (it) { return passText(it) && passGroup(it); });
+    var regCounts = {};
+    regBase.forEach(function (it) {
+      var r = it.meta && it.meta.register;
+      if (r) regCounts[r] = (regCounts[r] || 0) + 1;
+    });
+    Object.keys(REGISTER_CHIPS).forEach(function (id) {
+      var count = id === 'all' ? regBase.length : (regCounts[id] || 0);
+      updateChip(REGISTER_CHIPS[id], id, FILTER.register === id && !FILTER.ont, count);
+    });
   }
 
   function applyFilters() {
     var items = DATA.items.filter(matches);
+    updateCounts();
     renderActiveFilter();
     renderGrid(items);
     var total = DATA.items.length;
@@ -230,7 +329,7 @@
   // ---- grid -------------------------------------------------------------
 
   function metaLine(it) {
-    var parts = [labelFor(it.category)];
+    var parts = [it.group || labelFor(it.category)];
     var m = it.meta;
     if (m) {
       if (m.register) parts.push(cap(m.register));
@@ -254,10 +353,36 @@
     grid.innerHTML = '';
 
     var frag = document.createDocumentFragment();
-    items.forEach(function (it) { frag.appendChild(makeCard(it)); });
+    if (FILTER.group === 'all' && !FILTER.ont) {
+      // Show every group under its own plain heading, in the canonical order.
+      var byGroup = {};
+      items.forEach(function (it) {
+        var g = it.group || 'Other';
+        (byGroup[g] || (byGroup[g] = [])).push(it);
+      });
+      orderedGroups().forEach(function (g) {
+        var list = byGroup[g];
+        if (!list || !list.length) return;
+        frag.appendChild(groupHeading(g, list.length));
+        list.forEach(function (it) { frag.appendChild(makeCard(it)); });
+      });
+    } else {
+      items.forEach(function (it) { frag.appendChild(makeCard(it)); });
+    }
     grid.appendChild(frag);
 
     setupObservers();
+  }
+
+  function groupHeading(group, count) {
+    var head = el('div', 'group-heading');
+    var h = el('h2', 'group-heading-text');
+    h.textContent = group;
+    var c = el('span', 'group-heading-count');
+    c.textContent = count;
+    head.appendChild(h);
+    head.appendChild(c);
+    return head;
   }
 
   function makeCard(it) {
@@ -439,8 +564,9 @@
       var dd = el('dd'); dd.textContent = value; if (mono) dd.className = 'mono';
       d.appendChild(dt); d.appendChild(dd); dl.appendChild(d);
     }
+    if (it.group) fact('Group', it.group);
     fact('Category', labelFor(it.category));
-    if (it.subgroup) fact('Group', it.subgroup);
+    if (it.subgroup) fact('Subgroup', it.subgroup);
     fact('Kind', it.kind);
     if (it.meta) {
       if (it.meta.family) fact('Family', it.meta.family);

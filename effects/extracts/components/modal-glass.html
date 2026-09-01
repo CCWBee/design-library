@@ -544,7 +544,8 @@
         backdrop-filter: none;
         background-color: var(--glass-fallback);
       }
-      dialog.modal::backdrop {
+      dialog.modal::backdrop,
+      .hero__scrim {
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
         background-color: rgba(16, 20, 28, 0.55);
@@ -559,6 +560,44 @@
       }
     }
 
+    /* ---------- Showcase hero: primary dialog, open over a dimmed ground ----------
+       The default panel, centred and large, sits over the same tile and a dim
+       scrim so it reads as an open modal. No heading or documentation of its own.
+       Reuses the .panel markup and classes; the scrim mirrors the live
+       dialog::backdrop values. */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      overflow: hidden;
+      isolation: isolate;
+      background: var(--tile);
+    }
+    .hero__scrim {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-color: rgba(16, 20, 28, 0.42);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .hero__scrim {
+        background-color: rgba(0, 0, 0, 0.56);
+      }
+    }
+    :root[data-theme="dark"] .hero__scrim {
+      background-color: rgba(0, 0, 0, 0.56);
+    }
+    .hero .panel {
+      position: relative;
+      z-index: 1;
+      width: min(440px, 100%);
+    }
+
     /* ---------- Reduced motion: no transitions, no spin ---------- */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -570,6 +609,30 @@
   </style>
 </head>
 <body>
+  <!-- Showcase hero: the primary dialog, open over a dimmed ground, no documentation. -->
+  <section class="hero">
+    <div class="hero__scrim" aria-hidden="true"></div>
+    <div class="panel panel--md">
+      <button type="button" class="panel__close" aria-label="Close" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
+      <div class="panel__body">
+        <h3 class="panel__title">Discard changes</h3>
+        <p class="panel__text">
+          Your edits have not been saved. Discarding returns the document to its last
+          saved version. This cannot be undone.
+        </p>
+        <div class="panel__actions">
+          <button type="button" class="btn btn--ghost" tabindex="-1">Keep editing</button>
+          <button type="button" class="btn btn--primary" tabindex="-1">Discard</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <main class="wrap">
     <header class="masthead">
       <div>

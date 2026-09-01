@@ -503,9 +503,30 @@
       .btn { transition: none; }
       .btn__spinner { animation-duration: 1.4s; }
     }
+
+    /* --- Gallery hero: the primary instance, alone on its stage --- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0;
+      border: 0;
+      padding: clamp(1.5rem, 5vw, 4rem);
+    }
+    .hero .btn {
+      font-size: 1.4rem;
+      padding: 0.9em 1.8em;
+      min-height: 64px;
+      border-radius: 16px;
+    }
   </style>
 </head>
 <body>
+  <section class="stage hero" aria-hidden="true">
+    <button type="button" class="btn btn--primary btn--lg">Continue</button>
+  </section>
+
   <div class="wrap">
     <header class="head">
       <div class="head__meta">

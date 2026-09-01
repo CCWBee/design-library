@@ -432,6 +432,36 @@
 </style>
 </head>
 <body>
+
+<style>
+  /* ---- Gallery hero: primary instance, no documentation ---- */
+  .hero-showcase {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--canvas);
+    padding: clamp(24px, 5vw, 64px);
+    margin: calc(-1 * clamp(24px, 5vw, 64px));
+    margin-bottom: 40px;
+  }
+  .hero-pair {
+    display: flex;
+    align-items: center;
+    gap: 64px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-switch { --w: 124px; --h: 72px; --pad: 7px; }
+</style>
+
+<section class="hero-showcase">
+  <div class="hero-pair">
+    <button class="switch hero-switch" type="button" role="switch" aria-checked="true" aria-label="Switch, on"><span class="track"></span><span class="knob"></span></button>
+    <button class="switch hero-switch" type="button" role="switch" aria-checked="false" aria-label="Switch, off"><span class="track"></span><span class="knob"></span></button>
+  </div>
+</section>
+
 <div class="sheet">
 
   <div class="head">

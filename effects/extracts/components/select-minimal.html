@@ -348,9 +348,31 @@
     .spinner { animation: none; border-top-color: var(--ink-2); }
     .skeleton { animation: none; background-color: var(--surface-sunk); }
   }
+
+  /* ---- Hero: clean showcase of the primary instance ---- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-6) var(--s-4);
+    background: var(--canvas);
+  }
+  .hero .field { width: 100%; max-width: 24rem; }
 </style>
 </head>
 <body>
+<section class="hero" aria-label="Select preview">
+  <div class="field">
+    <div class="select">
+      <button type="button" class="select-trigger placeholder lg" tabindex="-1" aria-hidden="true">
+        <span class="value">Choose a region</span>
+        <svg class="caret" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
 <div class="page">
 
   <header class="masthead">

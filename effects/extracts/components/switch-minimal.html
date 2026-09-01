@@ -404,6 +404,34 @@
   }
 </style>
 
+<style>
+  /* ---- Gallery hero: primary instance, no documentation ---- */
+  .hero-showcase {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--canvas);
+    padding: var(--s-5);
+    margin: 0;
+  }
+  .hero-pair {
+    display: flex;
+    align-items: center;
+    gap: var(--s-8);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-switch { --w: 108px; --h: 60px; --pad: 6px; }
+</style>
+
+<section class="hero-showcase">
+  <div class="hero-pair">
+    <button class="switch hero-switch" type="button" role="switch" aria-checked="true" aria-label="Switch, on"><span class="knob"></span></button>
+    <button class="switch hero-switch" type="button" role="switch" aria-checked="false" aria-label="Switch, off"><span class="knob"></span></button>
+  </div>
+</section>
+
 <div class="wrap">
   <div class="topbar">
     <div>

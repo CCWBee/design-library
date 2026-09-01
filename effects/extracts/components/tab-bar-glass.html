@@ -129,6 +129,27 @@
 
   html { -webkit-text-size-adjust: 100%; }
 
+  /* ---------------------------------------------------------------------------
+     Preview hero. Leads the page with the primary instance alone, large and
+     centred on the same busy per-theme backdrop the glass needs to read
+     through, tall enough to fill a gallery preview. No text of its own; the
+     spec sheet below documents everything. Reuses the .tabbar markup and CSS.
+  --------------------------------------------------------------------------- */
+  .hero-showcase {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1.5rem, 5vw, 4rem);
+    background-color: var(--canvas);
+    background-image:
+      radial-gradient(42% 60% at 12% 18%, var(--wash-1) 0%, transparent 60%),
+      radial-gradient(46% 64% at 88% 12%, var(--wash-2) 0%, transparent 62%),
+      radial-gradient(50% 70% at 78% 92%, var(--wash-3) 0%, transparent 60%),
+      radial-gradient(44% 60% at 22% 88%, var(--wash-4) 0%, transparent 60%);
+  }
+  .hero-showcase .tabbar { transform: scale(1.35); transform-origin: center; }
+
   body {
     margin: 0;
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -404,6 +425,28 @@
 </style>
 </head>
 <body>
+
+<section class="hero-showcase" aria-hidden="true">
+  <div class="tabbar">
+    <span class="tab is-selected">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+      <span class="lbl">Home</span>
+    </span>
+    <span class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.6-3.6"/></svg>
+      <span class="lbl">Search</span>
+    </span>
+    <span class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5 6 5-14L17 12h4"/></svg>
+      <span class="lbl">Activity</span>
+    </span>
+    <span class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.7"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg>
+      <span class="lbl">Profile</span>
+    </span>
+  </div>
+</section>
+
 <div class="wrap">
 
   <header class="sheet-head">

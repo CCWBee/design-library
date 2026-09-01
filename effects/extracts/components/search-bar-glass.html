@@ -380,6 +380,22 @@
     .spinner { animation: none; border-top-color: var(--accent); }
   }
 
+  /* ---- Preview hero: the primary instance, alone -------------------
+     Glass needs a backdrop to read, so the hero rests on the same in-file
+     scene the tiles use. No label, description or heading sits inside. */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    background-color: var(--page-bg);
+    background-image: var(--scene);
+    background-size: cover;
+    background-position: center;
+  }
+  .hero .searchbar { width: 100%; max-width: 34rem; }
+
   .footnote {
     margin-top: 3.5rem;
     padding-top: 1.5rem;
@@ -397,6 +413,17 @@
 </style>
 </head>
 <body>
+
+<section class="hero" aria-hidden="true">
+  <form class="searchbar" role="search" onsubmit="return false">
+    <span class="searchbar__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+    </span>
+    <input class="searchbar__input" type="search" placeholder="Search" aria-label="Search" tabindex="-1">
+    <button class="searchbar__submit" type="submit" tabindex="-1">Search</button>
+  </form>
+</section>
+
 <div class="wrap">
 
   <header class="doc-head">

@@ -46,6 +46,7 @@ Item shape:
   "name": "liquid-form",
   "title": "Liquid form",
   "category": "effects",
+  "group": "Orbs and spheres",
   "subgroup": null,
   "relpath": "effects/extracts/liquid-form.html",
   "fileUrl": "/files/effects/extracts/liquid-form.html",
@@ -59,6 +60,12 @@ Item shape:
 
 - `title`: humanise `name` (hyphens to spaces, first letter upper). For apple files, keep the symbol
   name; set `subgroup` to the framework folder (`swiftui` / `uikit` / `appkit` / root as `guide`).
+- `group`: the finer bucket the frontend filters and heads sections by. For `components`, the
+  Title-cased ontology family from `meta` (Actions, Inputs, Selection, Navigation, Surfaces, Feedback),
+  or `Components` when a component is not yet in the ontology. For `effects`, the theme heading in
+  `effects/catalogue.md` under which the effect's name appears (Glass and material, Orbs and spheres,
+  Fields particles and flow, Buttons and CTAs, Typography and text, Scenes and landscapes, Loaders and
+  UI chrome), else `Effects`. For `ai-native` it is `AI-native`, for `apple` `Apple`, for `docs` `Docs`.
 - `meta`: from `ontology/assets.json`, by inverting it into a map from referenced file path to its cell
   (`family`, `type`, `register`, `status`). Match on the item's `relpath` (the assets.json `files`
   entries are written relative to `design/`, for example `../effects/extracts/...`; normalise both to a
@@ -90,8 +97,14 @@ exemplary, not a scaffold.
 
 Fetch `/api/index` once on load. Two views, switchable by a plain control:
 
-**Gallery view** (default): a search box (filters by name and by register/type/family), a plain
-category filter, and a responsive card grid.
+**Gallery view** (default): a search box (matches name, title, group, register, type and family), a
+group filter over the item `group` values with live counts (component families first, then the effect
+themes, then AI-native, Apple, Docs), a second independent register filter (minimal / glass / tactile
+/ shader, only the registers present in the data), and a responsive card grid. With no group chosen the
+grid heads each group as a plain section; choosing one shows that group alone. On a phone the grid is a
+single column, the two filter rows wrap or scroll without widening the page, and the detail dialog is a
+full-screen sheet that leads with the live element preview at a comfortable size, then the facts and
+actions.
 - A renderable (`html`) card shows a **live preview** in a sandboxed `<iframe sandbox="allow-scripts">`
   pointed at `fileUrl`, at a fixed aspect ratio. **Lazy-load** each iframe with an `IntersectionObserver`
   (set `src` only when the card scrolls into view) and **unload** it (`src=""`) when it scrolls far out,

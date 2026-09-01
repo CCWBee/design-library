@@ -100,6 +100,25 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* ---------- Preview hero ---------- */
+  /* Leads the page with the primary instance alone: one default toast, large
+     and centred on the file's own neutral canvas, tall enough to fill a
+     gallery preview. No heading or label of its own; the spec sheet below
+     documents everything. Reuses the .toast markup and CSS. */
+  .hero-showcase {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-6) var(--s-4);
+    background: var(--canvas);
+  }
+  .hero-showcase .toast {
+    max-width: 30rem;
+    transform: scale(1.25);
+    transform-origin: center;
+  }
+
   .page {
     max-width: 68rem;
     margin: 0 auto;
@@ -398,6 +417,21 @@
     .toast-progress { animation: none; transform: scaleX(1); }
   }
 </style>
+
+<section class="hero-showcase" aria-hidden="true">
+  <div class="toast">
+    <span class="toast-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8h.01M11 12h1v4h1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <div class="toast-body">
+      <p class="toast-title">Draft saved</p>
+      <p class="toast-desc">Your changes are stored locally.</p>
+    </div>
+    <button class="dismiss" type="button" aria-label="Dismiss" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</section>
 
 <div class="page">
   <header>

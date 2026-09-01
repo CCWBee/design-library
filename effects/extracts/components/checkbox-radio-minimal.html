@@ -371,6 +371,29 @@
     color: var(--ink-2);
   }
 
+  /* ---- Hero: gallery preview, primary instance only -------------------- */
+  .hero {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--canvas);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-6) var(--s-5);
+  }
+  .hero-set {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--s-8);
+  }
+  .hero-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+  }
+  .hero .opt { font-size: 1.05rem; }
+
   /* ---- Accessibility media queries ------------------------------------- */
   @media (prefers-reduced-motion: reduce) {
     .box, .box::before, .box::after, .toggle { transition: none; }
@@ -382,6 +405,22 @@
 </style>
 </head>
 <body>
+
+<section class="hero" aria-hidden="true">
+  <div class="hero-set">
+    <div class="hero-col">
+      <label class="opt opt--check opt--md is-checked"><input type="checkbox" checked tabindex="-1"><span class="box"></span><span class="txt">Order status</span></label>
+      <label class="opt opt--check opt--md"><input type="checkbox" tabindex="-1"><span class="box"></span><span class="txt">Dispatch and tracking</span></label>
+      <label class="opt opt--check opt--md"><input type="checkbox" tabindex="-1"><span class="box"></span><span class="txt">Offers, occasionally</span></label>
+    </div>
+    <div class="hero-col">
+      <label class="opt opt--radio opt--md is-checked"><input type="radio" name="hero-ship" checked tabindex="-1"><span class="box"></span><span class="txt">Standard post</span></label>
+      <label class="opt opt--radio opt--md"><input type="radio" name="hero-ship" tabindex="-1"><span class="box"></span><span class="txt">Express, next day</span></label>
+      <label class="opt opt--radio opt--md"><input type="radio" name="hero-ship" tabindex="-1"><span class="box"></span><span class="txt">Collect in person</span></label>
+    </div>
+  </div>
+</section>
+
 <div class="wrap">
 
   <div class="top">

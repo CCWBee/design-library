@@ -442,9 +442,37 @@
       background-color: var(--skel-mid); /* rest at the mid rung */
     }
   }
+
+  /* ---------------------------------------------------------------------------
+     Showcase hero: the primary card, large and centred on the plain canvas,
+     in its own contained well so the frost reads. No text of its own; the spec
+     sheet below documents everything. Reuses the card and stage markup verbatim.
+     --------------------------------------------------------------------------- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-6) var(--s-5);
+  }
+  .hero .stage {
+    width: min(520px, 100%);
+    padding: var(--s-6);
+  }
 </style>
 </head>
 <body>
+  <!-- Showcase hero: the primary card, large and centred, no documentation. -->
+  <section class="hero">
+    <div class="stage">
+      <button type="button" class="card" tabindex="-1">
+        <h3 class="card__title">Harbour readings</h3>
+        <p class="card__body">Tidal harmonics for St Helier, refreshed on the hour from the local gauge.</p>
+        <span class="card__meta">Updated 14:00</span>
+      </button>
+    </div>
+  </section>
+
   <main class="page">
     <header class="masthead">
       <div>

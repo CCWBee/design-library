@@ -23,6 +23,7 @@ GALLERY = ROOT / "gallery"
 PUBLIC = GALLERY / "public"
 ONTOLOGY_DIR = ROOT / "ontology"
 ONTOLOGY_FILE = ONTOLOGY_DIR / "assets.json"
+CATALOGUE_FILE = ROOT / "effects" / "catalogue.md"
 
 # Content types used when serving files under /files/. Code files are handed
 # back as text/plain so they can be fetched and shown rather than run.
@@ -168,6 +169,65 @@ def load_ontology():
     return ontology, file_map
 
 
+def load_catalogue_themes():
+    """Map an effect name to the catalogue.md theme heading it sits under.
+
+    Parses each '## <Theme>' section of effects/catalogue.md and the table of
+    names beneath it, returning {name: theme}. The name is the first token of a
+    table row's first cell, with any leading bullet stripped (for example
+    '● liquid-form' -> 'liquid-form', 'portal-field (AEON)' ->
+    'portal-field'). A missing or unreadable catalogue degrades to an empty map,
+    so effects fall back to the generic 'Effects' group rather than failing.
+    """
+    themes = {}
+    try:
+        with open(CATALOGUE_FILE, "r", encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except (OSError, ValueError):
+        return themes
+
+    current = None
+    for line in lines:
+        if line.startswith("## "):
+            current = line[3:].strip()
+            continue
+        if current and line.lstrip().startswith("|"):
+            first = line.strip().strip("|").split("|")[0].strip()
+            if not first:
+                continue
+            if first.lower().startswith("name"):
+                continue
+            if set(first) <= set("-: "):  # table divider row
+                continue
+            name = first.replace("●", "").strip().split(" ")[0]
+            if name:
+                themes.setdefault(name, current)
+    return themes
+
+
+def group_for(item, catalogue_themes) -> str:
+    """The display group an item belongs to.
+
+    components -> the Title-cased ontology family from its meta (Actions,
+    Inputs, ...); effects -> the catalogue theme heading its name sits under,
+    else 'Effects'; ai-native -> 'AI-native'; apple -> 'Apple'; docs -> 'Docs'.
+    """
+    category = item["category"]
+    if category == "components":
+        meta = item.get("meta") or {}
+        family = meta.get("family")
+        return family.title() if family else "Components"
+    if category == "effects":
+        return catalogue_themes.get(item["name"], "Effects")
+    if category == "ai-native":
+        return "AI-native"
+    if category == "apple":
+        return "Apple"
+    if category == "docs":
+        return "Docs"
+    return category
+
+
 def normalise_ontology_path(raw: str):
     """Resolve an assets.json file entry to a ROOT-relative posix string."""
     try:
@@ -190,7 +250,7 @@ def file_url_for(rel_posix: str, mode: str) -> str:
     return "/files/" + rel_posix
 
 
-def build_item(path: Path, category: str, kind: str, renderable: bool, file_map, mode: str):
+def build_item(path: Path, category: str, kind: str, renderable: bool, file_map, mode: str, catalogue_themes):
     rel = path.relative_to(ROOT)
     rel_posix = rel.as_posix()
     name = path.stem
@@ -204,7 +264,7 @@ def build_item(path: Path, category: str, kind: str, renderable: bool, file_map,
         title = humanise(name)
         subgroup = None
 
-    return {
+    item = {
         "id": f"{category}/{name}",
         "name": name,
         "title": title,
@@ -218,6 +278,8 @@ def build_item(path: Path, category: str, kind: str, renderable: bool, file_map,
         "mtime": mtime,
         "meta": file_map.get(rel_posix),
     }
+    item["group"] = group_for(item, catalogue_themes)
+    return item
 
 
 def build_index(mode: str):
@@ -231,6 +293,7 @@ def build_index(mode: str):
     and the file glass/bible-full.md).
     """
     ontology, file_map = load_ontology()
+    catalogue_themes = load_catalogue_themes()
 
     items = []
     seen = set()
@@ -246,7 +309,7 @@ def build_index(mode: str):
             if rel_posix in seen:
                 continue
             seen.add(rel_posix)
-            items.append(build_item(path, category, kind, renderable, file_map, mode))
+            items.append(build_item(path, category, kind, renderable, file_map, mode, catalogue_themes))
 
     counts = {}
     for _, category, _, _ in SCAN_SETS:

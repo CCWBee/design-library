@@ -257,6 +257,17 @@
     box-shadow: 0 0 0 4px var(--ring);
   }
 
+  /* ---- Hero: clean showcase of the primary instance ---------------- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-6) var(--s-4);
+    background: var(--canvas);
+  }
+  .hero-stage { width: 100%; max-width: 27rem; }
+
   footer {
     margin-top: var(--s-8);
     color: var(--ink-3);
@@ -270,6 +281,15 @@
     border-radius: 5px;
   }
 </style>
+
+<section class="hero" aria-label="Text field preview">
+  <div class="hero-stage">
+    <div class="field">
+      <label for="hero-input">Full name</label>
+      <div class="control"><input class="input lg" id="hero-input" type="text" placeholder="Jane Le Brun"></div>
+    </div>
+  </div>
+</section>
 
 <div class="page">
   <header class="head">
