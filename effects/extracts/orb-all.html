@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<!--
+  Thinking orbs · all nine states in one grid.
+  thinking-orbs by Jakub Antalik, https://github.com/Jakubantalik/thinking-orbs, MIT License.
+  Ported from TypeScript/React to vanilla JavaScript for the design library; engine code preserved.
+  Self-contained: the engine is the sibling thinking-orbs.js. No CDN, no remote refs, no build step.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Thinking orbs · nine states</title>
+<style>
+  :root {
+    --ground: #0c0c0e;
+    --ink: rgba(237, 237, 240, 0.88);
+    --ink-quiet: rgba(237, 237, 240, 0.44);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  canvas { display: block; }
+  .name {
+    display: block;
+    font-size: 15px;
+    font-weight: 450;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+  .blurb {
+    display: block;
+    margin-top: 7px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-quiet);
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page {
+    max-width: 920px;
+    /* auto margins, not flex centring, so a tall grid never clips off the top */
+    margin: auto;
+    padding: 72px 28px 88px;
+  }
+  .head { text-align: center; margin-bottom: 64px; }
+  h1 { font-size: 17px; font-weight: 500; letter-spacing: 0.01em; }
+  .head p {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-quiet);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
+    gap: 52px 24px;
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .caption { text-align: center; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="head">
+      <h1>Thinking orbs</h1>
+      <p>Nine dotted states for AI and agent UIs, on a plain 2D canvas.</p>
+    </header>
+
+    <section class="grid">
+      <figure class="cell">
+        <canvas data-state="working"></canvas>
+        <figcaption class="caption">
+          <span class="name">Working</span>
+          <span class="blurb">Particles on tilted orbits</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="searching"></canvas>
+        <figcaption class="caption">
+          <span class="name">Searching</span>
+          <span class="blurb">A scan meridian sweeps a dotted globe</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="solving"></canvas>
+        <figcaption class="caption">
+          <span class="name">Solving</span>
+          <span class="blurb">Bands scramble in quarter turns, then click back solved</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="listening"></canvas>
+        <figcaption class="caption">
+          <span class="name">Listening</span>
+          <span class="blurb">A waveform rolls through the latitude rings</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="connecting"></canvas>
+        <figcaption class="caption">
+          <span class="name">Connecting</span>
+          <span class="blurb">A constellation wires itself, packets running the edges</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="weaving"></canvas>
+        <figcaption class="caption">
+          <span class="name">Weaving</span>
+          <span class="blurb">Three strands plait around the sphere</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="composing"></canvas>
+        <figcaption class="caption">
+          <span class="name">Composing</span>
+          <span class="blurb">An undulating multi-band sash</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="breathing"></canvas>
+        <figcaption class="caption">
+          <span class="name">Breathing</span>
+          <span class="blurb">A face-on ring slowly morphing</span>
+        </figcaption>
+      </figure>
+      <figure class="cell">
+        <canvas data-state="shaping"></canvas>
+        <figcaption class="caption">
+          <span class="name">Shaping</span>
+          <span class="blurb">A dotted outline: circle → triangle → square</span>
+        </figcaption>
+      </figure>
+    </section>
+  </div>
+
+  <script src="thinking-orbs.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      // one mount per canvas; every instance shares the same clock, so the
+      // nine states stay in phase with each other. mount honours
+      // prefers-reduced-motion, drawing one static frame for reduced viewers.
+      var nodes = document.querySelectorAll("canvas[data-state]");
+      for (var i = 0; i < nodes.length; i++) {
+        ThinkingOrbs.mount(nodes[i], {
+          state: nodes[i].getAttribute("data-state"),
+          size: 132,
+          theme: "dark"
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

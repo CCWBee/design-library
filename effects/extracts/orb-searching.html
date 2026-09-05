@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<!--
+  Thinking orbs · searching. A scan meridian sweeps a dotted globe.
+  thinking-orbs by Jakub Antalik, https://github.com/Jakubantalik/thinking-orbs, MIT License.
+  Ported from TypeScript/React to vanilla JavaScript for the design library; engine code preserved.
+  Self-contained: the engine is the sibling thinking-orbs.js. No CDN, no remote refs, no build step.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Thinking orbs · Searching</title>
+<style>
+  :root {
+    --ground: #0c0c0e;
+    --ink: rgba(237, 237, 240, 0.88);
+    --ink-quiet: rgba(237, 237, 240, 0.44);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  canvas { display: block; }
+  .name {
+    display: block;
+    font-size: 15px;
+    font-weight: 450;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+  .blurb {
+    display: block;
+    margin-top: 7px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-quiet);
+  }
+  .stage {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    padding: 48px 24px;
+  }
+  .caption { text-align: center; }
+</style>
+</head>
+<body>
+  <main class="stage">
+    <canvas id="orb"></canvas>
+    <p class="caption">
+      <span class="name">Searching</span>
+      <span class="blurb">A scan meridian sweeps a dotted globe</span>
+    </p>
+  </main>
+
+  <script src="thinking-orbs.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      // size is the displayed size in CSS pixels; the tuned 64 design is drawn
+      // and magnified, so this is the shipped design enlarged, not a re-tuning.
+      // mount honours prefers-reduced-motion on its own: a reduced viewer gets
+      // one static representative frame instead of the loop.
+      ThinkingOrbs.mount(document.getElementById("orb"), {
+        state: "searching",
+        size: 260,
+        theme: "dark"
+      });
+    })();
+  </script>
+</body>
+</html>

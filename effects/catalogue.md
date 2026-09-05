@@ -31,6 +31,16 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | gradient-collection | Grainy animated gradient swatches (grainient) | Canvas2D | Clean | src/shaders/neuform-isolated/sources/gradient-collection.html |
 
 ## Orbs and spheres
+| ● orb-working | Thinking orb, working: particles on tilted orbits. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-searching | Thinking orb, searching: a scan line sweeping a dotted globe. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-solving | Thinking orb, solving: scrambling bands that click into place. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-listening | Thinking orb, listening: a waveform rolling through rings. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-connecting | Thinking orb, connecting: a constellation wiring itself. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-weaving | Thinking orb, weaving: three strands braiding round the sphere. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-composing | Thinking orb, composing: an undulating multi-band sash. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-breathing | Thinking orb, breathing: a ring slowly morphing. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-shaping | Thinking orb, shaping: a dotted outline morphing circle to triangle to square. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
+| ● orb-all | Thinking orb, all nine thinking-orb states in one grid. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
 
 | Name | Effect | Tech | Self | Path |
 |---|---|---|---|---|
