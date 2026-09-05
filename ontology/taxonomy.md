@@ -156,3 +156,51 @@ About 62 types. The grid marks roughly 150 meaningful cells across the four regi
 load-bearing set (the cells worth a pre-built exemplar) is far smaller, on the order of 30 to 40.
 Everything else is a synthesis recipe. The map is finite and fixed; the file count is deliberately
 not.
+
+## Also known as
+
+Cross-system aliases for the types above, taken from The Component Gallery's survey of design systems (names
+only; the gallery's own descriptions stay local in `component-gallery/`). Use these when a brief names a
+component by another system's word: a snackbar is a toast, a chip is a badge or tag, a sheet is a drawer.
+
+| Component | Also known as |
+|---|---|
+| Accordion | Arrow toggle, Collapse, Collapsible sections, Collapsible, Details, Disclosure, Expandable, Expander, ShowyHideyThing |
+| Alert | Notification, Feedback, Message, Banner, Callout |
+| Badge | Tag, Label, Chip |
+| Breadcrumbs | Breadcrumb trail |
+| Button group | Toolbar |
+| Card | Tile |
+| Carousel | Content slider |
+| Combobox | Autocomplete, Autosuggest |
+| Datepicker | Calendar, Datetime picker |
+| Drawer | Tray, Flyout, Sheet |
+| Dropdown menu | Select menu |
+| File | Attachment, Download |
+| File upload | File input, File uploader, Dropzone |
+| Hero | Jumbotron, Banner |
+| Image | Picture |
+| Label | Form label |
+| Link | Anchor, Hyperlink |
+| Modal | Dialog, Popup, Modal window |
+| Navigation | Nav, Menu |
+| Progress bar | Progress |
+| Progress indicator | Progress tracker, Stepper, Steps, Timeline, Meter |
+| Quote | Pull quote, Block quote |
+| Radio button | Radio, Radio group |
+| Rich text editor | RTE, wysiwyg editor |
+| Search input | Search |
+| Segmented control | Toggle button group |
+| Select | Dropdown, Select input |
+| Separator | Divider, Horizonal rule, Vertical rule |
+| Skeleton | Skeleton loader |
+| Slider | Range input |
+| Spinner | Loader, Loading |
+| Stepper | Nudger, Quantity, Counter |
+| Tabs | Tabbed interface |
+| Textarea | Textbox, Text box |
+| Toast | Snackbar |
+| Toggle | Switch, Lightswitch, Toggle button |
+| Tooltip | Toggletip |
+| Video | Video player |
+| Visually hidden | Screenreader only |

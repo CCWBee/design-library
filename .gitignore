@@ -14,3 +14,9 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# Aceternity UI harvest: kept local until its free-component licence is confirmed redistributable
+effects/aceternity/
+
+# Component Gallery scrape (Iain Bean's descriptions, no licence): reference only, kept local
+ontology/component-gallery/

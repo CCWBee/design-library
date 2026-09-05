@@ -78,6 +78,8 @@ SCAN_SETS = [
     ("patterns/ai-native/primitives/*.tsx", "ai-native", "tsx", False),
     ("patterns/ai-native/primitives/*.css", "ai-native", "css", False),
     ("glass/liquid-glass/apple/**/*.swift", "apple", "swift", False),
+    ("effects/transitions/*.html", "transitions", "html", True),
+    ("effects/aceternity/**/*.tsx", "aceternity", "tsx", False),
     ("minimal/scandinavian/**/*.css", "scandinavian", "css", False),
     ("minimal/scandinavian/**/*.js", "scandinavian", "js", False),
     ("minimal/scandinavian/**/*.html", "scandinavian", "html", True),
@@ -90,6 +92,8 @@ CATEGORY_ORDER = [
     ("effects", "Effects"),
     ("apple", "Apple"),
     ("ai-native", "AI-native"),
+    ("transitions", "Transitions"),
+    ("aceternity", "Aceternity"),
     ("scandinavian", "Scandinavian"),
     ("docs", "Docs"),
 ]
@@ -105,6 +109,8 @@ def is_skipped(rel_posix: str, name: str) -> bool:
         return True
     if rel_posix == "glass/liquid-glass/apple/README.md":
         return True
+    if rel_posix.startswith("effects/transitions/skill/"):
+        return True  # snippet docs for the transitions skill, not library reference docs
     return False
 
 
@@ -114,6 +120,10 @@ def is_excluded_static(rel_posix: str) -> bool:
         return True
     if rel_posix == "glass/bible-full.md":
         return True
+    if rel_posix.startswith("effects/aceternity/"):
+        return True  # licence forbids redistribution; local only
+    if rel_posix.startswith("ontology/component-gallery/"):
+        return True  # unlicensed scrape; local only
     return False
 
 
@@ -228,6 +238,10 @@ def group_for(item, catalogue_themes) -> str:
     rel = item.get("relpath", "")
     if category == "ai-native":
         return "AI-native primitives" if "/primitives/" in rel else "AI-native"
+    if category == "transitions":
+        return "Transitions"
+    if category == "aceternity":
+        return "Aceternity"
     if category == "scandinavian":
         if "/demos/" in rel:
             return "Scandinavian demos"

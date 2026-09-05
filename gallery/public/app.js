@@ -26,7 +26,7 @@
     'Loaders and UI chrome', 'Effects',
     'AI-native', 'AI-native primitives',
     'Scandinavian demos', 'Scandinavian scripts', 'Scandinavian site',
-    'Apple', 'Docs'
+    'Transitions', 'Aceternity', 'Apple', 'Docs'
   ];
 
   // Chip element registries so counts and active state update without a rebuild.

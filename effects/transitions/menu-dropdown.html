@@ -1,0 +1,298 @@
+<!--
+  Menu dropdown. Verbatim from transitions.dev by Jakub Antalik (https://github.com/Jakubantalik/transitions.dev), MIT License.
+  Localised for the design library: site navigation, footer and page metadata removed; the transition, its CSS and JS are untouched.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menu dropdown — CSS transition | Transitions.dev</title>
+  <meta name="description" content="Menu dropdown: Origin-aware open / close transition. Copy-paste CSS and React, with reduced-motion support built in." />
+  <meta name="robots" content="index, follow" />
+
+  <link rel="icon" href="data:," type="image/svg+xml" />
+  
+
+  <!-- Theme boot: same key the rest of the site uses, applied before
+       paint so the page never flashes the wrong theme. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("tdev:theme");
+        var dark = stored
+          ? stored === "dark"
+          : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.setAttribute("data-theme", "dark");
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fdfdfd;
+      --text: #0d0d0d;
+      --text-muted: #6c6c6c;
+      --card-bg: #ffffff;
+      --card-border: rgba(0, 0, 0, 0.06);
+      --chip-bg: #f4f4f4;
+      --code-bg: #f7f7f7;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --text: #ffffff;
+      --text-muted: rgba(202, 202, 202, 0.7);
+      --card-bg: #181818;
+      --card-border: rgba(255, 255, 255, 0.07);
+      --chip-bg: rgba(255, 255, 255, 0.06);
+      --code-bg: #181818;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 24px 20px 96px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 56px; }
+    .brand { font-size: 15px; font-weight: 500; color: var(--text); text-decoration: none; }
+    .brand span { color: var(--text-muted); }
+    .topbar nav { display: flex; gap: 16px; }
+    .topbar nav a { font-size: 13px; color: var(--text-muted); text-decoration: none; }
+    .topbar nav a:hover { color: var(--text); }
+    .crumb { font-size: 13px; color: var(--text-muted); margin: 0 0 12px; }
+    .crumb a { color: var(--text-muted); text-decoration: none; }
+    .crumb a:hover { text-decoration: underline; }
+    h1 { font-size: 32px; line-height: 1.2; letter-spacing: -0.01em; margin: 0 0 8px; }
+    .lede { font-size: 16px; line-height: 24px; color: var(--text-muted); margin: 0 0 24px; }
+    .pro-pill {
+      display: inline-flex; align-items: center; height: 20px; padding: 0 8px; margin-left: 8px;
+      border-radius: 50px; background: rgba(0, 115, 255, 0.06); color: #0073ff;
+      font-size: 11px; font-weight: 500; vertical-align: middle;
+    }
+    html[data-theme="dark"] .pro-pill { background: rgba(85, 207, 255, 0.14); color: #7cd4ff; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 48px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 40px; padding: 0 16px; border-radius: 26px;
+      font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap;
+      transition: background-color 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .btn--primary { background: #17181c; color: #fff; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
+    .btn--primary:hover { background: #2a2a2a; }
+    html[data-theme="dark"] .btn--primary { background: #fff; color: #0d0d0d; }
+    .btn--secondary { background: var(--chip-bg); color: var(--text); }
+    h2 { font-size: 15px; font-weight: 500; margin: 40px 0 12px; }
+    p { font-size: 14px; line-height: 22px; color: var(--text-muted); }
+    pre {
+      margin: 0; padding: 20px; border-radius: 16px; overflow-x: auto;
+      background: var(--code-bg); border: 1px solid var(--card-border);
+    }
+    code { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; color: var(--text); }
+    .related { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--card-border); }
+    .related ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .related a {
+      display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
+      border-radius: 48px; background: var(--chip-bg); color: var(--text);
+      font-size: 13px; text-decoration: none;
+    }
+    footer { margin-top: 56px; font-size: 13px; color: var(--text-muted); }
+    footer a { color: var(--text); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      
+      
+    </header>
+    <p class="crumb"> / </p>
+    <h1>Menu dropdown</h1>
+    <p class="lede">Origin-aware open / close transition</p>
+    <div class="cta-row">
+      
+      
+    </div>
+    <h2>CSS</h2>
+    <p>Namespaced classes and motion tokens you can retune. The reduced-motion guard ships with the snippet.</p>
+    <pre><code>/* Transitions.dev — Menu dropdown */
+
+/*
+  Usage:
+    &lt;div class=&quot;t-dropdown&quot; data-origin=&quot;top-center&quot;&gt;
+      &lt;!-- your menu contents --&gt;
+    &lt;/div&gt;
+
+  State:
+    - Add `.is-open` to show.
+    - On close, swap `.is-open` for `.is-closing`, then remove
+      `.is-closing` after --dropdown-close-dur.
+
+  data-origin values: top-left | top-center | top-right |
+                      bottom-left | bottom-center | bottom-right.
+*/
+
+:root {
+  --dropdown-open-dur: 250ms;
+  --dropdown-close-dur: 150ms;
+  --dropdown-pre-scale: 0.97;
+  --dropdown-closing-scale: 0.99;
+  --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-dropdown {
+  transform-origin: top left;
+  transform: scale(var(--dropdown-pre-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-open-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-open-dur) var(--dropdown-ease);
+  will-change: transform, opacity;
+}
+.t-dropdown[data-origin=&quot;top-right&quot;]     { transform-origin: top right; }
+.t-dropdown[data-origin=&quot;top-center&quot;]    { transform-origin: top center; }
+.t-dropdown[data-origin=&quot;bottom-left&quot;]   { transform-origin: bottom left; }
+.t-dropdown[data-origin=&quot;bottom-center&quot;] { transform-origin: bottom center; }
+.t-dropdown[data-origin=&quot;bottom-right&quot;]  { transform-origin: bottom right; }
+
+.t-dropdown.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-dropdown.is-closing {
+  transform: scale(var(--dropdown-closing-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-close-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-close-dur) var(--dropdown-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-dropdown { transition: none !important; }
+}</code></pre>
+    <h2>React</h2>
+    <p>Self-contained component; the styles inject themselves on first import.</p>
+    <pre><code>// Transitions.dev — Menu dropdown (React, self-contained)
+// Drop into any React project — no extra CSS file needed.
+
+import { useEffect, useState } from &quot;react&quot;;
+
+// ── Styles ──────────────────────────────────────────────
+// Auto-injected on first import. Idempotent (guarded by
+// the element id) and SSR-safe (no-ops without document).
+const __TRANSITION_STYLES = `
+:root {
+  --dropdown-open-dur: 250ms;
+  --dropdown-close-dur: 150ms;
+  --dropdown-pre-scale: 0.97;
+  --dropdown-closing-scale: 0.99;
+  --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-dropdown {
+  transform-origin: top left;
+  transform: scale(var(--dropdown-pre-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-open-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-open-dur) var(--dropdown-ease);
+  will-change: transform, opacity;
+}
+.t-dropdown[data-origin=&quot;top-right&quot;]     { transform-origin: top right; }
+.t-dropdown[data-origin=&quot;top-center&quot;]    { transform-origin: top center; }
+.t-dropdown[data-origin=&quot;bottom-left&quot;]   { transform-origin: bottom left; }
+.t-dropdown[data-origin=&quot;bottom-center&quot;] { transform-origin: bottom center; }
+.t-dropdown[data-origin=&quot;bottom-right&quot;]  { transform-origin: bottom right; }
+
+.t-dropdown.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-dropdown.is-closing {
+  transform: scale(var(--dropdown-closing-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-close-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-close-dur) var(--dropdown-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-dropdown { transition: none !important; }
+}
+`;
+if (typeof document !== &quot;undefined&quot; &amp;&amp; !document.getElementById(&quot;transitions-p2&quot;)) {
+  const __style = document.createElement(&quot;style&quot;);
+  __style.id = &quot;transitions-p2&quot;;
+  __style.textContent = __TRANSITION_STYLES;
+  document.head.appendChild(__style);
+}
+
+// Pair with the CSS from the CSS tab (.t-dropdown + .is-open / .is-closing).
+export function MenuDropdown() {
+  // &quot;closed&quot; | &quot;open&quot; | &quot;closing&quot;
+  const [state, setState] = useState(&quot;closed&quot;);
+
+  // Hold `.is-closing` for the exit duration, then fully unmount state.
+  useEffect(() =&gt; {
+    if (state !== &quot;closing&quot;) return;
+    const ms = readMs(&quot;--dropdown-close-dur&quot;, 200);
+    const id = window.setTimeout(() =&gt; setState(&quot;closed&quot;), ms);
+    return () =&gt; window.clearTimeout(id);
+  }, [state]);
+
+  const toggle = () =&gt;
+    setState((s) =&gt; (s === &quot;open&quot; ? &quot;closing&quot; : &quot;open&quot;));
+
+  return (
+    &lt;&gt;
+      &lt;button type=&quot;button&quot; onClick={toggle}&gt;Toggle menu&lt;/button&gt;
+      &lt;div
+        role=&quot;menu&quot;
+        data-origin=&quot;top-center&quot;
+        className={
+          &quot;t-dropdown&quot; +
+          (state === &quot;open&quot; ? &quot; is-open&quot; : &quot;&quot;) +
+          (state === &quot;closing&quot; ? &quot; is-closing&quot; : &quot;&quot;)
+        }
+      &gt;
+        &lt;button type=&quot;button&quot; role=&quot;menuitem&quot;&gt;Item 1&lt;/button&gt;
+        &lt;button type=&quot;button&quot; role=&quot;menuitem&quot;&gt;Item 2&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/&gt;
+  );
+}
+
+function readMs(name, fallback) {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+</code></pre>
+    <div class="related">
+      <h2>More transitions</h2>
+      <ul>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+      </ul>
+    </div>
+    
+  </div>
+</body>
+</html>

@@ -66,3 +66,34 @@ house rules as first-class design law.
 Drop new material under the matching pillar (`glass/`, `minimal/`, `effects/`, `patterns/`), record
 it here with its licence, and update the relevant pillar reference and, if the trigger surface
 changes, the skill description. The `patterns/` pillar in particular is built to grow.
+
+## Added 5 September 2026: the tab audit
+
+Sources found open in the browser that the first pass had missed, each harvested as literal per-object files:
+
+**transitions.dev** (https://transitions.dev, https://github.com/Jakubantalik/transitions.dev, by Jakub Antalik).
+MIT License (its Terms page: "released under the MIT License"). The 32 free transitions as self-contained HTML in
+`effects/transitions/`, plus its agent skill with the copy-ready snippet per transition
+(`effects/transitions/skill/`). The repository also holds 11 landing-page stubs for paid Pro transitions;
+those carry no code and were not taken. Clone kept at
+`E:\claude-projects	ransitions-dev` as the raw mine. Published.
+
+**thinking-orbs** (https://github.com/Jakubantalik/thinking-orbs, Jakub Antalik, MIT). Nine canvas orb states
+for agent interfaces; the upstream of ThreeUI's brand-orbs. Clone at `E:\claude-projects	hinking-orbs`; engine
+ported to vanilla as `effects/extracts/thinking-orbs.js` with one demo per state (`orb-<state>.html`). Published.
+
+**Aceternity UI** (https://ui.aceternity.com). 109 components fetched verbatim from its shadcn registry into
+`effects/aceternity/`. Its licence permits building with the components but not redistributing them, so the
+folder is gitignored and local only.
+
+**The Component Gallery** (https://component.gallery, by Iain Bean; site source at github.com/inbn/component-gallery
+but the data lives in Airtable). Sixty component pages scraped into `ontology/component-gallery/` as JSON: name,
+aliases ("also known as"), and every design system implementing it with tech tags (2,804 entries). No licence on
+the descriptions, so kept local only; the factual taxonomy (names, aliases, who implements what) informs
+`ontology/taxonomy.md`.
+
+**Liquid glass lens** (`glass/liquid-glass/liquid-lens.html`). Charles's own example code from an earlier session,
+rescued from a temporary scratchpad; only its remote backdrop photo was swapped for a local SVG colour field.
+
+**Originkit** (https://www.originkit.dev): 403 animated React components, client-rendered. NOT harvested: its free tier is metered (3 component copies a day, account required) with paid Pro and Studio tiers and a usage licence, not open source, so bulk copying would breach its terms. Reference only; copy individual components by hand within the free allowance if wanted.
+**21st.dev**: a community marketplace of thousands (2,043 buttons alone); scope to be decided, not harvested.

@@ -21,6 +21,10 @@ travel with the files.
   (https://github.com/ericzakariasson/scandinavian-design). Adapted into `minimal/principles.md` with
   credit; its demo restyle themes and verification scripts are bundled verbatim in
   `minimal/scandinavian/`.
+- **transitions.dev** by Jakub Antalik (https://github.com/Jakubantalik/transitions.dev). The 32 free
+  transitions and its agent skill in `effects/transitions/`, MIT License.
+- **thinking-orbs** by Jakub Antalik (https://github.com/Jakubantalik/thinking-orbs). Engine ported to
+  `effects/extracts/thinking-orbs.js` with per-state demos, MIT License.
 
 Full provenance for every part is in `sources.md`.
 
@@ -33,3 +37,7 @@ redistribute:
   copyrighted sample code, kept locally for reference only.
 - **The full glass bible** (`glass/bible-full.md`), whose provenance is not settled. The distilled,
   original `glass/bible.md` is authored work and is included.
+- **Aceternity UI component sources** (`effects/aceternity/`). Its licence allows building with them, not
+  redistributing them.
+- **The Component Gallery scrape** (`ontology/component-gallery/`). Reference data with no licence on the
+  descriptions.
