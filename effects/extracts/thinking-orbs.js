@@ -1404,7 +1404,9 @@
       if (reduced) {
         halt();
         frame(0.6);
-      } else {
+      } else if (visible && (typeof document === 'undefined' || document.visibilityState !== 'hidden')) {
+        // upstream re-runs the whole effect here, so it only resumes when the
+        // orb is on screen and the tab is visible; match that
         start();
       }
     }

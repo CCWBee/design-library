@@ -31,6 +31,9 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | gradient-collection | Grainy animated gradient swatches (grainient) | Canvas2D | Clean | src/shaders/neuform-isolated/sources/gradient-collection.html |
 
 ## Orbs and spheres
+
+| Name | Effect | Tech | Self | Path |
+|---|---|---|---|---|
 | ● orb-working | Thinking orb, working: particles on tilted orbits. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
 | ● orb-searching | Thinking orb, searching: a scan line sweeping a dotted globe. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
 | ● orb-solving | Thinking orb, solving: scrambling bands that click into place. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
@@ -41,9 +44,6 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | ● orb-breathing | Thinking orb, breathing: a ring slowly morphing. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
 | ● orb-shaping | Thinking orb, shaping: a dotted outline morphing circle to triangle to square. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
 | ● orb-all | Thinking orb, all nine thinking-orb states in one grid. From thinking-orbs by Jakub Antalik (MIT), engine ported to extracts/thinking-orbs.js | Canvas2D | Clean | ../thinking-orbs/src/engine/ (separate clone) |
-
-| Name | Effect | Tech | Self | Path |
-|---|---|---|---|---|
 | ● energy-orb | Pulsing energy orb, plasma core with corona | WebGL | Clean | src/shaders/energy-orb/ |
 | brand-orbs | Set of thinking-orb marks, soft animated spheres | Canvas2D | Clean (demo Vendorable, gfont) | src/shaders/brand-orbs/ |
 | orbital-sphere | Orbiting particles around a sphere | Three.js | Clean | src/shaders/orbital-sphere/ |

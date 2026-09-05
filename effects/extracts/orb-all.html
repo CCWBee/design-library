@@ -45,6 +45,9 @@
     justify-content: center;
   }
   .page {
+    /* width 100% matters: as a flex item the page would otherwise size to its
+       content, and the auto-fit grid would collapse to a single column */
+    width: 100%;
     max-width: 920px;
     /* auto margins, not flex centring, so a tall grid never clips off the top */
     margin: auto;
