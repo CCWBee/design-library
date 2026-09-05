@@ -24,7 +24,9 @@
     'Glass and material', 'Orbs and spheres', 'Fields, particles and flow',
     'Buttons and CTAs', 'Typography and text', 'Scenes and landscapes',
     'Loaders and UI chrome', 'Effects',
-    'AI-native', 'Apple', 'Docs'
+    'AI-native', 'AI-native primitives',
+    'Scandinavian demos', 'Scandinavian scripts', 'Scandinavian site',
+    'Apple', 'Docs'
   ];
 
   // Chip element registries so counts and active state update without a rebuild.

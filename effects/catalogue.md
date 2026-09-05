@@ -83,7 +83,7 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | vertex-9 | Global data field, rotating vertex mesh | Three.js | Vendorable (gfont) | src/shaders/neuform-isolated/sources/vertex-9.html |
 | vanguard-dimensional | Dimensional architecture field, layered planes | Three.js | Vendorable (gfont) | src/shaders/neuform-isolated/sources/vanguard-dimensional.html |
 | constellation-field (Lumira) | Analytics constellation, linked point cloud | Canvas2D | Hard | src/shaders/neuform-isolated/sources/constellation-field.html |
-| portal-field (AEON) | AEON portal, depth tunnel hero | Three.js | Vendorable (gfont) | src/shaders/neuform-isolated/sources/portal-field.html |
+| portal-field-aeon | AEON portal, depth tunnel hero | Three.js | Vendorable (gfont) | src/shaders/neuform-isolated/sources/portal-field.html |
 
 ## Buttons and CTAs
 
@@ -113,7 +113,11 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | typography-vortex | Letters pulled into a vortex | Canvas2D | Clean | src/shaders/typography-vortex/ |
 | article-headings | Heading reveal animations, decode and wipe | CSS | Clean | src/shaders/article-headings/ |
 | text-path-studies | Text on a path, motion studies | Canvas2D | Clean | src/shaders/text-path-studies/ (sources: text-on-a-path.html, text-on-a-path-ii.html) |
+| ● text-on-a-path | Text on a path, study i | Canvas2D | Clean | src/shaders/text-path-studies/sources/text-on-a-path.html |
+| ● text-on-a-path-ii | Text on a path, study ii | Canvas2D | Clean | src/shaders/text-path-studies/sources/text-on-a-path-ii.html |
 | character-carousel | Per-character carousel, filmstrip and wave | CSS | Clean | src/shaders/character-carousel/ (sources: character-filmstrip.html, character-wave.html) |
+| ● character-filmstrip | Character carousel, filmstrip variant | CSS | Clean | src/shaders/character-carousel/sources/character-filmstrip.html |
+| ● character-wave | Character carousel, wave variant | CSS | Clean | src/shaders/character-carousel/sources/character-wave.html |
 | semantic-bloom | Words blooming from a seed term | Canvas2D | Clean | src/shaders/semantic-bloom/ (sources/design-f0ebbe02-...html) |
 | audio-wordmark | Wordmark reacting to audio, radio identity | Canvas2D | Clean | src/shaders/neuform-isolated/sources/audio-wordmark.html |
 | kinetic-lathe-certificate | Kinetic lathe-turned certificate type | Canvas2D | Vendorable (gfont) | src/shaders/neuform-isolated/sources/kinetic-lathe-certificate.html |
@@ -134,6 +138,8 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | koi-studies | Halftone koi swimming studies | Canvas2D | Clean | src/shaders/koi-studies/ (embeds public/synthralos-halftone.html) |
 | sylva-living-world | Living forest world, drifting green depth | Three.js | Clean | src/shaders/sylva-living-world/ (sources/inner-green-3d.html) |
 | elements | Elemental marks (water/thunder/fire) and generative tree | WebGL2 / Canvas2D | Clean (marks Vendorable, gfont) | src/shaders/elements/ (sources: elemental-marks.html, generative-tree.html) |
+| ● elemental-marks | Elements, elemental marks study | WebGL | Vendorable | src/shaders/elements/sources/elemental-marks.html |
+| ● generative-tree | Elements, generative tree study | Canvas2D | Vendorable | src/shaders/elements/sources/generative-tree.html |
 | sketchbook | Hand-drawn sketchbook document, ink strokes | SVG | Clean | src/shaders/sketchbook/ |
 
 ## Loaders and UI chrome

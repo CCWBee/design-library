@@ -1,0 +1,175 @@
+<!--
+  Connectivity Graph
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped/stubbed: Tailwind CDN, Iconify icons, GSAP + ScrollTrigger text reveal, remote Supabase
+  background photo, marketing copy/stats sections, and the pause/settings header controls; kept
+  the canvas 2D particle-streak animation converging toward a bottom vanishing point, rebuilt as
+  plain CSS + a native requestAnimationFrame loop with a CSS gradient standing in for the photo.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connectivity Graph</title>
+<style>
+  :root {
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #eef2f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  body {
+    background:
+      linear-gradient(180deg, rgba(240,244,248,0.95) 0%, rgba(225,234,244,0.95) 40%, rgba(196,217,239,0.95) 80%, rgba(166,200,234,0.95) 100%),
+      radial-gradient(ellipse at 50% 15%, #dbe6f2 0%, #b9cde5 55%, #9cb9d9 100%);
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .label {
+    position: absolute;
+    top: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: rgba(23, 37, 84, 0.75);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="networkCanvas"></canvas>
+    <div class="label">Connectivity graph</div>
+  </div>
+
+<script>
+(function () {
+  var canvas = document.getElementById('networkCanvas');
+  var ctx = canvas.getContext('2d', { alpha: true });
+  var width, height;
+  var particles = [];
+  var animationFrameId;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    initParticles();
+  }
+
+  function Particle() {
+    this.reset(true);
+  }
+
+  Particle.prototype.reset = function (initial) {
+    this.angle = Math.PI + (Math.random() * Math.PI);
+    if (Math.random() > 0.3) {
+      this.angle = Math.PI * 1.25 + (Math.random() * Math.PI * 0.5);
+    }
+    this.speed = 0.5 + Math.random() * 2.5;
+    this.distance = initial ? Math.random() * (height * 1.2) : Math.random() * 50;
+    this.maxLength = 20 + Math.random() * 180;
+    this.length = 0;
+    this.alpha = 0;
+  };
+
+  Particle.prototype.update = function () {
+    this.distance += this.speed;
+    this.length = Math.min(this.maxLength, this.distance * 0.8);
+
+    var normalizedDist = this.distance / (height * 1.2);
+    this.alpha = Math.min(1, this.distance / 100) * Math.max(0, 1 - normalizedDist);
+
+    if (this.distance > height * 1.5) {
+      this.reset(false);
+    }
+  };
+
+  Particle.prototype.draw = function () {
+    var originX = width / 2;
+    var originY = height + 50;
+
+    var startX = originX + Math.cos(this.angle) * this.distance;
+    var startY = originY + Math.sin(this.angle) * this.distance;
+    var endX = originX + Math.cos(this.angle) * (this.distance + this.length);
+    var endY = originY + Math.sin(this.angle) * (this.distance + this.length);
+
+    var distRatio = Math.min(1, this.distance / height);
+    var hue = 220 + (distRatio * 15);
+    var lightness = 15 + (distRatio * 35);
+
+    var color = 'hsla(' + hue + ', 90%, ' + lightness + '%, ' + this.alpha + ')';
+    var tailColor = 'hsla(' + hue + ', 90%, ' + Math.max(5, lightness - 15) + '%, ' + (this.alpha * 0.05) + ')';
+
+    ctx.beginPath();
+    var gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+    gradient.addColorStop(0, tailColor);
+    gradient.addColorStop(1, color);
+
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 0.5 + (distRatio * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(endX, endY, 0.5 + (distRatio * 1.5), 0, Math.PI * 2);
+    ctx.fillStyle = 'hsla(' + hue + ', 100%, ' + (lightness + 20) + '%, ' + (this.alpha * 1.5) + ')';
+    ctx.fill();
+  };
+
+  function initParticles() {
+    particles = [];
+    var particleCount = window.innerWidth < 768 ? 150 : 400;
+    for (var i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+    for (var i = 0; i < particles.length; i++) {
+      particles[i].update();
+      particles[i].draw();
+    }
+    animationFrameId = requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('resize', function () {
+    cancelAnimationFrame(animationFrameId);
+    resize();
+    animate();
+  });
+
+  resize();
+  animate();
+})();
+</script>
+</body>
+</html>

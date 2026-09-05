@@ -1,0 +1,329 @@
+<!--
+  Imaginie Starfield
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped/stubbed: Tailwind CDN, Iconify, Google Fonts, all Supabase remote images/video,
+  headline/copy/nav/footer marketing text, and hover CTA buttons; kept the two canvas
+  starfield simulations and the bronze portal frame (now a CSS gradient stand-in for the
+  removed video), converted to plain CSS and a system font stack.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Starfield Portal</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: #030303;
+    background-image: radial-gradient(circle at 10% 20%, rgba(15, 11, 28, 0.6) 0%, rgba(3, 3, 3, 1) 80%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  #ambient-starfield {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .stage {
+    position: relative;
+    z-index: 10;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .portal-frame {
+    position: relative;
+    width: min(90vw, 500px);
+    height: min(85vh, 680px);
+    border-radius: 180px 180px 40px 40px;
+    padding: 5px;
+    background: linear-gradient(135deg, #1b120f 0%, #a3704c 50%, #e6c29e 100%);
+    box-shadow: 0 0 80px rgba(163, 112, 76, 0.15);
+    overflow: hidden;
+  }
+
+  .portal-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 176px 176px 36px 36px;
+    overflow: hidden;
+    background: #030303;
+  }
+
+  /* Stand-in for the removed remote video: a slow nebula gradient wash */
+  .nebula-stub {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 25%, rgba(120, 90, 200, 0.35), transparent 55%),
+      radial-gradient(circle at 70% 60%, rgba(80, 140, 200, 0.30), transparent 60%),
+      radial-gradient(circle at 50% 90%, rgba(200, 140, 90, 0.25), transparent 65%),
+      #050308;
+    background-size: 200% 200%;
+    animation: nebula-drift 30s ease-in-out infinite;
+    opacity: 0.85;
+    mix-blend-mode: lighten;
+    filter: brightness(1.1) saturate(1.1);
+  }
+
+  @keyframes nebula-drift {
+    0%   { background-position: 0% 0%; }
+    50%  { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+
+  #portal-stars {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .horizon-glow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 12rem;
+    background: linear-gradient(to top, #0e0c15, transparent);
+    z-index: 20;
+  }
+
+  .figure {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .figure-glow-outer {
+    position: absolute;
+    top: -0.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: #fb923c;
+    opacity: 0.4;
+    filter: blur(6px);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .figure-glow-inner {
+    position: absolute;
+    top: -0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: #fef9c3;
+    opacity: 0.6;
+    filter: blur(3px);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.1; }
+  }
+
+  .figure svg {
+    width: 6rem;
+    height: 6rem;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.9));
+  }
+
+  .glass-glare {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), rgba(255,255,255,0.10));
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .bottom-shadow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6rem;
+    background: linear-gradient(to top, #030303, transparent);
+    z-index: 40;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+  <canvas id="ambient-starfield"></canvas>
+
+  <div class="stage">
+    <div class="portal-frame">
+      <div class="portal-inner">
+
+        <div class="nebula-stub"></div>
+
+        <canvas id="portal-stars"></canvas>
+
+        <div class="horizon-glow"></div>
+
+        <div class="figure">
+          <div class="figure-glow-outer"></div>
+          <div class="figure-glow-inner"></div>
+          <svg viewBox="0 0 100 100" fill="currentColor">
+            <path d="M50,15 C30,15 20,30 20,55 C20,75 32,85 50,85 C68,85 80,75 80,55 C80,30 70,15 50,15 Z" fill="#060608"></path>
+            <path d="M50,22 C35,22 26,33 26,55 C26,70 34,78 50,78 C66,78 74,70 74,55 C74,33 65,22 50,22 Z" fill="#010102"></path>
+            <path d="M46,68 L54,68 L54,58 L52,50 L48,50 L46,58 Z" fill="#08080c"></path>
+            <circle cx="50" cy="45" r="4.5" fill="#08080c"></circle>
+            <path d="M26,55 C26,62 30,70 38,74" stroke="#e6c29e" stroke-width="1" fill="none" opacity="0.4"></path>
+            <path d="M74,55 C74,62 70,70 62,74" stroke="#a3704c" stroke-width="1" fill="none" opacity="0.3"></path>
+          </svg>
+        </div>
+
+        <div class="glass-glare"></div>
+
+      </div>
+    </div>
+    <div class="bottom-shadow"></div>
+  </div>
+
+<script>
+(function () {
+  // Interactive starfield inside the portal frame
+  var portalCanvas = document.getElementById('portal-stars');
+  var ctxPortal = portalCanvas.getContext('2d');
+
+  var stars = [];
+  var portalWidth = 0;
+  var portalHeight = 0;
+
+  function resizePortalCanvas() {
+    var rect = portalCanvas.getBoundingClientRect();
+    portalWidth = rect.width;
+    portalHeight = rect.height;
+    portalCanvas.width = portalWidth;
+    portalCanvas.height = portalHeight;
+    initStars();
+  }
+
+  function initStars() {
+    stars = [];
+    var count = 45;
+    for (var i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * portalWidth,
+        y: Math.random() * portalHeight,
+        radius: Math.random() * 1.5 + 0.5,
+        color: getRandomColor(),
+        speed: Math.random() * 0.15 + 0.05,
+        angle: Math.random() * Math.PI * 2,
+        pulse: Math.random() * 0.02
+      });
+    }
+  }
+
+  function getRandomColor() {
+    var colors = [
+      'rgba(230, 194, 158, ',
+      'rgba(244, 244, 246, ',
+      'rgba(173, 140, 255, ',
+      'rgba(135, 206, 250, '
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  function drawStars() {
+    ctxPortal.clearRect(0, 0, portalWidth, portalHeight);
+
+    stars.forEach(function (s) {
+      s.x += Math.cos(s.angle) * s.speed;
+      s.y += Math.sin(s.angle) * s.speed;
+
+      if (s.x < 0 || s.x > portalWidth) s.angle = Math.PI - s.angle;
+      if (s.y < 0 || s.y > portalHeight) s.angle = -s.angle;
+
+      s.speed += (Math.random() - 0.5) * 0.01;
+      s.speed = Math.max(0.02, Math.min(s.speed, 0.25));
+
+      var alpha = 0.3 + Math.abs(Math.sin(Date.now() * s.pulse)) * 0.7;
+      ctxPortal.beginPath();
+      ctxPortal.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+      ctxPortal.fillStyle = s.color + alpha + ')';
+      ctxPortal.shadowBlur = s.radius * 4;
+      ctxPortal.shadowColor = s.color + '0.8)';
+      ctxPortal.fill();
+    });
+
+    requestAnimationFrame(drawStars);
+  }
+
+  // Ambient starfield across the full page background
+  var ambientCanvas = document.getElementById('ambient-starfield');
+  var ctxAmbient = ambientCanvas.getContext('2d');
+  var ambientStars = [];
+
+  function resizeAmbientCanvas() {
+    ambientCanvas.width = window.innerWidth;
+    ambientCanvas.height = window.innerHeight;
+    initAmbientStars();
+  }
+
+  function initAmbientStars() {
+    ambientStars = [];
+    var count = 70;
+    for (var i = 0; i < count; i++) {
+      ambientStars.push({
+        x: Math.random() * ambientCanvas.width,
+        y: Math.random() * ambientCanvas.height,
+        size: Math.random() * 0.8 + 0.2,
+        opacity: Math.random() * 0.6 + 0.1,
+        drift: Math.random() * 0.02 + 0.01
+      });
+    }
+  }
+
+  function drawAmbientStars() {
+    ctxAmbient.clearRect(0, 0, ambientCanvas.width, ambientCanvas.height);
+    ambientStars.forEach(function (s) {
+      s.y -= s.drift;
+      if (s.y < 0) s.y = ambientCanvas.height;
+      ctxAmbient.fillStyle = 'rgba(255, 255, 255, ' + s.opacity + ')';
+      ctxAmbient.fillRect(s.x, s.y, s.size, s.size);
+    });
+    requestAnimationFrame(drawAmbientStars);
+  }
+
+  window.addEventListener('resize', function () {
+    resizePortalCanvas();
+    resizeAmbientCanvas();
+  });
+
+  resizePortalCanvas();
+  resizeAmbientCanvas();
+  drawStars();
+  drawAmbientStars();
+})();
+</script>
+
+</body>
+</html>

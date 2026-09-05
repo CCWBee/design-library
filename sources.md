@@ -20,6 +20,9 @@ Desktop as source-of-truth; the original on OneDrive is left untouched. Distille
 **scandinavian-design** (https://github.com/ericzakariasson/scandinavian-design, by Eric
 Zakariasson). MIT License. A minimal/restraint design system, captured and adapted into
 `minimal/principles.md`. The captured scratch input was superseded by `principles.md` and recycled.
+The repository's own code was harvested verbatim on 5 September 2026 into `minimal/scandinavian/`:
+18 demo restyle themes (10 live, 8 retired), `shared.css`, the 11 verification scripts, and the site.
+See `minimal/scandinavian/README.md`.
 
 **Beautiful UI** (https://www.beautifului.dev/, by the studio Turbo; author Shane Levine). MIT License,
 © 2026 Shane Levine. A library of 20 AI-native interface patterns that **does** publish working code:
@@ -30,8 +33,12 @@ component, plus `LICENSE` and `ATTRIBUTION.md`); `patterns/ai-native.md` is the 
 its intent/when-to-use/state prose and the inferred vanilla sketches as the dependency-free adaptation
 layer. The code is React + Tailwind (custom tokens: `bg-surface`, `text-ink`, `shadow-hairline`,
 `rounded-card`, …) and pulls external packages (`liveline`, `glimm`, `iconoir-react`) plus the studio's
-own atoms/primitives (`Button`, `EntityChip`, `GlideMenu`, …) which are **not** published on the page
-and so are not in the harvest; it is therefore reference/adaptation material, not a vanilla drop-in.
+own atoms/primitives (`Button`, `EntityChip`, `GlideMenu`, …). An earlier note said those primitives
+were not published; they are, in the shadcn registry, and on 5 September 2026 all six (`Button`,
+`GlideMenu`, `EntityChip`, `ValuePill`, `Shimmer`, `StreamText`) plus the `foundation` stylesheet were
+harvested verbatim into `patterns/ai-native/primitives/`, so the full 27-item registry is captured. It
+remains React and Tailwind, so it is reference and adaptation material for a vanilla target, not a
+drop-in.
 Copying is permitted under MIT provided the notice travels with it (`patterns/ai-native/LICENSE`). Not
 carried: the unpublished internal atoms/primitives, and the site's own fonts and media.
 

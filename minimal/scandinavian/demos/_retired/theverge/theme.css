@@ -1,0 +1,984 @@
+/* ==========================================================================
+   The Verge (front page) — Scandinavian override
+
+   Structural problem: a news front page carrying four type families
+   (PolySans, PolySans Mono, FK Roman Standard, Manuka), seven headline sizes
+   all set at 700–900, ~440 elements of #5200FF, a mint #3CFFD0 secondary, and
+   uppercase applied by CSS to every byline, timestamp, comment count and nav
+   label on the page. Nothing is ranked, because everything shouts at once.
+
+   Target hierarchy: the rotated nameplate is the only display-scale event on
+   the page. Below it, one family at four sizes, an ink ladder instead of hue,
+   and chapter breaks made of space with a single hairline to mark them.
+
+   What stays loud on purpose: the nameplate at full size and full ink, the
+   Subscribe action in Verge purple, and the photography. Those three carry
+   the identity; the 440 purple bylines were carrying it away from them.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+
+   The Verge exposes no custom properties worth retargeting — its design
+   system is vanilla-extract, which compiles literal values into hashed atomic
+   classes, so the ladder is declared here and spent by hand. Those hashes are
+   also why nearly every selector below is [class*=]: an element's classes are
+   a base recipe plus variants (._1d4s5vd0 on every headline, ._1d4s5vda on
+   the hero one), and matching the tail is the only way to reach a rank rather
+   than an instance.
+
+   --sd-sans keeps the site's own PolySans first. It is a well-made product
+   sans shipping 300/400/500/700 — enough rungs for this hierarchy — so the
+   skill's rule 1 applies and Inter is never reached for. The hashed family
+   name is build-specific, hence the literal "PolySans" and Inter behind it:
+   if Vox redeploys and the hash moves, the page lands on Inter, not Times.
+   -------------------------------------------------------------------------- */
+html,
+body,
+.duet--app,
+footer.duet--navigation--footer,
+[id^="drawer_"] {
+  --sd-sans: __polySans_9afc27, "PolySans", "PolySans Neutral", Inter,
+    "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+    Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-1: rgb(0 0 0 / 88%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 52%, not the 40–50% metadata rung. Bylines, timestamps and comment counts
+     all sit at 12px here and still have to clear 4.5:1 on white. */
+  --sd-ink-3: rgb(0 0 0 / 52%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-rule-strong: rgb(0 0 0 / 18%);
+  --sd-fill: rgb(0 0 0 / 4%);
+  --sd-fill-2: rgb(0 0 0 / 6%);
+
+  /* The one surviving accent. Spent on the Subscribe action and the focus
+     ring, nowhere else. */
+  --sd-accent: #5200ff;
+
+  /* Dark bands — the footer and the navigation drawer. The light ladder's
+     alphas buy more contrast on near-black, so these are the dark
+     equivalents rather than the same numbers inverted. */
+  --sd-dark: #0a0a0a;
+  --sd-dark-ink-2: rgb(255 255 255 / 56%);
+  --sd-dark-ink-3: rgb(255 255 255 / 36%);
+  --sd-dark-rule: rgb(255 255 255 / 12%);
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas and type family
+
+   One family across the whole surface. Three of the four the page ships are
+   replaced here: FK Roman Standard (serif deks and quick-post body), Manuka
+   (the 90px/900 hero display face) and PolySans Mono, which was setting
+   chrome labels — Subscribe, Sign in, the Latest/Following toggle, the Most
+   Popular numerals — rather than anything tabular. Tabular figures come back
+   as a font-feature below, where they are actually needed.
+   -------------------------------------------------------------------------- */
+html,
+body {
+  background: #fff !important;
+  color: var(--sd-ink-1) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+optgroup,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+li,
+span,
+a,
+div,
+figcaption,
+blockquote,
+cite,
+em,
+i,
+strong,
+b {
+  font-family: var(--sd-sans) !important;
+}
+
+/* Italics carry emphasis in quick-post copy ("The New York Times reports…").
+   Losing the serif must not lose the emphasis. */
+em,
+i,
+cite {
+  font-style: italic !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Casing
+
+   Every set of capitals on this page comes from CSS, not from the markup —
+   bylines, timestamps, comment counts, ad labels, the nav drawer, the
+   copyright line. Verified with a computed-style sweep before writing this:
+   the only markup capitals are inside headline strings ("THE PEOPLE DO NOT
+   YEARN FOR AUTOMATION"), which a text-transform cannot reach and which stay
+   exactly as the desk wrote them.
+
+   text-transform and letter-spacing move together: the 1.1–1.8px tracking on
+   this page exists to open up capitals and reads as broken spacing the moment
+   the capitals go.
+   -------------------------------------------------------------------------- */
+body *,
+body *::before,
+body *::after {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+/* Topic-follow chips are the one place the capitals were load-bearing: their
+   labels come from lowercase slugs in the markup ("ai", "tech"), so simply
+   removing the transform leaves all-lowercase chrome, which is the same
+   failure in the other direction. */
+[class*="_11kb06m1"] {
+  text-transform: capitalize !important;
+}
+
+/* The ad label is CSS content — lowercase in the stylesheet, uppercased on
+   the way out. Capitalising one known word cannot corrupt anything. */
+.m-ad::before,
+[class*="m-ad__"]::before {
+  text-transform: capitalize !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Type scale
+
+   Seven headline sizes at 700–900 collapse to three ranks plus the hero.
+   PolySans ships no 600, so headings are set at 500: asking for 600 resolves
+   back up to 700 and would quietly restore the weight this section exists to
+   remove.
+
+   Order matters more than usual here. Every headline carries the base class
+   ._1d4s5vd0 alongside its rank variant, so three rules of equal weight would
+   resolve by source order and the last one would win everywhere. The base is
+   written first and the two larger ranks are qualified with `div` so they win
+   on specificity rather than on position.
+   -------------------------------------------------------------------------- */
+body {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
+
+/* Rank 3 — the default story title, and the base every headline inherits. */
+[class*="_1d4s5vd0"],
+[class*="_1d4s5vd0"] a,
+[class*="_8esbkt3"] {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  line-height: 1.28 !important;
+  letter-spacing: -0.008em !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Rank 2 — the lead card in a story set, previously 26px and 34px. */
+div[class*="_1d4s5vd8"],
+div[class*="_1d4s5vd8"] a {
+  font-size: 24px !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.014em !important;
+}
+
+/* Rank 1 — the hero, and the only headline allowed near display scale. Was
+   90px/900 in Manuka, which put a second display-scale black type event 60px
+   from the nameplate and made the two compete for the same job. */
+div[class*="_1d4s5vda"],
+div[class*="_1d4s5vda"] a {
+  font-family: var(--sd-sans) !important;
+  font-size: 44px !important;
+  line-height: 1.06 !important;
+  letter-spacing: -0.022em !important;
+}
+
+/* Section headings, and the ranked-list headings beside them. */
+h2[class*="_1e7ii3f2"],
+[class*="_1e7ii3f3"],
+h2[class*="pnbklw1"] {
+  font-size: 22px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.012em !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Section description: same size and baseline as the title, at 64% ink. The
+   page already had this two-tone pattern; it only needed the weights
+   levelling, having shipped as 700 against 300 — two weights doing what one
+   step down the ink ladder does more quietly. */
+[class*="_1e7ii3f5"] {
+  font-size: 22px !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* The "/" between a section title and its description is a separator, so it
+   belongs on the quietest rung in the heading rather than in brand purple. */
+[class*="_1e7ii3f4"] {
+  color: var(--sd-ink-3) !important;
+  font-weight: 400 !important;
+}
+
+/* Deks. Was FK Roman Standard at #4A4A4A, in two sizes. */
+[class*="_1d4s5vdc"],
+[class*="_1d4s5vdd"],
+[class*="_1d4s5vdg"],
+[class*="_1d4s5vdm"],
+[class*="_19wv7tc1"],
+[class*="_1044qizi"],
+[class*="_18mzr4b0"],
+[class*="_18mzr4b1"],
+.duet--article--standard-paragraph {
+  font-family: var(--sd-sans) !important;
+  font-size: 15.5px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* Quick posts in the Latest river are the only running prose on the page and
+   are read rather than scanned, so they keep body size and a reading
+   line-height. */
+[class*="_4ine550"],
+[class*="_1y5ugvb0"],
+[class*="_1y5ugvbf"],
+.duet--content-cards--quick-post p {
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+  color: var(--sd-ink-1) !important;
+}
+
+/* The lede sentence of a quick post is its headline. Weight 500, not the 700
+   it shipped at: it has to outrank the sentence after it, not the section
+   heading above it. */
+[class*="_4ine554"] {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Metadata rung: byline, timestamp, comment count, image credit, ad label. */
+.duet--article--timestamp,
+.duet--article--comments-link,
+[class*="_19wv7tc5"],
+[class*="_1g89o322"],
+[class*="_1jiz7rn6"],
+[class*="_1jiz7rna"],
+[class*="_1044qizs"],
+[class*="_1044qizr"],
+[class*="_1044qizj"],
+[class*="g4xafw0"],
+[class*="g4xafw2"],
+[class*="_4zezgs"],
+[class*="_1y5ugvbc"],
+.m-ad::before,
+[class*="m-ad__"]::before {
+  font-family: var(--sd-sans) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* The source attribution under a quick post ("nytimes.com") shipped at
+   15px/700 in purple — heavier than the post's own lede. It is provenance. */
+a[class*="_1y5ugvba"],
+[class*="_1y5ugvb9"],
+[class*="_1p001ee0"] {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* "More" beside a shelf heading: the least-used control in the region, so it
+   must not be one of its heavier elements. */
+header[class*="_1e7ii3f0"] a {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-3) !important;
+  text-decoration: none !important;
+}
+
+header[class*="_1e7ii3f0"] a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Neutralising the palette
+
+   #5200FF appears on ~440 elements: every byline, the nav separators, tag
+   chips, ranking tiles, the selected feed tab, image overlays, and the
+   underline under every in-prose link. None of them encode anything — it is
+   the house colour used as texture. Bylines in particular were louder than
+   the timestamps beside them and nearly as loud as the headlines above them,
+   which inverts the ranking a reader needs.
+
+   #3CFFD0 is the mint secondary: disclosure chevrons, social icon rings, the
+   Verge Score badge. Merchandising colour under the skill's third category,
+   so it goes too. The score's own numeral carries the score.
+   -------------------------------------------------------------------------- */
+
+/* Bylines drop to the rung of the timestamp they sit beside. The author name
+   keeps 500 so the two are still told apart without hue doing the work. */
+[class*="_19wv7tc5"],
+[class*="_1g89o322"],
+[class*="_1jiz7rn6"] {
+  color: var(--sd-ink-2) !important;
+  font-weight: 500 !important;
+}
+
+/* Ranking numerals in Most Popular / Most Discussed. #EEE6FF was a purple
+   wash behind a numeral that is already the largest thing in its row, and
+   neutralising the wash to 4% grey only turned five brand chips into five
+   grey boxes — in an <ol>, where the rank is content and needs no chip at
+   all. The fill goes, and the numeral aligns to the top of its row instead of
+   floating in the middle of a 50px tile beside a two-line headline. */
+[class*="pnbklw4"] {
+  background: none !important;
+  color: var(--sd-ink-2) !important;
+  border-radius: 0 !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500 !important;
+  font-size: 18px !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  height: auto !important;
+}
+
+/* Image overlays and the video play affordance. rgba(82,0,255,.85) over a
+   photograph is the loudest thing in any card that has one, and the shadow
+   under it was doing nothing a solid fill does not already do. */
+[class*="_1cnxcye1"],
+[class*="_1cnxcye4"] {
+  background-color: rgb(0 0 0 / 78%) !important;
+  box-shadow: none !important;
+}
+
+/* Verge Score badge: mint fill removed, the number stays the number. */
+[class*="_1j7g5t30"],
+[class*="xhcq400"] {
+  background-color: var(--sd-fill-2) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Tag / follow chips: a purple 35% outline reads as coloured next to neutral
+   ink. They keep their pill family — the skill allows one for tags and
+   filters — and lose the hue. */
+[class*="_11kb06m1"],
+[class*="_11kb06m2"],
+.duet--cta--button {
+  border-color: var(--sd-rule-strong) !important;
+  color: var(--sd-ink-1) !important;
+  background-color: transparent !important;
+}
+
+/* Icons are ink on the same ladder as the text beside them, not a second
+   colour system: purple sign-in glyph, mint chevrons, mint social rings. The
+   two logotypes are marks rather than icons and are restated after this so
+   they are not caught by it. */
+svg {
+  fill: currentColor !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. The nameplate
+
+   Kept. Full size, full ink, in its own column.
+
+   The argument against is real: it is 149×658px of type carrying no
+   information, and the hero card is offset 120px to clear it, so it is
+   decoration holding a column of the page open. The argument for is that a
+   front page's nameplate is not decoration — it is the masthead, the one
+   element that says whose front page this is, and the skill is explicit that
+   a brand mark is not chrome and keeps the form it shipped in. Removing it
+   would also mean closing the 120px gutter, after which the page would be
+   indistinguishable from any other tech feed.
+
+   So it stays, and the page is rebalanced around it instead: the hero
+   headline comes down from 90px/900 to 44px/500 (section 4) so the nameplate
+   is the only display-scale mark on the surface rather than one of two
+   competing for the job. Same logic the skill applies to colour — one loud
+   mark on a quiet page does more identity work than it did on a loud one.
+   -------------------------------------------------------------------------- */
+svg[class*="_1e7jslxo"],
+svg[class*="_1e7jslxo"] path,
+svg[class*="up4voow"],
+svg[class*="up4voow"] path {
+  fill: var(--sd-ink) !important;
+  color: var(--sd-ink) !important;
+  opacity: 1 !important;
+}
+
+/* The masthead logotype in the nav row, and its white counterpart in the
+   footer. Both are the same mark at smaller sizes. */
+a[class*="_1c6ljn7u"] svg,
+a[class*="_1c6ljn7u"] svg path {
+  fill: var(--sd-ink) !important;
+}
+
+[class*="_1fwf6sa3"] > a svg,
+[class*="_1fwf6sa3"] > a svg path {
+  fill: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Masthead and navigation
+
+   Two rows: a utility row (Subscribe, Sign in) and the nav proper, carrying
+   the small logotype, seven sections, notifications and the drawer toggle.
+   Every capability stays; only the weights change.
+   -------------------------------------------------------------------------- */
+nav[class*="_1c6ljn77"],
+nav[class*="_1c6ljn71"] {
+  border-bottom: 1px solid var(--sd-rule-strong) !important;
+  padding-bottom: 8px !important;
+}
+
+nav[class*="_1c6ljn7"] a,
+[class*="tc3v1r"] a {
+  color: var(--sd-ink-1) !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+}
+
+nav[class*="_1c6ljn7"] a:hover,
+[class*="tc3v1r"] a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+  text-underline-offset: 0.24em !important;
+}
+
+/* Subscribe is the page's existing primary action and the single place the
+   accent survives. It was a 2px-radius purple chip set in PolySans Mono caps
+   at 11px; it keeps the fill and the colour and gains a readable label. */
+a[class*="_152op7n1"],
+a[class*="_971sic4"] {
+  background: var(--sd-accent) !important;
+  color: #fff !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  text-decoration: none !important;
+}
+
+a[class*="_152op7n1"]:hover,
+a[class*="_971sic4"]:hover {
+  background: #4400d6 !important;
+}
+
+/* Sign in sits beside it and is used far less often, so it must not be the
+   heavier of the two. Quiet text, matching size, no box. */
+a[class*="_152op7n2"],
+a[class*="_971sicd"],
+[class*="_152op7n3"] {
+  color: var(--sd-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+}
+
+a[class*="_152op7n2"]:hover,
+a[class*="_971sicd"]:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* Skip-to-content only appears on focus, and keeps the accent because that is
+   the moment it needs to be seen. */
+.duet--cta--skip-to-content {
+  border-color: var(--sd-accent) !important;
+  color: var(--sd-accent) !important;
+  background: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Navigation drawer (dark band)
+
+   The mega-menu panel is a saturated purple sheet with white 18px uppercase
+   links, mint disclosure chevrons and mint-ringed social icons. Kept as a
+   deliberately inverted surface with its own consistent ladder, which the
+   skill permits; the hue and the capitals go.
+   -------------------------------------------------------------------------- */
+[id^="drawer_"],
+[id^="drawer_"] > div,
+[id^="drawer_"] section,
+[class*="_1j7g5t3"] {
+  background-color: var(--sd-dark) !important;
+}
+
+[id^="drawer_"] a,
+[id^="drawer_"] button {
+  color: #fff !important;
+}
+
+a[class*="hvvo7w0"] {
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  padding: 8px 12px !important;
+  color: var(--sd-dark-ink-2) !important;
+}
+
+a[class*="hvvo7w0"]:hover {
+  color: #fff !important;
+}
+
+/* Section rows in the drawer. The divider shipped as 1px #3D00BF — purple on
+   purple, and near invisible; on a dark canvas 12% white is the equivalent of
+   the 10% hairline used on the light one. */
+li[class*="_17jblij0"] {
+  border-color: var(--sd-dark-rule) !important;
+}
+
+button[class*="_17jblij1"] {
+  font-size: 17px !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+}
+
+svg[class*="_17jblij4"] {
+  color: var(--sd-dark-ink-3) !important;
+}
+
+/* Social links in the drawer and the footer: mint ring, mint glyph. These are
+   third-party marks, so they go monochrome under Page Composition. */
+a[class*="d9cw201"] {
+  border-color: var(--sd-dark-rule) !important;
+  color: var(--sd-dark-ink-2) !important;
+}
+
+a[class*="d9cw201"]:hover {
+  border-color: rgb(255 255 255 / 32%) !important;
+  color: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Latest / Following
+
+   A two-state feed switch, three-state on mobile where it also carries Top
+   Stories. Selected shipped as a filled purple pill on an #E9E9E9 track.
+   Selection is now carried by ink contrast, which keeps the states obviously
+   different from one another without putting a second saturated control on
+   the page. The pill shape stays: this is a filter, and the skill allows
+   filters their own pill family.
+   -------------------------------------------------------------------------- */
+#storyStream-tab,
+#follows-tab,
+#mobile-topStories-tab,
+#mobile-latest-tab,
+#mobile-following-tab {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+  background: transparent !important;
+  padding: 9px 20px !important;
+}
+
+#storyStream-tab[aria-selected="true"],
+#follows-tab[aria-selected="true"],
+#mobile-topStories-tab[aria-selected="true"],
+#mobile-latest-tab[aria-selected="true"],
+#mobile-following-tab[aria-selected="true"] {
+  background: var(--sd-ink) !important;
+  color: #fff !important;
+}
+
+[class*="_1cuypub5"] {
+  background: var(--sd-fill) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Hero composition
+
+   The headline block shipped with margin: -45px 0 0 80px — pulled up over the
+   photograph and indented 80px from its left edge, sitting in a white box
+   whose 20px box-shadow spread is what let the overlap read. Nothing else on
+   the page starts at that x-position, so the lead story was the one item out
+   of alignment with the grid it heads.
+
+   Dropped below the image and flush with it. The white box is no longer
+   covering anything, so it stops being a surface — which is also the only way
+   to get rid of the shadow, since a `background: transparent` alone leaves
+   the spread painting a white band across the bottom of the photograph.
+   -------------------------------------------------------------------------- */
+.duet--homepage--hero [class*="up4voos"] {
+  margin: 20px 0 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 680px !important;
+}
+
+.duet--homepage--hero [class*="_1e7jslxq"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+/* The dek would run the full 680px at 15.5px, which is ~95 characters. Held
+   to a reading measure; the headline above it keeps the full width. */
+.duet--homepage--hero [class*="_1d4s5vdc"],
+.duet--homepage--hero [class*="_1d4s5vdd"],
+.duet--homepage--hero [class*="_19wv7tc1"] {
+  max-width: 34em !important;
+  font-size: 17px !important;
+  line-height: 1.45 !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Chapter rhythm
+
+   Around twenty curated sections, ranked lists and category shelves, each
+   introduced by a 3px purple rule directly above its heading. On a page with
+   no other chapter signal that rule is doing real work, so it stays — as one
+   hairline rather than three purple pixels, with space doing most of the
+   separating: the gap above a heading ends up roughly three times the gap
+   below it, which is what makes the break legible.
+   -------------------------------------------------------------------------- */
+header[class*="_1e7ii3f0"] {
+  border-top: 1px solid var(--sd-rule-strong) !important;
+  padding-top: 16px !important;
+  margin-bottom: 2px !important;
+}
+
+/* Most Popular and Most Discussed carry the same 3px purple rule on the
+   section rather than on a header element, so they need it separately. */
+section[class*="pnbklw0"] {
+  border-top: 1px solid var(--sd-rule-strong) !important;
+  padding-top: 16px !important;
+}
+
+/* 40px above the rule and 16px below it, against 16px from the heading to its
+   own content: the gap above a heading works out at roughly three times the
+   gap below it, which is what makes a chapter break legible without widening
+   the rule. */
+section[class*="_1ks5mod0"],
+section[class*="pnbklw0"] {
+  margin-top: 40px !important;
+  row-gap: 16px !important;
+}
+
+#topStories-panel,
+[class*="_1e7jslxe"] {
+  row-gap: 24px !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Rules
+
+   lines.js on the untouched page reports ~1,800 painted edges. Almost all of
+   them come from four mechanisms, and only one was a border:
+
+     536  a 1px #E9E9E9 box around every 75px thumbnail (134 images × 4 edges)
+     686  an inset box-shadow drawing the underline beneath every link
+     160  2px bars — carousel position indicators, which are controls
+      41  the chapter rule above each section heading
+
+   The thumbnail boxes go: a photograph defines its own edge, and 134 of them
+   were the largest line population on the page by a wide margin. The link
+   underlines are recoloured rather than removed, but through one mechanism
+   only — see section 14. The carousel bars stay, because they are a control's
+   only visible output. The chapter rules stay.
+
+   That leaves the chapter rules, one under the nav, one between the story
+   column and the Latest river, and the record separators below.
+   -------------------------------------------------------------------------- */
+img[class*="i7ks070"],
+img[class*="_1ismqjf"] {
+  border: 0 !important;
+}
+
+/* Records in the Latest river — quick posts and full story cards alike. Each
+   post already begins with an author avatar or a thumbnail, which marks the
+   start of a record more clearly than a rule does, so the line is replaced by
+   the difference between a 10px internal gap and a ~44px external one. */
+.duet--content-cards--quick-post,
+[class*="rj2ep84"],
+[class*="rj2ep89"],
+#storyStream-panel [class*="_1ismqj1"],
+#storyStream-panel [class*="up4voo5"] {
+  border-bottom: 0 !important;
+  padding: 22px 0 !important;
+}
+
+li[class*="pnbklw3"] {
+  border-bottom: 0 !important;
+  padding: 12px 0 !important;
+}
+
+/* Row and column separators inside the curated story sets: a ::before bar
+   between rows and a border between the two columns. Both draw a grid across
+   items the gutter already separates. */
+[class*="q0eggf4"]::before,
+[class*="q0eggf"]::before {
+  display: none !important;
+}
+
+[class*="_1rdp8jb3"] {
+  border-right: 0 !important;
+}
+
+/* The 2×2 set of small cards under the hero draws its row divider as an
+   ::after carrying a border rather than a background bar, which is why
+   zeroing borders on the card itself left the line untouched. */
+[class*="_1msrjwf1"]::after,
+[class*="_1msrjwf1"]::before {
+  display: none !important;
+}
+
+/* Inside a quick post the header, body, source and comment count are one
+   record. Tight gaps hold them together against the space that now separates
+   one post from the next. */
+[class*="_1jiz7rn0"],
+[class*="_1jiz7rn1"] {
+  margin-bottom: 10px !important;
+}
+
+[class*="_4ine550"] {
+  margin-bottom: 8px !important;
+}
+
+[class*="dq5wa40"] {
+  margin-top: 8px !important;
+}
+
+/* The one vertical rule left on the page, between the story column and the
+   Latest river. Two different streams of content run side by side for 10,000
+   pixels with nothing else to say they are different; this is the line that
+   earns its place. */
+[class*="_1e7jslx5"] {
+  border-left: 1px solid var(--sd-rule) !important;
+}
+
+/* Carousel position indicators: an active bar and its inactive siblings.
+   Quieting a control's only visible output is fine, deleting it is not, so
+   both states stay and stay distinguishable. */
+li[class*="xnv72hb"] {
+  background: var(--sd-ink) !important;
+}
+
+li[class*="xnv72hc"] {
+  background: var(--sd-rule-strong) !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Advertising
+
+   Kept, all of it — the leaderboards, the river rectangles, the sticky rail,
+   the footer unit. Only the label around them is quieted; it shipped at 9px
+   uppercase with 0.9px tracking. The #F6F6F6 band behind the top leaderboard
+   is left exactly as it is: at 3.5% black it is already the quiet alternating
+   fill the skill asks for, and restating it would be painting it twice.
+   -------------------------------------------------------------------------- */
+.m-ad::before,
+[class*="m-ad__"]::before {
+  font-size: 10px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. Links, media, states
+
+   The Verge underlines links with `box-shadow: inset 0 -1px 0` rather than
+   text-decoration, in purple, on 439 elements — and leaves the same shadow
+   transparent on headline links so it can appear on hover. Adding a
+   text-decoration underline on top would have drawn every prose link twice,
+   so the shadow is cleared everywhere first and one underline is drawn back
+   where it is load-bearing.
+   -------------------------------------------------------------------------- */
+main a,
+footer a,
+nav a {
+  box-shadow: none !important;
+}
+
+main a,
+main a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* In-prose links inside quick posts sit mid-sentence and have no other
+   affordance now that the purple has gone, so they keep an underline. */
+.duet--content-cards--quick-post [class*="_1y5ugvb"] a,
+[class*="_18mzr4b0"] a,
+[class*="_18mzr4b1"] a,
+.duet--article--dangerously-set-cms-markup a {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgb(0 0 0 / 34%) !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 0.16em !important;
+}
+
+.duet--content-cards--quick-post [class*="_1y5ugvb"] a:hover,
+.duet--article--dangerously-set-cms-markup a:hover {
+  text-decoration-color: var(--sd-ink) !important;
+}
+
+/* Headline links: the title is already the affordance, so the underline is
+   hover feedback rather than a permanent rule under every headline. */
+[class*="_1d4s5vd0"] a:hover,
+[class*="_7uluu50"]:hover,
+[class*="_7uluu54"]:hover {
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+  text-underline-offset: 0.14em !important;
+}
+
+/* Photography is expressive media and keeps its colour. Stated explicitly so
+   nothing above reaches into it. */
+img,
+picture,
+video {
+  filter: none !important;
+}
+
+/* Focus keeps the accent. Removing colour from a focus state is one of the
+   few things this skill asks to be corrected rather than done, and on a page
+   that is now monochrome the purple ring reads more clearly than it did. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--sd-accent) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+/* --------------------------------------------------------------------------
+   15. Footer
+
+   A dark band carrying the white logotype, five social links, two rows of
+   navigation and the Vox Media line. The logotype is the brand mark and stays
+   white; everything else drops onto the dark ladder.
+   -------------------------------------------------------------------------- */
+[class*="_1fwf6sa0"] {
+  background: var(--sd-dark) !important;
+}
+
+/* Two rows of links, written general-then-specific so the primary row wins on
+   source order: both rows carry _1lw5n751 and only the first adds _1lw5n754,
+   so a :not() on the secondary row would have lost to whichever rule came
+   later. The legal row includes at least one <button> among the anchors. */
+[class*="_1lw5n751"] a,
+[class*="_1lw5n751"] button {
+  color: var(--sd-dark-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+}
+
+[class*="_1lw5n754"] a,
+[class*="_1lw5n754"] button {
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+[class*="_1lw5n751"] a:hover,
+[class*="_1lw5n751"] button:hover {
+  color: #fff !important;
+  text-decoration: underline !important;
+}
+
+p[class*="_1fwf6saa"],
+p[class*="_1fwf6saa"] a {
+  color: var(--sd-dark-ink-3) !important;
+  font-size: 12px !important;
+}
+
+/* --------------------------------------------------------------------------
+   16. Mobile
+
+   The mobile page leads with a full-width horizontal logotype rather than the
+   rotated one, then the three-way feed switch, then the hero. That order and
+   hierarchy are already right; the display sizes are not.
+   -------------------------------------------------------------------------- */
+@media (max-width: 800px) {
+  div[class*="_1d4s5vda"],
+  div[class*="_1d4s5vda"] a {
+    font-size: 32px !important;
+    line-height: 1.08 !important;
+  }
+
+  div[class*="_1d4s5vd8"],
+  div[class*="_1d4s5vd8"] a {
+    font-size: 22px !important;
+  }
+
+  [class*="_1d4s5vd0"],
+  [class*="_1d4s5vd0"] a {
+    font-size: 17px !important;
+  }
+
+  h2[class*="_1e7ii3f2"],
+  [class*="_1e7ii3f3"],
+  [class*="_1e7ii3f5"],
+  h2[class*="pnbklw1"] {
+    font-size: 20px !important;
+  }
+
+  section[class*="_1ks5mod0"],
+  section[class*="pnbklw0"] {
+    margin-top: 24px !important;
+  }
+
+  #topStories-panel,
+  [class*="_1e7jslxe"] {
+    row-gap: 20px !important;
+  }
+
+  .duet--homepage--hero [class*="up4voos"] {
+    margin: 16px 0 0 !important;
+  }
+
+  .duet--content-cards--quick-post,
+  [class*="rj2ep84"],
+  [class*="rj2ep89"] {
+    padding: 18px 0 !important;
+  }
+
+  /* The column rule is a desktop device; at one column it would run down the
+     edge of the page for no reason. */
+  [class*="_1e7jslx5"] {
+    border-left: 0 !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   17. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

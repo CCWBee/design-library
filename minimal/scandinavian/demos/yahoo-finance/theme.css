@@ -1,0 +1,1103 @@
+/* ==========================================================================
+   Yahoo Finance — SPCX (SpaceX) quote page — Scandinavian override
+
+   Structural problem: this is the densest surface in the set, and almost
+   none of its density is the problem. The problem is that ~37 bordered
+   cards, 9 ad frames, a ticker strip, a left rail and a 344px dock all
+   arrive at the same visual weight. Every group is a 4px box with a
+   #dde0e4 outline; every heading is GT America *Condensed* 700; the
+   interactive palette runs #1967d2 blue for links, #037b66 green for the
+   subscription CTA and #d60a22 red for losses — so the one colour pair
+   that means something (gain / loss) competes with two that do not.
+   Nothing is individually wrong. The mismatch is.
+
+   Target hierarchy: the quote is the page's subject, so price is the
+   largest thing on it and everything else steps down from there. Boxes
+   become tables — a title, a hairline, rows — so 37 outlines collapse to
+   one countable system aligned on a single left edge. Chrome, links,
+   buttons, dividers and categorical chart series all go to alpha black.
+   Gain and loss keep the exact red and green they shipped with, and are
+   then the only saturated ink on the page apart from the Yahoo mark.
+
+   Density is the product here, so this pass buys its calm from *weights
+   and colours*, not from whitespace: no row got taller, and the rules
+   under table rows stay because the space that would replace them costs
+   density the surface cannot afford. Rows and data points per screen are
+   measured before and after rather than assumed.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+
+   Yahoo declares its entire design-token set on `:root` *and* on `:root *`,
+   so every element re-declares every token locally and nothing actually
+   inherits. A `:root`-only override resolves for `html` and for nothing
+   else, which is why the universal selector is here rather than as a
+   shotgun: it is the only way to reach the declaration components read.
+
+   Deliberately NOT overridden, and load-bearing:
+     --color-text-icon-pos / -neg (+ -background)  gain / loss
+     --color-interactive-pos-* / -neg-*            gain / loss controls
+     --color-interactive-heatmap-*-pos / -neg-*    heatmap direction
+     --color-diverging-*                           sentiment scale
+     --color-ui-banner-* / --color-ui-tag-* for alert, critical, notice
+                                                   and success           status
+     --color-ui-old-brand, --yb-finance-logo-brand brand mark
+   -------------------------------------------------------------------------- */
+:root,
+:root * {
+  --sd-sans: "GT America", Inter, "Inter Variable", -apple-system,
+    BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-body: rgb(0 0 0 / 88%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 54% rather than the 40–50% metadata rung. Nearly every label on this
+     page is 12px and is real reading — "Market Cap (intraday)" is not
+     decoration — so it has to clear 4.5:1 on white. */
+  --sd-ink-3: rgb(0 0 0 / 54%);
+  --sd-rule: rgb(0 0 0 / 9%);
+  --sd-rule-strong: rgb(0 0 0 / 16%);
+  --sd-fill: rgb(0 0 0 / 4%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-active: rgb(0 0 0 / 9%);
+
+  /* Ink. Yahoo's primary is #232a31 and its secondary #656e76 — both
+     blue-grey, both reading as tinted next to a genuinely neutral rule. */
+  --color-text-icon-primary: #000 !important;
+  --color-text-icon-secondary: rgb(0 0 0 / 64%) !important;
+  --color-text-icon-neutral: rgb(0 0 0 / 64%) !important;
+  --color-text-icon-neutral-background: rgb(0 0 0 / 8%) !important;
+  --color-text-icon-disabled: rgb(0 0 0 / 32%) !important;
+  --color-text-icon-inversed: #fff !important;
+  --primary: #000 !important;
+  --secondary: rgb(0 0 0 / 64%) !important;
+  --neutral: rgb(0 0 0 / 64%) !important;
+  --disabled: rgb(0 0 0 / 32%) !important;
+  --inversed: #fff !important;
+
+  /* Surfaces. 3 and 4 were #f2f5f7, a blue-grey that tints every ad
+     placeholder, quote-lookup field and inset panel on the page. */
+  --color-surface-1: #fff !important;
+  --color-surface-2a: #fff !important;
+  --color-surface-2b: #fff !important;
+  --color-surface-3: rgb(0 0 0 / 4%) !important;
+  --color-surface-4: rgb(0 0 0 / 4%) !important;
+  --color-surface-ws: #fff !important;
+  --surface1: #fff !important;
+  --surface2: #fff !important;
+  --surface2a: #fff !important;
+  --surface2b: #fff !important;
+  --surface3: rgb(0 0 0 / 4%) !important;
+  --surface4: rgb(0 0 0 / 4%) !important;
+
+  /* Dividers. `prominent` was #232a31 — a near-black rule, which on a
+     table-heavy page draws harder than the numbers it separates. */
+  --color-ui-divider-subtle: rgb(0 0 0 / 9%) !important;
+  --color-ui-divider-subtle-non-table: rgb(0 0 0 / 6%) !important;
+  --color-ui-divider-prominent: rgb(0 0 0 / 20%) !important;
+  --color-ui-mobile-card-border: rgb(0 0 0 / 9%) !important;
+  --light-divider: rgb(0 0 0 / 9%) !important;
+  --dark-divider: rgb(0 0 0 / 20%) !important;
+  --separator: rgb(0 0 0 / 9%) !important;
+
+  /* Grey ladder, re-expressed as alpha black over white */
+  --color-ui-gray-500: #000 !important;
+  --color-ui-gray-400: rgb(0 0 0 / 64%) !important;
+  --color-ui-gray-300: rgb(0 0 0 / 40%) !important;
+  --color-ui-gray-200: rgb(0 0 0 / 12%) !important;
+  --color-ui-gray-100: rgb(0 0 0 / 7%) !important;
+  --color-ui-gray-50: rgb(0 0 0 / 4%) !important;
+  --color-ui-gray-30: rgb(0 0 0 / 3%) !important;
+  --color-ui-gray-0: #fff !important;
+  --ui-gray-500: #000 !important;
+  --ui-gray-400: rgb(0 0 0 / 64%) !important;
+  --ui-gray-300: rgb(0 0 0 / 40%) !important;
+  --ui-gray-200: rgb(0 0 0 / 12%) !important;
+  --ui-gray-100: rgb(0 0 0 / 7%) !important;
+  --ui-gray-50: rgb(0 0 0 / 4%) !important;
+  --ui-gray-0: #fff !important;
+
+  /* Links and interactive text. Level 1 is the #1967d2 blue on every
+     ticker symbol; level 2 is the near-black used for selected states. */
+  --color-interactive-level-1-enabled: #000 !important;
+  --color-interactive-level-1-hovered: #000 !important;
+  --color-interactive-level-1-pressed: #000 !important;
+  --color-interactive-level-1-selected: #000 !important;
+  --color-interactive-level-1-visited: rgb(0 0 0 / 62%) !important;
+  --color-interactive-level-1-disabled: rgb(0 0 0 / 32%) !important;
+  --color-interactive-level-1-background-hovered: rgb(0 0 0 / 6%) !important;
+  --color-interactive-level-1-background-pressed: rgb(0 0 0 / 9%) !important;
+  --color-interactive-level-2-enabled: #000 !important;
+  --color-interactive-level-2-hovered: #000 !important;
+  --color-interactive-level-2-pressed: #000 !important;
+  --color-interactive-level-2-selected: #000 !important;
+  --color-interactive-level-2-disabled: rgb(0 0 0 / 32%) !important;
+  --color-interactive-level-2-background-hovered: rgb(0 0 0 / 6%) !important;
+  --color-interactive-level-2-background-pressed: rgb(0 0 0 / 9%) !important;
+  --color-interactive-level-3-enabled: #000 !important;
+  --color-interactive-level-3-hovered: #000 !important;
+  --color-interactive-level-3-pressed: rgb(0 0 0 / 9%) !important;
+  --enabled-l1: #000 !important;
+  --hovered-l1: #000 !important;
+  --pressed-l1: #000 !important;
+  --active-l1: #000 !important;
+  --hovered-bg-l1: rgb(0 0 0 / 6%) !important;
+  --pressed-bg-l1: rgb(0 0 0 / 9%) !important;
+  --enabled-l2: #000 !important;
+  --hovered-l2: #000 !important;
+  --pressed-l2: #000 !important;
+  --active-l2: #000 !important;
+  --pressed-bg-l2: rgb(0 0 0 / 9%) !important;
+
+  /* The Finance brand accent is #037b66 — the *same* green as a gain.
+     Using it for a subscription CTA on a page where green means "up"
+     makes a button read as a status, so the accent is dropped entirely
+     and the primary action is ink instead. */
+  --color-ui-brand: #000 !important;
+  --color-interactive-brand-enabled: #000 !important;
+  --color-interactive-brand-hovered-1: rgb(0 0 0 / 78%) !important;
+  --color-interactive-brand-hovered-2: rgb(0 0 0 / 78%) !important;
+  --color-interactive-brand-pressed: #000 !important;
+  --color-interactive-brand-disabled: rgb(0 0 0 / 32%) !important;
+  --color-interactive-brand-background-hovered: rgb(0 0 0 / 6%) !important;
+  --color-interactive-brand-background-pressed: rgb(0 0 0 / 9%) !important;
+  --ui-brand: #000 !important;
+  --enabled-active-brand: #000 !important;
+  --hovered-brand: rgb(0 0 0 / 78%) !important;
+  --hovered-brand-same: rgb(0 0 0 / 78%) !important;
+  --pressed-brand: #000 !important;
+  --pressed-bg-brand: rgb(0 0 0 / 9%) !important;
+
+  /* The AI accents are a violet/gradient family used to make Scout and
+     AlphaSpace look new. No state, no brand mark — decoration. */
+  --color-interactive-ai-enabled: #000 !important;
+  --color-interactive-ai-hovered: #000 !important;
+  --color-interactive-ai-pressed: #000 !important;
+  --color-interactive-ai-selected: #000 !important;
+  --color-interactive-ai-background-enabled: rgb(0 0 0 / 4%) !important;
+  --color-interactive-ai-background-hovered: rgb(0 0 0 / 6%) !important;
+  --color-interactive-ai-background-pressed: rgb(0 0 0 / 9%) !important;
+
+  /* Subscription tier metals. The padlock glyph already says "locked". */
+  --color-ui-subscriber-free: rgb(0 0 0 / 64%) !important;
+  --color-ui-subscriber-bronze: rgb(0 0 0 / 64%) !important;
+  --color-ui-subscriber-silver: rgb(0 0 0 / 64%) !important;
+  --color-ui-subscriber-gold: #000 !important;
+  --bronze: rgb(0 0 0 / 64%) !important;
+  --silver: rgb(0 0 0 / 64%) !important;
+  --gold: #000 !important;
+  --color-interactive-ui-subscriber-bronze-enabled: rgb(0 0 0 / 64%) !important;
+  --color-interactive-ui-subscriber-silver-enabled: rgb(0 0 0 / 64%) !important;
+  --color-interactive-ui-subscriber-gold-enabled: #000 !important;
+
+  --color-interactive-focused: #000 !important;
+  --focused: #000 !important;
+
+  /* Table interaction: a hover on a data row should be a fill, not a hue.
+     `table-1-hovered` was #dde0e4, dark enough to read as a selection. */
+  --color-interactive-table-1-hovered: rgb(0 0 0 / 5%) !important;
+  --color-interactive-table-2-hovered: rgb(0 0 0 / 5%) !important;
+  --color-interactive-table-2-pressed: rgb(0 0 0 / 9%) !important;
+  --table-hover: rgb(0 0 0 / 5%) !important;
+  --table-hover-emph: rgb(0 0 0 / 5%) !important;
+  --table-selected-emph: rgb(0 0 0 / 9%) !important;
+
+  /* Categorical series carry no state — the Revenue vs. Earnings bars are
+     blue and yellow only to tell two series apart. An ink ladder does that
+     job, and interleaving the steps keeps neighbouring series separable
+     instead of fading down a ramp. */
+  --color-categorical-1-enabled: rgb(0 0 0 / 78%) !important;
+  --color-categorical-2-enabled: rgb(0 0 0 / 30%) !important;
+  --color-categorical-3-enabled: rgb(0 0 0 / 56%) !important;
+  --color-categorical-4-enabled: rgb(0 0 0 / 16%) !important;
+  --color-categorical-5-enabled: rgb(0 0 0 / 66%) !important;
+  --color-categorical-6-enabled: rgb(0 0 0 / 42%) !important;
+  --color-categorical-7-enabled: rgb(0 0 0 / 88%) !important;
+  --color-categorical-8-enabled: rgb(0 0 0 / 24%) !important;
+  --color-categorical-9-enabled: rgb(0 0 0 / 60%) !important;
+  --color-categorical-10-enabled: rgb(0 0 0 / 12%) !important;
+  --color-categorical-11-enabled: rgb(0 0 0 / 72%) !important;
+  --color-categorical-12-enabled: rgb(0 0 0 / 48%) !important;
+  --color-categorical-1-hovered: #000 !important;
+  --color-categorical-2-hovered: rgb(0 0 0 / 44%) !important;
+  --color-categorical-3-hovered: rgb(0 0 0 / 70%) !important;
+  --color-categorical-4-hovered: rgb(0 0 0 / 30%) !important;
+  --categorical1: rgb(0 0 0 / 78%) !important;
+  --categorical2: rgb(0 0 0 / 30%) !important;
+  --categorical3: rgb(0 0 0 / 56%) !important;
+  --categorical4: rgb(0 0 0 / 16%) !important;
+  --categorical5: rgb(0 0 0 / 66%) !important;
+  --categorical6: rgb(0 0 0 / 42%) !important;
+
+  /* Informational chrome dressed as a status. `accent` is the blue-tinted
+     banner behind "What's happening with SPCX?" and its suggestion chips;
+     `default` and `overlay` are plain containers. alert / critical /
+     notice / success are left alone one block above — those mean something. */
+  --color-ui-banner-accent: #000 !important;
+  --color-ui-banner-accent-bg: rgb(0 0 0 / 4%) !important;
+  --color-ui-banner-accent-icon: rgb(0 0 0 / 64%) !important;
+  --color-ui-banner-default: #000 !important;
+  --color-ui-banner-default-bg: rgb(0 0 0 / 4%) !important;
+  --color-ui-banner-default-icon: rgb(0 0 0 / 64%) !important;
+  --color-ui-tag-accent-bg-1: rgb(0 0 0 / 5%) !important;
+  --color-ui-tag-accent-bg-2: rgb(0 0 0 / 8%) !important;
+  --color-ui-tag-accent-border: rgb(0 0 0 / 12%) !important;
+  --color-ui-tag-accent-label-1: #000 !important;
+  --color-ui-tag-accent-label-2: rgb(0 0 0 / 64%) !important;
+  --color-ui-tag-default-bg-1: rgb(0 0 0 / 5%) !important;
+  --color-ui-tag-default-bg-2: rgb(0 0 0 / 8%) !important;
+  --color-ui-tag-default-border: rgb(0 0 0 / 12%) !important;
+  --color-ui-tag-default-label-1: #000 !important;
+  --color-ui-tag-default-label-2: rgb(0 0 0 / 64%) !important;
+
+  --color-ui-menu-surface: #fff !important;
+  --color-ui-overlay-1: rgb(0 0 0 / 4%) !important;
+  --color-ui-overlay-2: rgb(0 0 0 / 8%) !important;
+  --color-ui-overlay-3: rgb(0 0 0 / 12%) !important;
+  --color-ui-overlay-4: rgb(0 0 0 / 18%) !important;
+  --color-ui-scrim: rgb(0 0 0 / 44%) !important;
+  --color-ui-old-brand: #7d2eff !important;
+}
+
+/* The wordmark is two paths, each filled from its own variable: "yahoo!"
+   from --yb-finance-logo-brand (#7D2EFF) and "finance" from
+   --yb-logo-property (#232A31). The purple is the brand mark and stays
+   exactly as shipped. The property half is a tinted near-black, which is
+   the same off-palette neutral being swept everywhere else, so it goes to
+   true ink — the mark keeps its signature colour and loses its blue cast. */
+:root,
+:root * {
+  --yb-logo-property: #000 !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas and type family
+
+   GT America stays. Rule 1 of the skill's typography order is to preserve
+   an existing well-made sans-serif product typeface, and a Swiss grotesque
+   with a working 400/500 is exactly that — swapping in Inter would change
+   every metric on a page held together by `.clip` and `.ellipsis` for no
+   gain. What does go is GT America *Condensed* 700, which every one of the
+   ~40 headings uses (§3).
+
+   The family ships 400, 500 and 700 only. A request for 600 resolves *up*
+   to 700, so every heading weight below is 500 — asking for 600 here would
+   silently keep the bold it is replacing.
+   -------------------------------------------------------------------------- */
+html,
+body#atomic {
+  background: #fff !important;
+  color: var(--sd-ink-body) !important;
+  font-family: var(--sd-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: var(--sd-sans) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Type scale
+
+   Five sizes and two weights across the whole page, against nine sizes and
+   three weights (400/500/700) in two families before. Six styles is above
+   the skill's three-or-four, and that is deliberate: a quote page has to
+   separate price, instrument, chapter, table title, row and unit, and
+   collapsing any pair of those merges two real distinctions.
+   -------------------------------------------------------------------------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-condensed,
+[class*="type-"][class*="-bold"],
+[class*="type-"][class*="-emphasis"] {
+  font-family: var(--sd-sans) !important;
+  font-stretch: normal !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Page chapters — "Recent News", "Statistics", "Compare". Twenty of these
+   at 24px condensed 700 gave the page twenty equal shouts. */
+h3.header,
+h2.header {
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.012em !important;
+  color: var(--sd-ink) !important;
+}
+
+/* A chapter belongs to what follows it: 40px above against 12px below is
+   the ~3:1 ratio that makes the break legible with no rule at all. That
+   also replaces the assorted 24–60px gaps the page had between sections. */
+header.medium,
+header.large {
+  margin: 40px 0 12px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  align-items: baseline !important;
+}
+
+/* Table and card titles */
+h3.title,
+h4.title,
+.card header h3,
+.card header h4 {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Subheads inside Financial Highlights, at 700 before */
+h4 {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* Story and video headlines already sat at 16/500 and 24/700; one size,
+   one weight, and the 24px feature headline drops its bold. */
+h3.clamp,
+h3[class*="line-clamp"] {
+  font-size: 15.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.34 !important;
+  letter-spacing: -0.004em !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Masthead and site nav
+
+   Two stacked bars, then a ticker strip, then an ad, then the quote. The
+   bars keep every control; what goes is the boxed green subscription pill
+   outranking the navigation it sits beside — the least-used control in the
+   band was its heaviest element.
+   -------------------------------------------------------------------------- */
+#ybar,
+#ybar .inner,
+header.hideOnPrint,
+.ybar-sticky,
+#navigation-container {
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+/* One rule under the whole masthead. The nav row and the ticker strip both
+   drew their own, which stacked three lines into 120px of chrome. */
+#ybar {
+  border: 0 !important;
+}
+
+#navigation-container {
+  border: 0 !important;
+  border-bottom: 1px solid var(--sd-rule) !important;
+}
+
+#navigation-container a.item,
+#navigation-container .item-content,
+#ybar-l1-nav a,
+#ybar-l1-nav .item-content {
+  color: var(--sd-ink-2) !important;
+  font-weight: 400 !important;
+  font-size: 13.5px !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+}
+
+#navigation-container a.item:hover,
+#navigation-container a.item.active,
+#ybar-l1-nav a:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* Yahoo marks the current property ("Finance") in the brand green. Ink and
+   weight say the same thing without spending the gain colour on wayfinding. */
+#ybar-l1-nav .active .item-content,
+#ybar-l1-nav a[aria-current] .item-content,
+#navigation-container .selected .item-content {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+/* Search: one boundary for one control. The form, the input and the submit
+   each carried their own, so the field drew itself three times. A quiet
+   fill is the boundary now and the button stops being a blue-green block. */
+#ybar-sf,
+.ybar-search-box-container form {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+#ybar-sbq,
+.finsrch-inpt {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--sd-ink-body) !important;
+  font-size: 14px !important;
+}
+
+#ybar-sbq::placeholder,
+.finsrch-inpt::placeholder {
+  color: var(--sd-ink-3) !important;
+}
+
+#ybar-search,
+.finsrch-btn {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--sd-ink-2) !important;
+}
+
+#ybar-search:hover,
+.finsrch-btn:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Mail, notifications, account and sign-in are peers: one size, one rung,
+   one baseline, fill only on hover. Sign-in keeps a hairline because it is
+   the only one of the four that is a labelled action rather than an icon. */
+.l2-alphaspace a,
+.l2-alphaspace button,
+.l2-get-premium a,
+.l2-get-premium button,
+#login-container {
+  background: transparent !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
+.l2-alphaspace a:hover,
+.l2-get-premium a:hover,
+#login-container:hover {
+  background: var(--sd-hover) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Market ticker strip
+
+   Eight indices with price, change, percent and a sparkline in 53px. All of
+   it stays: this is the densest useful thing on the page and it costs one
+   row. The strip is separated by the masthead rule above it, so its own
+   border goes rather than making a third line in 130px.
+   -------------------------------------------------------------------------- */
+.market-indices-header-container,
+.market-indices-header {
+  background: #fff !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.ticker-item-wrapper .longName,
+.ticker-item-wrapper .name,
+.market-indices-header .name {
+  color: var(--sd-ink-2) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.ticker-item-wrapper .price,
+.ticker-item-wrapper .last-price {
+  color: var(--sd-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Quote nav rail
+
+   Twelve section links down the left. It was already a quiet text list, so
+   it stays one — a rule or a fill here would promote a wayfinding aid above
+   the quote it points into. Selected reads as ink plus weight.
+   -------------------------------------------------------------------------- */
+nav.vertical,
+nav.vertical .nav-list {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+nav.vertical a.item {
+  color: var(--sd-ink-2) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+nav.vertical a.item:hover {
+  color: var(--sd-ink) !important;
+}
+
+nav.vertical a.item.selected,
+nav.vertical a.item[aria-current] {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Quote header — the page's subject
+
+   Before: company name 24px/700 and price 32px/700, two near-equal bolds
+   competing to be the headline, with the exchange line above them at the
+   same grey as the timestamp below. After: price is the largest thing on
+   the page, the instrument steps down from it, and the whole block carries
+   one weight so size alone builds the hierarchy.
+   -------------------------------------------------------------------------- */
+[data-testid="quote-hdr"] {
+  border: 0 !important;
+}
+
+/* The line under the exchange row separated the instrument from its own
+   price — a rule across a relationship, not between two of them. */
+[data-testid="quote-hdr"] .top {
+  border: 0 !important;
+  box-shadow: none !important;
+  padding-bottom: 4px !important;
+}
+
+.exchange {
+  color: var(--sd-ink-3) !important;
+  font-size: 12px !important;
+}
+
+h1.heading {
+  font-size: 26px !important;
+  font-weight: 500 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--sd-ink) !important;
+  margin: 0 !important;
+}
+
+[data-testid="qsp-price"],
+[data-testid="qsp-overnight-price"] {
+  font-size: 36px !important;
+  font-weight: 500 !important;
+  line-height: 1.06 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--sd-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Change and percent keep #037b66 / #d60a22 untouched. They are now the
+   only saturated ink in the header, which makes direction *more* legible
+   than it was beside a blue CTA and a green subscription pill. Weight drops
+   to 500 with everything else; the colour is doing the work. */
+[data-testid="qsp-price-change"],
+[data-testid="qsp-price-change-percent"],
+[data-testid="qsp-overnight-price-change"],
+[data-testid="qsp-overnight-price-change-percent"] {
+  font-size: 19px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.marketTimeNotice,
+.marketTimeNotice span {
+  color: var(--sd-ink-3) !important;
+  font-size: 12px !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Chart region
+
+   The chart itself is ChartIQ painting a <canvas>, and its 20 sparkline
+   siblings are canvases too, so the line colour, the gradient wash under
+   it and the grid behind it are all out of CSS's reach. That is the hard
+   ceiling of override mode on this page, and it lands on exactly the
+   element the skill would otherwise neutralise. It also settles the
+   neutrality-vs-status question by force: the price chart keeps its red or
+   green, so the surrounding chrome has to go quiet enough for that colour
+   to read as the signal rather than as one more decorated panel.
+   -------------------------------------------------------------------------- */
+.chartChinWrap,
+[data-testid="chart-container"],
+.quote-chart-container,
+.ciq-chart-area {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Range tabs (1D … All). Selected was #1967d2 on #f0f9ff; it is now ink on
+   a 6% fill, which is the same mechanism the rest of the page's segmented
+   controls use. Each tab still shows its own return in gain/loss colour. */
+.tabBtn {
+  border-radius: 6px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+
+.tabBtn[aria-selected="true"] {
+  font-weight: 500 !important;
+}
+
+/* Every affordance survives: the mountain/candle selector, Advanced Chart,
+   AlphaSpace Chart and the settings gear. They were four controls at three
+   weights; now they are one row of quiet pills at the site's own radius. */
+[data-testid="chart-ctls"] a,
+[data-testid="chart-ctls"] button,
+[data-testid="advanced-chart-link"],
+[data-testid="chart-settings-button"] {
+  background: #fff !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+[data-testid="chart-ctls"] a:hover,
+[data-testid="chart-ctls"] button:hover {
+  background: var(--sd-hover) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Key statistics
+
+   Sixteen label/value pairs in four columns — the densest table on the page
+   and the one that must not lose a row. Yahoo separated each with a *dashed*
+   rule; dashed is decoration doing a hairline's job. Kept as a solid 9%
+   rule rather than replaced with space, because at 24px per row the space
+   that would group these instead would cost roughly half of them off the
+   screen. That is the trade, made deliberately.
+   -------------------------------------------------------------------------- */
+[data-testid="quote-statistics"] {
+  border: 0 !important;
+}
+
+[data-testid="quote-statistics"] li {
+  border: 0 !important;
+  border-bottom: 1px solid var(--sd-rule) !important;
+  align-items: baseline !important;
+}
+
+[data-testid="quote-statistics"] .label,
+[data-testid="quote-statistics"] .labelText {
+  color: var(--sd-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+}
+
+[data-testid="quote-statistics"] .value,
+[data-testid="quote-statistics"] .value fin-streamer {
+  color: var(--sd-ink) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Cards become tables
+
+   Thirty-seven `section.card` boxes — four returns, four analyst panels,
+   two statistics tables, five compare cards, four insight scores, four
+   research reports, five watchlist cards — each a 4px rectangle outlined
+   in #dde0e4. Read together they are a tile field, and the outlines are
+   also a second boundary around groups whose rows are already ruled.
+   Dropping the box and keeping one rule above the title turns each into a
+   table: title, hairline, rows. Rules in a row land on one baseline and
+   the eye counts them as a single line, so four across a band reads as
+   structure rather than as four boxes.
+
+   Removing the horizontal padding as well pulls every value onto the same
+   left edge as the statistics table and the section headings above it,
+   which is what does most of the work of making this read as designed.
+   -------------------------------------------------------------------------- */
+section.card,
+div.card,
+section.card.bdr,
+section.card.small,
+section.card.large,
+[data-testid="card-container"] {
+  background: #fff !important;
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 10px 16px 0 0 !important;
+}
+
+section.card header,
+div.card header {
+  margin-bottom: 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Buttons and controls
+
+   Yahoo's control system is already consistent — a 24px-radius pill family
+   for buttons, a 4px family for tabs and cards — so the pills stay. Choosing
+   a shape per instance is the failure the skill warns about; replacing a
+   coherent family with a different coherent family is churn. What changes is
+   that filled, tinted and bordered variants collapse onto one quiet
+   treatment, leaving exactly one filled button on the page.
+   -------------------------------------------------------------------------- */
+.secondary-btn,
+.secondary-btn-link,
+.tertiary-btn,
+.tertiary-btn-link,
+.icon-btn,
+.icon2-btn,
+.link-btn,
+.link2-btn,
+.quaternary-btn {
+  background: transparent !important;
+  border-color: var(--sd-rule-strong) !important;
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
+.secondary-btn:hover,
+.secondary-btn-link:hover,
+.tertiary-btn:hover,
+.tertiary-btn-link:hover,
+.icon-btn:hover,
+.icon2-btn:hover,
+.link-btn:hover,
+.link2-btn:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* The one primary action the page shipped with stays primary and stays a
+   filled pill. It is ink rather than an accent because Finance's accent is
+   the gain green, and a green button beside a green percentage would read
+   as a status. No other control was promoted: the page had one filled CTA
+   before and has one now. */
+a.btn.quaternary-blue,
+a.btn.primary,
+button.primary-btn,
+a.primary-btn-link {
+  background: var(--sd-ink) !important;
+  background-image: none !important;
+  border: 1px solid var(--sd-ink) !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+a.btn.quaternary-blue:hover,
+a.btn.primary:hover,
+button.primary-btn:hover {
+  background: rgb(0 0 0 / 82%) !important;
+  border-color: rgb(0 0 0 / 82%) !important;
+}
+
+.disclaimer-cta,
+.disclaimer-cta span {
+  color: var(--sd-ink-3) !important;
+  font-size: 12px !important;
+}
+
+input,
+select,
+textarea {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--sd-ink-body) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--sd-ink-3) !important;
+}
+
+/* Suggestion chips under the Scout summary. They were tinted-blue panels
+   with a violet sparkle glyph; a quiet fill is boundary enough. */
+.sparkle-question-card {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  color: var(--sd-ink-body) !important;
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Links, stories and the news list
+
+   Ticker symbols were #1967d2 and headlines near-black, so the *symbol*
+   read as the most important thing in a news row. Both are ink now and the
+   headline is the only 15.5px/500 in the row, which puts them back in
+   order. Rows group on proximity — no rule between a headline and its own
+   source and timestamp.
+   -------------------------------------------------------------------------- */
+a,
+a:link,
+a:visited,
+a:hover,
+a:active,
+.subtle-link,
+.none-link,
+.item-link {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.symbol,
+[data-testid="ticker-symbol-link"] {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+.longName,
+.publishing,
+.meta,
+time {
+  color: var(--sd-ink-3) !important;
+}
+
+[data-testid="recent-news"] .stream-item,
+.stream-item {
+  border-color: var(--sd-rule) !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Right rail dock
+
+   Trending tickers, top gainers, top losers, most active, economic events,
+   earnings — about 60 rows at 30px each, plus two ad frames and every
+   dock control. Nothing here loses a row or a capability. Module headers
+   chapter on space and on being the only 15px/500 in the column, so the
+   per-module boxes go the same way as the cards in §10.
+   -------------------------------------------------------------------------- */
+#right-rail,
+.dock-rail,
+.dock,
+.dock .container,
+.modules-panel,
+.dock-modules-column {
+  background: #fff !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.dock .row {
+  border-color: var(--sd-rule) !important;
+}
+
+.dock .row .symbol {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+.dock .row .longName {
+  color: var(--sd-ink-3) !important;
+  font-weight: 400 !important;
+}
+
+.dock .row .last-price,
+.dock .row .price {
+  color: var(--sd-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Gain and loss again untouched, and tabular figures so a column of
+   percentages lines up on the decimal instead of drifting. */
+.txt-positive,
+.txt-negative,
+.percent-change,
+.price-change,
+.percent-price-change {
+  font-variant-numeric: tabular-nums !important;
+}
+
+#header-quote-lookup input {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. Advertising
+
+   Nine slots, all left in place and all left legible — an ad is third-party
+   media and its colour belongs to it, the same exemption product photography
+   gets. What changes is the frame: the placeholder fill was #f2f5f7, a
+   blue-grey panel that read as page furniture, and an empty slot still
+   carried its reserved height plus margins. A hairline above each slot marks
+   it as not-editorial without boxing it, and the collapsed margins hand the
+   recovered height back to content rather than to gaps.
+   -------------------------------------------------------------------------- */
+.sdaContainer {
+  background: transparent !important;
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 24px 0 0 !important;
+  padding: 12px 0 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   15. Footer
+
+   Denser than the body, same typography and ink ladder. The wordmark keeps
+   its purple; the social glyphs drop to the metadata rung.
+   -------------------------------------------------------------------------- */
+footer {
+  background: #fff !important;
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  margin-top: 48px !important;
+  padding-top: 32px !important;
+}
+
+footer a,
+footer li {
+  color: var(--sd-ink-2) !important;
+  font-size: 12.5px !important;
+}
+
+footer a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+}
+
+footer h3,
+footer .title {
+  color: var(--sd-ink) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   16. Focus, selection and state
+
+   Yahoo's focus ring was #87b4ff. Removing the blue without putting a real
+   ring back would have cost keyboard navigation, so ink replaces it.
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+
+input:focus,
+textarea:focus {
+  outline: 1px solid var(--sd-ink) !important;
+  outline-offset: -1px !important;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+hr,
+.divider {
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  background: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   17. Mobile
+
+   The desktop grid collapses to one column and the ad slots keep their
+   reserved height, so the first screen is mostly chrome before any quote
+   appears. Tightening the masthead and the ad frames is worth more here
+   than anywhere on desktop: it is the difference between the price being
+   on the first screen or below it.
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  header.medium,
+  header.large {
+    margin: 28px 0 10px !important;
+  }
+
+  h3.header,
+  h2.header {
+    font-size: 18px !important;
+  }
+
+  h1.heading {
+    font-size: 22px !important;
+  }
+
+  [data-testid="qsp-price"],
+  [data-testid="qsp-overnight-price"] {
+    font-size: 30px !important;
+  }
+
+  [data-testid="qsp-price-change"],
+  [data-testid="qsp-price-change-percent"] {
+    font-size: 16px !important;
+  }
+
+  section.card,
+  div.card,
+  [data-testid="card-container"] {
+    padding-right: 0 !important;
+  }
+
+  .sdaContainer {
+    margin-top: 16px !important;
+    padding-top: 10px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   18. Motion
+
+   The page streams prices, so its flashes and pulses are state feedback and
+   stay. Reduced motion keeps the colour change and drops the movement.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

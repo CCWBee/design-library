@@ -1,0 +1,982 @@
+/* ==========================================================================
+   Steam store front page — Scandinavian override
+
+   Structural problem: the canvas is a tinted navy (#0F1924) and every grey on
+   top of it carries the same blue cast, so "neutral" chrome and expressive
+   game art are painted from one palette and the art has nothing to sit
+   against. Chapters are separated by 30px, which is less than the gap between
+   a capsule and its own price, so eight distinct merchandising modules read
+   as one continuous scroll. Merchandising colour — 149 green sale flags,
+   magenta and teal deal banners, a blue glow behind the masthead, a purple
+   sign-in band — outranks the artwork it is advertising.
+
+   Target hierarchy: a true near-black canvas with a four-rung white ink
+   ladder, chapters separated by whitespace instead of density, and colour
+   spent in exactly two places — the game media, and review sentiment, which
+   is the only thing on this page that encodes state in hue.
+
+   Ceiling note: Steam serves all thirteen of its stylesheets cross-origin and
+   declares no custom properties, so there is no token layer to retarget and
+   every value below is spent against a real selector. Its React chrome ships
+   webpack-hashed class names; where one is unavoidable it is marked, because
+   it will not survive Valve's next deploy.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+
+   Four ink rungs, not three. Steam ships eight greys — #fff, #DCDEDF,
+   #C6D4DF, 80% white, #B8B6B4, #8B929A, #848E94, 50% white — but that is
+   twenty years of drift, not eight distinctions: three of them sit within
+   four points of each other. Collapsing those and keeping the four that
+   carry real hierarchy preserves every distinction the page was making.
+   -------------------------------------------------------------------------- */
+html {
+  --sd-canvas: #0a0a0a;
+
+  --sd-ink: #fff;
+  /* Body and nav labels. Louder than the skill's 56% secondary because the
+     "body" of this page is game titles and section copy, not supporting text. */
+  --sd-ink-2: rgb(255 255 255 / 74%);
+  /* Supporting: tags, review counts, footer links, header account links. */
+  --sd-ink-3: rgb(255 255 255 / 56%);
+  /* Metadata: release dates, struck-through prices, "See more".
+     46%, not the skill's 36%. 36% white on #0A0A0A composites to #626262 and
+     lands at 3.2:1 — the same ratio 44% black on white gives, so the dark
+     ladder is translated faithfully and still fails AA. Steam sets this rung
+     at 11-12px and puts release dates and original prices in it, which is
+     real reading. 46% is where this rung reaches 4.5:1. */
+  --sd-ink-4: rgb(255 255 255 / 46%);
+  /* Genuinely non-essential: chevrons, dividers, disabled. The skill's 36%
+     belongs here, where nothing has to be read. */
+  --sd-ink-5: rgb(255 255 255 / 36%);
+
+  --sd-rule: rgb(255 255 255 / 11%);
+  --sd-rule-strong: rgb(255 255 255 / 18%);
+  --sd-fill: rgb(255 255 255 / 5%);
+  --sd-hover: rgb(255 255 255 / 9%);
+  --sd-active: rgb(255 255 255 / 14%);
+  /* Popovers only. Everything that reads as a panel on the page itself uses
+     --sd-fill; this is reserved for things that float over content. */
+  --sd-panel: #17171a;
+
+  /* A legibility scrim over game art. Neutral, so the art underneath keeps
+     its own colour instead of being pushed toward navy. */
+  --sd-scrim: linear-gradient(
+    0deg,
+    rgb(0 0 0 / 88%) 0%,
+    rgb(0 0 0 / 72%) 26%,
+    rgb(0 0 0 / 40%) 70%,
+    rgb(0 0 0 / 12%) 100%
+  );
+
+  /* Review sentiment. Kept, not neutralised: it is the one encoding on this
+     page carried primarily by hue. Once everything else goes monochrome these
+     three become the only coloured text in the chrome, which makes the signal
+     louder than it was rather than quieter. Values are Steam's own, checked
+     against #0A0A0A: positive 9.8:1, mixed 7.7:1, negative 4.8:1. */
+  --sd-positive: rgb(102 192 244);
+  --sd-mixed: rgb(185 160 116);
+  --sd-negative: rgb(200 94 45);
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas and type
+
+   Motiva Sans stays. It is Steam's own well-made product typeface and it
+   loads 300/400/500/700, which covers the label and heading ladder this
+   system needs — the usual argument for substituting the default web sans
+   (a two-weight family that cannot express the ladder) does not apply here.
+   The one hazard is that Motiva Sans ships no 600, so CSS resolves 600 up to
+   700: every heading below is set at 500 rather than restating Steam's 600.
+   -------------------------------------------------------------------------- */
+html,
+body,
+body.v6,
+body.v7 {
+  background-color: var(--sd-canvas) !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* A 35% blue radial wash behind the masthead, sized to make the takeover ad
+   glow. Decoration with no state to report, tinting the third of the page
+   that carries the most artwork. */
+body.v6,
+body.v7,
+.responsive_page_frame,
+.responsive_page_content {
+  background-image: none !important;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: "Motiva Sans", sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   3. Global header
+
+   Two stacked bands — account row over store nav — each previously on its own
+   dark grey. One canvas plus a single hairline under the pair is enough
+   structure; a second fill here would be a band with nothing to say.
+   -------------------------------------------------------------------------- */
+#global_header,
+#global_header .content,
+.responsive_header,
+.responsive_page_menu,
+.menu_takeover_background {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+#global_header,
+.responsive_header {
+  background: var(--sd-canvas) !important;
+}
+
+/* The Steam wordmark is this product's own mark and stays exactly as
+   shipped — on a page with no other colour in its chrome it does more
+   identity work than it did in the original. */
+#logo_holder img,
+#responsive_menu_logo img {
+  filter: none !important;
+}
+
+/* Store / Community / About / Support.
+   Only "About" carried its capitals in CSS; the other three are uppercase in
+   the markup, so removing the transform left one sentence-case label in a row
+   of three shouting ones — worse than either end state. There is no CSS that
+   lowercases source text, but lowercasing and restoring the initial does the
+   same job. It is safe here only because these four labels are known, single
+   words with no acronyms; the same rule across arbitrary copy would corrupt
+   "FPS" and "DLC", which is exactly why the blanket version is a trap. */
+.supernav_container > a.menuitem {
+  text-transform: lowercase !important;
+  letter-spacing: 0 !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.supernav_container > a.menuitem::first-letter {
+  text-transform: uppercase !important;
+}
+
+.menuitem,
+a.menuitem {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.menuitem:hover,
+a.menuitem:hover,
+.supernav_container > a.menuitem:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* Active section was a 3px blue underline plus blue text. Ink and weight
+   carry "you are here"; the underline stays because it is the only thing
+   telling you which of four top-level areas you are in. */
+.supernav_active,
+a.menuitem.supernav_active,
+.supernav_container > a.menuitem.supernav_active {
+  color: var(--sd-ink) !important;
+  border-bottom-color: var(--sd-ink) !important;
+}
+
+/* Install Steam, sign in, language. These are the least-used controls in the
+   header, so the filled green button was also its heaviest element. */
+.header_installsteam_btn_content {
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 6px !important;
+  color: var(--sd-ink-2) !important;
+  /* Steam indents the label to clear a download glyph painted as a background
+     sprite. The glyph is gone, so the box reserved for it goes too. */
+  text-indent: 0 !important;
+  padding: 0 12px !important;
+  width: auto !important;
+}
+
+.header_installsteam_btn:hover .header_installsteam_btn_content {
+  background-color: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+#global_actions,
+#global_action_menu,
+.global_action_link,
+#language_pulldown {
+  color: var(--sd-ink-3) !important;
+}
+
+.global_action_link:hover,
+#language_pulldown:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* The language chevron is a coloured PNG sprite; greyscale is the only lever
+   an override has on a raster glyph it cannot replace. */
+#language_pulldown.pulldown {
+  filter: grayscale(1);
+  opacity: 0.85;
+}
+
+/* --------------------------------------------------------------------------
+   4. Store nav and search
+
+   Browse / Recommendations / Categories / Hardware / Ways to Play / Special
+   Sections, plus store search. Every dropdown trigger stays a button.
+   -------------------------------------------------------------------------- */
+/* .Panel is Valve's generic React surface class. It wraps the store nav bar,
+   the discovery banner and several layout shells, so treating it as "popover"
+   painted a lifted 8px card across the whole nav strip. It is a layout
+   primitive, not a surface: reset it and style the real popovers by name. */
+.Panel,
+.Panel.Focusable {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#store_nav_area,
+.store_nav,
+[class*="StoreNav"] {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* Build hash. A 12px slate strip under the nav that reads as a fifth band on
+   a page that already has too many. */
+.h2B3SGR_w4RWdrnsRZEcD > div,
+._19o1GB7ysfrWKLYpqZ6aXu {
+  background-color: transparent !important;
+}
+
+/* Search was a translucent white well with a filled blue submit hanging off
+   its right edge — a bordered input inside a filled form beside a filled
+   button, one control drawn three times. One quiet fill now marks the whole
+   thing and the submit sits inside it. The input is not a direct child of the
+   form, which is why the first pass at this selector matched nothing. */
+form:has(input[type="text"]),
+form:has(input[type="search"]) {
+  background: var(--sd-fill) !important;
+  border: 1px solid var(--sd-rule) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+input[type="text"],
+input[type="search"] {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--sd-ink) !important;
+  box-shadow: none !important;
+}
+
+input::placeholder {
+  color: var(--sd-ink-4) !important;
+  font-style: normal !important;
+}
+
+form:has(input[type="text"]) button,
+form:has(input[type="search"]) button {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--sd-ink-3) !important;
+}
+
+form:has(input[type="text"]) button:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* The magnifier is an inline SVG that hard-codes its fill on some builds. */
+form:has(input[type="text"]) button svg,
+form:has(input[type="text"]) button svg path {
+  fill: currentColor !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Chapter rhythm
+
+   Eight merchandising modules separated by 30px, which is less than the gap
+   between a capsule and its own price. The unrendered modules in this list
+   (#module_recommender, #module_deep_dive and friends, which only exist for a
+   signed-in visitor) are display:none rather than zero-height, so a top
+   margin here does not open holes where they sit.
+   -------------------------------------------------------------------------- */
+.home_pagecontent_ctn,
+.home_tab_section,
+#home_maincap_v7 {
+  margin-top: 88px !important;
+}
+
+.main_content_ctn > *:first-child,
+#home_maincap_v7 {
+  margin-top: 0 !important;
+}
+
+/* Section title to its own content is ~18px against the 88px above it — the
+   heading reads as belonging below without a rule doing the work. */
+.home_title_ctn,
+.title_grid {
+  margin-bottom: 18px !important;
+  align-items: baseline !important;
+}
+
+.home_section_title,
+.home_title,
+#home_featured_and_recommended {
+  font-size: 26px !important;
+  font-weight: 500 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--sd-ink) !important;
+  text-align: left !important;
+  text-transform: none !important;
+}
+
+/* Steam wraps the tag name in a <b> inside the section title, so "Turn-Based"
+   sat at 700 beside " Games" at 500 — two weights inside one heading, for a
+   split that is a template artefact rather than a distinction. */
+.home_section_title b,
+.home_title b {
+  font-weight: inherit !important;
+}
+
+.home_section_subtitle {
+  color: var(--sd-ink-3) !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Capsules, carousels and media containment
+
+   Game art, screenshots and microtrailers keep their colour. Everything drawn
+   around them goes neutral, so the artwork is the only saturated thing in
+   each row.
+   -------------------------------------------------------------------------- */
+/* Steam layers a navy gradient plus an inset blue glow under the capsule's
+   text column. The scrim does a real job — text over artwork — so it stays;
+   the navy does not, because it leaked the chrome's cast onto the art. */
+.info {
+  background-image: var(--sd-scrim) !important;
+  box-shadow: none !important;
+}
+
+/* The same navy gradient is reused as a backdrop on containers that hold no
+   text at all, where it was doing nothing but tinting. */
+.carousel_items,
+.home_discount_games_ctn {
+  background-image: none !important;
+}
+
+/* Two 2x2 discount grids sit side by side; a quiet fill keeps each reading as
+   one group now that the tinted panel behind them is gone. */
+.home_discount_games_ctn {
+  background-color: rgb(255 255 255 / 4%) !important;
+  border-radius: 8px !important;
+}
+
+.info_ctn,
+.app_name {
+  color: var(--sd-ink) !important;
+}
+
+.reason,
+.additional,
+.topseller_subtext {
+  color: var(--sd-ink-3) !important;
+}
+
+/* "Top seller", "Because you played…" — recommendation reasons were green.
+   They label a recommendation; they do not report state. */
+.topseller_title,
+.main_reason_topseller .topseller_title {
+  color: var(--sd-ink-2) !important;
+}
+
+/* The rank glyph beside them is a green SVG. It is interface iconography, not
+   product media, so it goes onto the ink ladder with everything else. */
+.main_reason_topseller img,
+.main_reason img {
+  filter: grayscale(1);
+  opacity: 0.8;
+}
+
+/* "Early Access", "Pre-Purchase" inside a recommendation line, in the same
+   merchandising green as the sale flags. These are real availability states,
+   so they stay distinguishable — by sitting a full rung above the sentence
+   they interrupt, which is a distinction that survives on a monochrome page. */
+.main_reason strong,
+.reason strong {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+/* Every capsule carried a drop shadow. On a near-black canvas a black shadow
+   paints nothing at all, so these were thirteen declarations producing no
+   pixels — and two of them were tinted blue. */
+.store_main_capsule,
+.main_capsule,
+.capsule,
+.sale_capsule,
+.broadcast_capsule,
+.store_capsule,
+.home_area_spotlight,
+.content_hub_capsule_ctn,
+.tab_content_items,
+.home_capsule_banner {
+  box-shadow: none !important;
+}
+
+/* The selected capsule in the featured carousel is the one place elevation is
+   behaviour: it is wider than its neighbours and it is what the paging dots
+   point at. A faint white edge is the dark-canvas equivalent of a shadow. */
+.store_main_capsule.focus,
+.carousel_items > .focus {
+  background: var(--sd-fill) !important;
+  box-shadow: 0 0 0 1px var(--sd-rule) !important;
+}
+
+/* Carousel arrows and paging dots stay reachable — they are the only way
+   through five of these rows — but they sit low on the ladder until hover. */
+.arrow,
+.carousel_thumbs .arrow,
+.focus_arrow {
+  filter: grayscale(1);
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.arrow:hover,
+.carousel_thumbs .arrow:hover,
+.focus_arrow:hover {
+  opacity: 1;
+}
+
+.carousel_thumbs > div {
+  background: var(--sd-rule-strong) !important;
+}
+
+.carousel_thumbs > div.focus,
+.carousel_thumbs > div.active {
+  background: var(--sd-ink) !important;
+}
+
+/* Deal flashes: "Weekend Deal", "Today's Deal", "Franchise Sale". Magenta and
+   teal gradients that encode no state and identify nothing. The label is the
+   information; the gradient was the noise. */
+.home_capsule_banner {
+  background-image: none !important;
+  background-color: rgb(0 0 0 / 72%) !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 4px !important;
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  /* Only some of these are uppercase in CSS — "Publisher Sale" is title case
+     in the markup while "WEEKEND DEAL" is not. Dropping the transform fixes
+     the styled ones and leaves the markup capitals, which is the only correct
+     move: unlike the four nav labels above, these strings are arbitrary
+     campaign copy and a lowercase pass would mangle them. */
+  text-transform: none !important;
+}
+
+/* The gift-card promo was a dark-to-blue gradient sitting beside the
+   "Featured & Recommended" heading, where it outweighed the heading. */
+.home_gift_card_link,
+.gift_card_desktop,
+.gift_card_mobile {
+  background-image: none !important;
+  background-color: transparent !important;
+  border: 1px solid var(--sd-rule) !important;
+  border-radius: 6px !important;
+}
+
+.home_gift_card_text {
+  color: var(--sd-ink-2) !important;
+  font-weight: 500 !important;
+}
+
+.home_gift_card_img {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+/* --------------------------------------------------------------------------
+   7. Price, discount and availability
+
+   The price block is the buying signal on ~150 capsules, so it is the one
+   place allowed to be the highest-contrast element in its row.
+   -------------------------------------------------------------------------- */
+/* A 25% black well over a near-black canvas is invisible, and mixing alpha
+   black into a surface whose whole ladder is alpha white is the thing the
+   dark-canvas rule warns about. Same job, same side of the ladder. */
+.discount_prices {
+  background: var(--sd-fill) !important;
+  border-radius: 4px !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Steam's sale flag was #A1CD44 on black — a campaign green repeated 149
+   times down the page, which after the neutralising pass would have been the
+   only colour left in the chrome and the loudest thing on the screen. The
+   flag stays unmistakable: white fill, near-black text, still the
+   highest-contrast chip in its row, still saying "-60%". What it stops doing
+   is competing with the artwork it is advertising. The percentage was always
+   the encoding; the green was merchandising sitting on top of it. */
+.discount_pct {
+  background: var(--sd-ink) !important;
+  color: #0a0a0a !important;
+  font-weight: 500 !important;
+  border-radius: 4px 0 0 4px !important;
+}
+
+/* A bundle shows its component discount beside its total. Same chip one rung
+   down, so the pair still reads as part-then-whole. Steam's own version put
+   green behind it and left the text on the metadata rung, which after the ink
+   pass would have been 46% white on green. */
+.bundle_base_discount {
+  background: rgb(255 255 255 / 14%) !important;
+  color: var(--sd-ink-2) !important;
+  font-weight: 500 !important;
+  border-radius: 4px 0 0 4px !important;
+}
+
+.discount_final_price,
+.discount_block .discount_final_price {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+/* Struck through and one rung down, so the pair reads as before-and-after
+   rather than as two prices. */
+.discount_original_price {
+  color: var(--sd-ink-4) !important;
+  text-decoration-color: var(--sd-ink-5) !important;
+}
+
+/* Free To Play, Coming Soon and the like. Availability is a state and keeps a
+   state's contrast — it must never be the quietest text in a capsule. */
+.no_discount .discount_final_price,
+.discount_block.no_discount,
+.free {
+  color: var(--sd-ink) !important;
+}
+
+/* The spotlight price column was a pale blue that read as a link. */
+.spotlight_price,
+.spotlight_body.spotlight_price,
+.discount_block_spotlight {
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Review sentiment
+
+   The one encoding on this page carried primarily by hue, so it keeps it.
+   Steam gives the negative case no modifier class — the bare
+   .game_review_summary colour IS "Mostly Negative" — so anything set on the
+   unqualified class silently repaints the worst-rated games.
+   -------------------------------------------------------------------------- */
+.game_review_summary {
+  color: var(--sd-negative) !important;
+  font-weight: 500 !important;
+}
+
+.game_review_summary.positive {
+  color: var(--sd-positive) !important;
+}
+
+.game_review_summary.mixed {
+  color: var(--sd-mixed) !important;
+}
+
+/* "No user reviews" is an absence, not a sentiment, so it belongs on the ink
+   ladder rather than in the colour set. */
+.game_review_summary.no_reviews {
+  color: var(--sd-ink-4) !important;
+  font-weight: 400 !important;
+}
+
+.review_count,
+.review_summary .review_count,
+.tab_review_summary {
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. The tab section — New Releases / Top Sellers / Upcoming / Specials
+   -------------------------------------------------------------------------- */
+.home_tab_bg_ctn {
+  background-image: none !important;
+}
+
+.home_tab_button,
+.tab_content {
+  color: var(--sd-ink-3) !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+}
+
+.home_tab_button {
+  border-bottom-color: transparent !important;
+}
+
+.home_tab_button.active,
+.home_tab_button.active .tab_content {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  border-bottom-color: var(--sd-ink) !important;
+}
+
+/* Zebra striping was a blue tint at 8%. Neutral alpha white at 3% does the
+   same row separation without a cast and without a rule per row. */
+.tab_row_item,
+a.tab_row_item {
+  background: rgb(255 255 255 / 3%) !important;
+  border: 0 !important;
+}
+
+.tab_row_item:hover,
+a.tab_row_item:hover,
+.tab_row_item.focus,
+a.tab_row_item.focus {
+  background: var(--sd-hover) !important;
+}
+
+.tab_item_title {
+  color: var(--sd-ink) !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+.tab_item_tags,
+.top_tag {
+  color: var(--sd-ink-3) !important;
+}
+
+.tab_item_release_date {
+  color: var(--sd-ink-4) !important;
+}
+
+/* Hover preview panel. Its fill was a 25% slate wash and its tag chips a 12%
+   pale blue — the densest patch of tint left on the page after the first
+   pass, because none of it is a colour anyone would call a colour. */
+.tab_preview,
+.tab_preview.focus,
+#tab_preview_container > div {
+  background: var(--sd-fill) !important;
+  border-radius: 8px !important;
+}
+
+.tab_preview_details {
+  background: rgb(255 255 255 / 4%) !important;
+}
+
+.tab_title {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+.tags a,
+.tab_preview .tags a {
+  background: rgb(255 255 255 / 8%) !important;
+  color: var(--sd-ink-2) !important;
+  border-radius: 4px !important;
+}
+
+.tags a:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Free-to-play and library filters in the Top Sellers tab. Not rendered until
+   that tab is opened, so styled defensively rather than verified rendered. */
+#topsellers_controls,
+#topsellers_controls label {
+  color: var(--sd-ink-3) !important;
+}
+
+#topsellers_controls input[type="checkbox"] {
+  accent-color: #fff;
+}
+
+/* --------------------------------------------------------------------------
+   10. Browse by Category
+
+   Five tiles whose backgrounds were red, amber, green, teal and indigo
+   gradients assigned per tag — decoration with no relationship to the tag it
+   sits under. Greyscaling them would have left five different greys, which
+   reads as an encoding that is not there; one quiet fill makes them peers.
+   -------------------------------------------------------------------------- */
+.gradient {
+  background-image: none !important;
+  background-color: rgb(255 255 255 / 6%) !important;
+}
+
+.label {
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  border-radius: 6px !important;
+}
+
+/* A live-broadcast badge with a red glow behind it. The badge reports a real
+   state, so it keeps its label and its icon; the 7px glow is decoration. */
+.broadcast_live_stream_icon,
+[class*="broadcast_live"] {
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Buttons and "See more"
+
+   Every button here is secondary — the page's primary action is opening a
+   game, which the capsules already are. None of them gains a fill.
+   -------------------------------------------------------------------------- */
+.btnv6_white_transparent,
+.btn_small,
+.btn_small_tall,
+.btn_medium,
+[class*="btnv6"] {
+  background: transparent !important;
+  background-image: none !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  color: var(--sd-ink-2) !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+/* Steam's button label lives in a nested span with its own hard-coded black,
+   because the original button was a light grey fill. Emptying the fill turned
+   every "See More" on the page into black text on near-black — invisible, and
+   invisible in a way no CSS read would show, since the rule that broke it
+   never mentions the element that renders the text. */
+.btnv6_white_transparent span,
+.btn_small span,
+.btn_small_tall span,
+[class*="btnv6"] span {
+  color: inherit !important;
+}
+
+.btnv6_white_transparent:hover,
+.btn_small:hover,
+.btn_small_tall:hover,
+[class*="btnv6"]:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+  border-color: var(--sd-rule-strong) !important;
+}
+
+.see_more_link,
+.see_more_link a,
+.home_section_button {
+  color: var(--sd-ink-3) !important;
+  font-weight: 400 !important;
+}
+
+/* Signed-out discovery-queue banner: a magenta-to-teal gradient band with a
+   filled blue action, sitting between two merchandising chapters where it
+   outweighed both. Build hashes — the gradient container and its action are
+   the only two elements in Steam's React chrome with no stable class. */
+[class*="WidgetHeaderCtn"] {
+  background-image: none !important;
+  background-color: var(--sd-fill) !important;
+  border-radius: 8px !important;
+}
+
+[class*="WidgetHeaderCtn"] > div:first-child {
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+[class*="WidgetHeaderCtn"] > div:last-child {
+  background-color: transparent !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 6px !important;
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Menus, dropdowns and overlays
+
+   Every nav dropdown, the language list and the search suggestions keep their
+   behaviour; they change from tinted slate panels to one lifted neutral.
+   -------------------------------------------------------------------------- */
+.popup_menu,
+.popup_body,
+.popup_block_new,
+[id^="searchSuggestions"] {
+  background: var(--sd-panel) !important;
+  background-image: none !important;
+  border: 1px solid var(--sd-rule) !important;
+  border-radius: 8px !important;
+  /* Elevation is behaviour here: these overlay content and have to read as
+     floating above it. A black shadow is invisible on this canvas, so a
+     barely-visible white ring does the work instead. */
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 7%) !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.popup_menu_item,
+.submenuitem,
+.popup_body a,
+[id^="searchSuggestions"] a {
+  background-color: transparent !important;
+  color: var(--sd-ink-2) !important;
+  text-transform: none !important;
+}
+
+.popup_menu_item:hover,
+.submenuitem:hover,
+.popup_body a:hover,
+[id^="searchSuggestions"] a:hover {
+  background-color: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Footer
+
+   Denser than the page above it, same typography and same ladder.
+   The STEAM / VALVE / LEGAL / MORE column headings are capitals in the
+   markup. Unlike the four nav labels they are set alongside link text in the
+   same subtree, so the lowercase-and-restore trick cannot be scoped tightly
+   enough to be safe; they stay as shipped.
+   -------------------------------------------------------------------------- */
+#footer {
+  background: var(--sd-canvas) !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  color: var(--sd-ink-3) !important;
+  margin-top: 96px !important;
+  padding-top: 40px !important;
+}
+
+#footer h3 {
+  color: var(--sd-ink) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* One link in this list ships a filled blue background at mobile widths while
+   its neighbours are plain text. Nothing distinguishes it in the markup, so
+   it joins the list rather than keeping a fill no other link has. */
+#footer a {
+  background-color: transparent !important;
+  color: var(--sd-ink-3) !important;
+  text-decoration: none !important;
+}
+
+#footer a:hover {
+  color: var(--sd-ink) !important;
+}
+
+#footer p {
+  color: var(--sd-ink-4) !important;
+  line-height: 1.6 !important;
+  max-width: 60ch;
+}
+
+/* --------------------------------------------------------------------------
+   14. Focus and state
+
+   Two pixels, because a hairline ring on a near-black canvas has no
+   surrounding light field to register against.
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+.Focusable:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus {
+  outline: none !important;
+}
+
+form:has(input[type="text"]):focus-within,
+form:has(input[type="search"]):focus-within {
+  border-color: var(--sd-ink) !important;
+}
+
+::selection {
+  background: rgb(255 255 255 / 22%);
+}
+
+/* --------------------------------------------------------------------------
+   15. Mobile
+
+   The store nav collapses into a drawer and several modules swap to mobile
+   variants, so those need the same treatment as their desktop counterparts
+   rather than inheriting a desktop-only rule.
+   -------------------------------------------------------------------------- */
+@media (max-width: 910px) {
+  .home_pagecontent_ctn,
+  .home_tab_section,
+  #home_maincap_v7 {
+    margin-top: 64px !important;
+  }
+
+  .home_section_title,
+  .home_title,
+  #home_featured_and_recommended {
+    font-size: 21px !important;
+  }
+
+  #responsive_page_menu,
+  #responsive_menu_logo,
+  #responsive_store_nav_ctn,
+  #responsive_store_nav_overlay,
+  #responsive_store_nav_overlay_ctn,
+  #responsive_store_nav_overlay_bottom,
+  #responsive_store_search_overlay {
+    background: var(--sd-canvas) !important;
+    background-image: none !important;
+    border-color: var(--sd-rule) !important;
+  }
+
+  #footer {
+    margin-top: 64px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   16. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

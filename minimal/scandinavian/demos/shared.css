@@ -1,0 +1,98 @@
+/* Consent / interstitial chrome that contaminates before/after eval shots. */
+#onetrust-banner-sdk,
+#onetrust-consent-sdk,
+.ot-sdk-container,
+#onetrust-pc-sdk,
+[id*="cookie-banner" i],
+[class*="cookie-banner" i],
+[id*="CookieBanner" i],
+[class*="CookieBanner" i],
+[aria-label*="cookie" i],
+[aria-label*="consent" i],
+.qc-cmp2-container,
+#transcend-consent-manager,
+#truste-consent-track,
+.osano-cm-window,
+#usercentrics-root,
+[id^="sp_message_container"],
+iframe[title*="cookie" i],
+iframe[title*="consent" i],
+iframe[title*="Privacy" i],
+/* Onboarding coach marks. These open themselves on a first visit and float over
+   the header, so every capture gets one whether the design asked for it or not. */
+[class*="__coach"],
+[class*="coachmark" i],
+[data-testid*="coachmark" i] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Advertising, for the same reason. Third-party creative is not the design
+   under review, and a leaderboard or a sticky unit can take a third of the fold
+   and make a restyle look like a mess it had no part in. This applies to the
+   before and the after equally, so the comparison stays honest — the layout the
+   ad sits in is untouched, only the creative goes.
+
+   Selectors stay narrow on purpose. A loose `[class*="ad"]` match catches
+   "shadow", "header", "loading", "download" and "badge", so this targets ad
+   networks by name, slot ids that are unambiguous, and the roles and labels
+   that ad frames actually carry. */
+ins.adsbygoogle,
+iframe[src*="doubleclick" i],
+iframe[src*="googlesyndication" i],
+iframe[src*="amazon-adsystem" i],
+iframe[src*="adnxs" i],
+iframe[src*="criteo" i],
+iframe[src*="taboola" i],
+iframe[src*="outbrain" i],
+iframe[id^="google_ads"],
+iframe[name^="google_ads"],
+iframe[id^="aswift"],
+div[id^="google_ads"],
+div[id^="div-gpt-ad"],
+div[id^="dfp-"],
+[id^="ad-slot"],
+[class^="ad-slot"],
+[class*="adslot" i],
+[class*="advertisement" i],
+[id*="advertisement" i],
+[class*="ad-banner" i],
+[class*="ad-container" i],
+[class*="ad-wrapper" i],
+[data-testid*="ad-slot" i],
+[aria-label*="advertisement" i],
+[aria-label="Ads by Google"],
+[data-ad-slot],
+[data-google-query-id],
+.imdb-ad,
+[data-testid="ad-topslot"],
+[data-testid="ad-bottomslot"],
+[class*="ipc-ad" i],
+/* IMDb and other Amazon properties serve their slots from `ape_`-prefixed
+   wrappers and iframes, with a sibling "Sponsored" caption. Hiding only the
+   iframe leaves the black reserved box behind, so the wrapper has to go too. */
+[id^="ape_"],
+[id^="sis_pixel"],
+[id^="cookie_sync_pixel"],
+/* The slot's own container reserves the space and paints it black, so hiding
+   the frame alone leaves a void where the ad was. */
+section[class*="inline20-page-background"],
+section[class*="inline40-page-background"],
+section[class*="inlinebottom-page-background"],
+section[class*="adhesion-page-background"],
+/* Match the ad slots by their `inline*` slot names rather than by the generic
+   wrapper classes around them: `slot_wrapper` and `cornerstone_slot` are also
+   used for editorial widgets, and hiding those took the sidebar's recommendation
+   cards with the advertising. */
+.nas-slot,
+[id^="inline20"],
+[id^="inline40"],
+[id^="inlinebottom"],
+[id^="adhesion"],
+[cel_widget_id^="inline"],
+[cel_widget_id^="adhesion"],
+[id^="sda-"],
+[class*="sda-ad" i] {
+  display: none !important;
+  pointer-events: none !important;
+}

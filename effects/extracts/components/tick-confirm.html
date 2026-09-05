@@ -1,0 +1,190 @@
+<title>Tick confirm · Glass</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Tick confirm: the one success confirmation.
+  Source: cruise-passport, src/ui/Confirm.tsx + src/ui/confirm.css (Cocktail Passport, Sept 2026).
+
+  What it is for: an action the person cannot otherwise see landing (a friend added, a group joined,
+  a code accepted). Anything whose result is already on screen (a row ticking, a star filling) stays
+  silent, or the app spends its confirmation budget on things nobody asked about.
+
+  The recipe, in five parts:
+    1. A fixed, centred overlay with pointer-events: none, so it never eats the next tap.
+    2. A 96px disc of the chrome material: a white film, a blur, a hairline, and one light from the
+       top (an inset specular edge plus a highlight over the top 40%). Radius 999.
+    3. A 40px tick drawn as a single SVG path with pathLength="1", stroke-dasharray 1 and
+       stroke-dashoffset animated 1 to 0. pathLength means the dash values are fractions, so no
+       geometry has to be measured and the path can be redrawn freely.
+    4. Order: the disc scales in from .9 over 120ms, then the tick strokes on over 300ms. One easing.
+    5. It holds about a second, fades over 200ms and clears itself; a timer, not animationend,
+       because under reduced motion there is no animation to end.
+
+  Reduced motion: the disc and the whole tick are there from the first frame; only the drawing goes.
+  Haptics: on the app side the same moment fires navigator.vibrate on Android. iOS Safari has no
+  Vibration API, so the tick is the confirmation and a buzz is a bonus.
+-->
+<style>
+  :root {
+    --cream: #FBF3E2;
+    --wash-sand: #F7ECD3;
+    --ink: #1C3C56;
+    --ink-2: rgba(28, 60, 86, .74);
+    --line: rgba(28, 60, 86, .12);
+    --mint: #147C58;
+
+    /* the chrome material: film, blur, one light from above */
+    --glass-film: rgba(255, 255, 255, .55);
+    --glass-fallback: rgba(255, 253, 250, .94);
+    --glass-rim: rgba(255, 255, 255, .75);
+    --glass-rim-under: rgba(255, 255, 255, .18);
+    --glass-highlight-film: rgba(255, 255, 255, .28);
+    --glass-blur: 8px;
+    --glass-sat: 160%;
+
+    --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+    --r-control: 12px; --r-tag: 999px;
+    --f-body: 15px; --f-meta: 13px;
+    --e-out: cubic-bezier(.22, .9, .32, 1);
+    --t-press: 120ms; --t-panel: 200ms; --t-draw: 300ms;
+    --font: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-family: var(--font);
+    font-size: var(--f-body);
+    line-height: 1.5;
+    color: var(--ink);
+    background:
+      radial-gradient(900px 560px at -8% 8%, #F8EDD8 0%, transparent 58%),
+      radial-gradient(940px 720px at 50% 114%, var(--wash-sand) 0%, transparent 64%),
+      var(--cream);
+  }
+
+  /* the page behind the tick: enough content to show the disc is a layer over it */
+  main { max-width: 420px; margin: 0 auto; padding: var(--s5) var(--s4) 96px; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; margin: 0; }
+  .meta { font-size: var(--f-meta); color: var(--ink-2); margin: var(--s2) 0 0; }
+  .rows { margin-top: var(--s5); }
+  .row {
+    display: flex; align-items: center; gap: var(--s3);
+    min-height: 48px; padding: var(--s2) 0;
+  }
+  .row + .row { border-top: 1px solid var(--line); }
+  .row b { font-weight: 600; }
+  .row span { color: var(--ink-2); font-size: var(--f-meta); }
+  .dot { width: 28px; height: 28px; border-radius: var(--r-tag); background: rgba(28, 60, 86, .1); flex: none; }
+
+  .replay {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0 var(--s4); margin-top: var(--s5);
+    border: 1px solid var(--line); border-radius: var(--r-control);
+    background: #FDFAF2; color: var(--ink);
+    font: 600 var(--f-body)/1 var(--font);
+    transition: scale var(--t-press) var(--e-out);
+  }
+  .replay:active { scale: .97; }
+
+  /* ── the tick itself ── */
+  .tickc {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s3);
+    pointer-events: none;
+    animation: tickc-in var(--t-press) var(--e-out);
+  }
+  .tickc[hidden] { display: none; }
+  .tickc-leaving { animation: tickc-out var(--t-panel) var(--e-out) forwards; }
+
+  .tickc-disc {
+    width: 96px;
+    height: 96px;
+    border-radius: var(--r-tag);
+    display: grid;
+    place-items: center;
+    color: var(--mint);
+    background: var(--glass-fallback);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 var(--glass-rim-under);
+    background-image: linear-gradient(to bottom, var(--glass-highlight-film), transparent 40%);
+    animation: tickc-pop var(--t-press) var(--e-out);
+  }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .tickc-disc {
+      background-color: var(--glass-film);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    }
+  }
+  .tickc-mark { display: block; }
+  .tickc-mark path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: tickc-draw var(--t-draw) var(--e-out) var(--t-press) forwards;
+  }
+  .tickc-label { font-weight: 600; }
+
+  @keyframes tickc-in { from { opacity: 0; } }
+  @keyframes tickc-out { to { opacity: 0; } }
+  @keyframes tickc-pop { from { scale: .9; } }
+  @keyframes tickc-draw { to { stroke-dashoffset: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tickc, .tickc-disc { animation: none; }
+    .tickc-mark path { animation: none; stroke-dashoffset: 0; }
+    .tickc-leaving { animation: none; opacity: 0; }
+  }
+</style>
+
+<main>
+  <h1>Your crew</h1>
+  <p class="meta">The page carries on underneath: the tick is a layer, not a screen.</p>
+  <div class="rows">
+    <div class="row"><span class="dot"></span><b>Sam</b><span>8 logged</span></div>
+    <div class="row"><span class="dot"></span><b>Ravi</b><span>6 logged</span></div>
+    <div class="row"><span class="dot"></span><b>Nell</b><span>Nothing logged yet</span></div>
+  </div>
+  <button class="replay" id="replay" type="button">Add someone</button>
+</main>
+
+<div class="tickc" id="tick" role="status" hidden>
+  <span class="tickc-disc" aria-hidden>
+    <svg class="tickc-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <path d="M9.5 20.6 16.6 27.6 30.5 12.8" pathLength="1" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </span>
+  <span class="tickc-label" id="tick-label">Sam added</span>
+</div>
+
+<script>
+  // Hold, fade, clear. Replacing the node restarts the animations, which is what a second
+  // confirmation should do rather than sitting there half-drawn.
+  const HOLD = 1100, FADE = 200
+  const host = document.getElementById('tick')
+  const label = document.getElementById('tick-label')
+  let timers = []
+
+  function confirm(text) {
+    timers.forEach(clearTimeout)
+    timers = []
+    label.textContent = text
+    host.hidden = true
+    host.classList.remove('tickc-leaving')
+    void host.offsetWidth // restart the animations
+    host.hidden = false
+    timers.push(setTimeout(() => host.classList.add('tickc-leaving'), HOLD))
+    timers.push(setTimeout(() => { host.hidden = true; host.classList.remove('tickc-leaving') }, HOLD + FADE))
+    // the app also calls navigator.vibrate([14, 40, 22]) here, where the platform has it
+  }
+
+  const names = ['Sam added', 'Ravi added', 'Joined Gillams']
+  let n = 0
+  document.getElementById('replay').addEventListener('click', () => confirm(names[n++ % names.length]))
+  confirm('Sam added')
+</script>

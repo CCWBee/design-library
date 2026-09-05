@@ -36,6 +36,9 @@ anything under `gallery/`, and `apple/README.md`.
 | Components | `effects/extracts/components/*.html` | `components` | `html` | true |
 | AI-native | `patterns/ai-native/*.tsx` | `ai-native` | `tsx` | false |
 | Apple code | `glass/liquid-glass/apple/**/*.swift` | `apple` | `swift` | false |
+| AI-native primitives | `patterns/ai-native/primitives/*.{tsx,css}` | `ai-native` | `tsx` / `css` | false |
+| Scandinavian code | `minimal/scandinavian/**/*.{css,js}` | `scandinavian` | `css` / `js` | false |
+| Scandinavian pages | `minimal/scandinavian/**/*.html` | `scandinavian` | `html` | true |
 | Docs | `**/*.md` (exclude `gallery/`) | `docs` | `md` | false |
 
 Item shape:

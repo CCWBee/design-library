@@ -1,0 +1,123 @@
+<!--
+  Signal Particles
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped: Tailwind scaffolding, Iconify icons, GSAP text-reveal + ScrollTrigger, Google Fonts (Manrope),
+  remote Supabase background image, header/nav chrome and marketing copy/cards. Kept only the canvas
+  particle-grid animation, rebuilt as a full-viewport plain-CSS/JS requestAnimationFrame loop.
+-->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Particles</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    overflow: hidden;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  #particle-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+  .caption {
+    position: fixed;
+    left: 50%;
+    bottom: 6vh;
+    transform: translateX(-50%);
+    color: rgba(203, 213, 225, 0.5);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+<div class="caption">Signal grid</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById('particle-canvas');
+  var ctx = canvas.getContext('2d');
+  var width, height;
+
+  var spacing = 16;
+  var dotRadius = 1.5;
+  var time = 0;
+
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    var cols = Math.floor(width / spacing);
+    var rows = Math.floor(height / spacing);
+
+    var offsetX = (width - cols * spacing) / 2;
+    var offsetY = (height - rows * spacing) / 2;
+
+    for (var i = 0; i <= cols; i++) {
+      for (var j = 0; j <= rows; j++) {
+        var x = offsetX + i * spacing;
+        var y = offsetY + j * spacing;
+
+        var nx = i * 0.1;
+        var ny = j * 0.1;
+
+        var wave1 = Math.sin(nx + time * 0.5) * Math.cos(ny - time * 0.3);
+        var wave2 = Math.sin(nx * 0.5 - ny * 0.5 + time * 0.8);
+        var value = wave1 + wave2;
+
+        if (value > 0.1) {
+          ctx.beginPath();
+          ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+
+          var highlightCheck = Math.sin(i * 12.34) * Math.cos(j * 56.78);
+
+          if (highlightCheck > 0.98) {
+            ctx.fillStyle = '#3b82f6';
+          } else if (highlightCheck < -0.98) {
+            ctx.fillStyle = '#8b5cf6';
+          } else {
+            var alpha = Math.min(0.6, (value - 0.1) * 0.8);
+            ctx.fillStyle = 'rgba(148, 163, 184, ' + alpha + ')';
+          }
+
+          ctx.fill();
+        }
+      }
+    }
+
+    time += 0.02;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+</script>
+
+</body>
+</html>

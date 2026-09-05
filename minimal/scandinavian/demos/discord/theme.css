@@ -1,0 +1,785 @@
+/* ==========================================================================
+   Discord homepage — Scandinavian override
+
+   Structural problem: the canvas is not a surface, it is decoration. A
+   full-page blurple gradient carries a star field, seven per-section texture
+   plates sit on top of it, and every chapter's display heading is ABC Ginto
+   Nord at 700-800 forced to uppercase. Nothing is quiet enough for the
+   character art and the product screenshots to be the loudest thing in view,
+   which is the one job this page has.
+
+   Target hierarchy: a true near-black canvas, one type family (ggsans, the
+   product's own) on a white ink ladder, expressive colour contained to the
+   illustrations, the app videos and the mark, and one light band at the page's
+   midpoint so eight near-identical chapters gain a beat. The chapter order and
+   the alternating two-column rhythm are good and are left alone.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+
+   Two groups. The --sd-* ladder is the dark inversion: 56% white on #0A0A0A
+   lands supporting text at 6.5:1, which is what 64% black on white gives on a
+   light page. Reusing the light 64/44 percentages here would have put
+   secondary text at 8.2:1 — louder than a light page's *primary* body copy.
+
+   There is no third ink rung. The dark ladder's 36% tertiary measures 3.3:1,
+   which is correct as the mirror of light-mode 44% black and still below AA
+   for text, and this page has nothing that qualifies — no timestamps, no
+   captions, no metadata. Two rungs plus size and weight carry it, and the
+   chevrons ride their own trigger's ink rather than sitting a rung below it.
+
+   The second group retargets four of Discord's own neutrals. #23272a, #2c2f33,
+   #50555f and #99aab5 carry 7 to 28 points of channel spread; at the top of
+   that range they read visibly blue beside white ink. These are neutrals, not
+   identity, so they move — each onto the white alpha nearest its old
+   lightness, so anything still reading them keeps its relative position.
+   Blurple, red, green, yellow and the rest of the palette stay declared
+   exactly as they ship, because the presence dots and status pips inside the
+   product screenshots read them.
+   -------------------------------------------------------------------------- */
+:root,
+html,
+body,
+.page-wrapper,
+.nav,
+main#main,
+.footer_new {
+  --sd-sans: Ggsans, "gg sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif;
+
+  --sd-canvas: #0a0a0a;
+  /* One step above the canvas, for menu panels that must read as a layer over
+     the page rather than a hole in it. */
+  --sd-surface: #141414;
+  --sd-ink: #fff;
+  --sd-ink-2: rgb(255 255 255 / 56%);
+  --sd-rule: rgb(255 255 255 / 12%);
+  --sd-rule-strong: rgb(255 255 255 / 24%);
+  --sd-hover: rgb(255 255 255 / 8%);
+  --sd-active: rgb(255 255 255 / 14%);
+  --sd-fill: rgb(255 255 255 / 6%);
+
+  /* The one light surface on the page carries its own alpha-black ladder
+     rather than borrowing the white one from the canvas around it. */
+  --sd-band: #f2f2f2;
+  --sd-band-ink: rgb(0 0 0 / 82%);
+
+  --not-quite-black: #0a0a0a;
+  --black: #000;
+  --dark-charcoal: #141414;
+  --dark-button-hover: #262626;
+  --greyple: rgb(255 255 255 / 56%);
+  --dim-grey: rgb(255 255 255 / 36%);
+  --off-white: #f5f5f5;
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas
+
+   The page paints its background in four stacked places: a body colour
+   (#1a2081), a full-height gradient PNG on <main>, a "Texture N.webp" star
+   plate on each of the eight chapters, and a second gradient in the footer.
+   Neutralising the body colour alone changed nothing visible, which is why all
+   four are named. #1a2081 is 103 points of channel spread — far outside
+   anything the tinted-neutral test would flag, because it is not a grey with a
+   cast, it is the brand hue used as a surface.
+   -------------------------------------------------------------------------- */
+html,
+body,
+body.body,
+body.is-dark-blue,
+.page-wrapper {
+  background-color: var(--sd-canvas) !important;
+  background-image: none !important;
+  color: var(--sd-ink) !important;
+}
+
+main#main,
+main#main.main-wrapper,
+.home--hero,
+.home--2section,
+.home--3section,
+.home--4section,
+.home--5section,
+.home--6section,
+.home--section7,
+.discord_banner,
+.footer_new,
+.home--block-group,
+.home--block-group.is-reverse,
+.home--block-group.block-1 {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.footer_new {
+  background-color: var(--sd-canvas) !important;
+}
+
+/* The star field is ~90 absolutely-positioned <img> plus two larger ornament
+   plates behind the headline. Over a saturated gradient they read as
+   atmosphere; over near-black the same sprites read as dust on the screen.
+   None of them is in flow, so removing them frees no space to close. */
+.star-hero-home,
+.crown,
+.star.is_2025,
+.smoke-gif,
+#smoke_gif,
+.cloud-shadow {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Typography
+
+   Two families ship here: ggsans for text, ABC Ginto Nord for display. ggsans
+   is a well-made product sans and stays. Ginto Nord goes, and not for style
+   reasons — the site loads exactly one cut of it (700) and sets every heading
+   in uppercase, so it can express neither the 500/600 heading rungs nor
+   sentence case. ggsans ships 400/500/600/700, so the ladder survives inside
+   Discord's own type system instead of being handed to Inter, and the page
+   keeps its voice.
+   -------------------------------------------------------------------------- */
+body,
+button,
+input,
+select,
+textarea,
+.line_text-animation,
+[class*="button-"],
+[class*="heading--"] {
+  font-family: var(--sd-sans) !important;
+}
+
+h1,
+.heading--h1,
+h1.heading--h1.is_2025 {
+  font-size: clamp(38px, 4vw, 54px) !important;
+  font-weight: 600 !important;
+  line-height: 1.06 !important;
+  letter-spacing: -0.022em !important;
+  color: var(--sd-ink) !important;
+  text-align: left !important;
+}
+
+h2,
+.heading--h2,
+h2.heading--h2.is_2025,
+h2.heading--h2.m-90.is_2025 {
+  font-size: clamp(26px, 2.4vw, 32px) !important;
+  font-weight: 600 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.018em !important;
+  color: var(--sd-ink) !important;
+  text-align: left !important;
+}
+
+/* Tracking for this one is set with its casing below, not here. */
+h2.heading--h2-center.is_2025 {
+  font-size: clamp(28px, 2.9vw, 40px) !important;
+  font-weight: 600 !important;
+  line-height: 1.14 !important;
+  text-align: left !important;
+}
+
+/* Both headline wrappers clip to a fixed height for the site's reveal
+   animation. Sentence case wraps differently from caps, so leaving these boxed
+   sliced the descenders off the first line of several chapters. */
+.text-mask,
+.text-mask.is_2025,
+.text-mask.title-wr {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+main p,
+.body-text--xl,
+.body-text--xl.is_2025,
+.body-text--xl.is_2025-n,
+.body-text--xl.new-home,
+.hero-p {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  line-height: 1.55 !important;
+  letter-spacing: 0 !important;
+  color: var(--sd-ink-2) !important;
+  text-align: left !important;
+  max-width: 34em;
+}
+
+/* --------------------------------------------------------------------------
+   3a. Casing
+
+   Every heading and every marquee word renders in capitals because of a
+   `text-transform`, so the transform is what gets corrected — but the markup
+   underneath is not one thing, and a single blanket rule would publish the
+   worst of it. Sampled per chapter it runs:
+
+     hero      "Group chat that's all fun & games"   sentence
+     2section  "MAKE YOUR GROUP CHATS MORE FUN"      shouted
+     3section  "stream like you're in the same room" lowercase
+     4section  "Hop in when you're free, no need…"   sentence
+     5section  "See who's around to chill"           sentence
+     6section  "always have something to do together" lowercase
+     section7  "wherever YOU GAME, HANG OUT HERE"    both at once
+     banner    "YOU CAN'T SCROLL ANYMORE.<br>BETTER GO CHAT."  shouted, two
+                                                     sentences
+
+   So the correction is per chapter, not per class: lowercase-plus-first-letter
+   only where the markup shouts, first-letter only where it whispers, and
+   nothing at all where the copy was already written in sentence case. Every
+   string it touches is one sentence of marketing copy with no proper noun and
+   no acronym in it, which is the condition under which a case transform is
+   safe to run at all.
+   -------------------------------------------------------------------------- */
+h1.heading--h1.is_2025,
+h2.heading--h2,
+h2.heading--h2-center,
+div.line_text-animation {
+  text-transform: none !important;
+}
+
+/* Shouted in the markup: lowercase the string, restore the initial. */
+.home--2section h2.heading--h2,
+.home--section7 h2.heading--h2 {
+  text-transform: lowercase !important;
+}
+
+/* Lowercase in the markup, and marquee words ("talk", "play", "chat",
+   "hang out"): the initial is the only thing missing. */
+.home--2section h2.heading--h2::first-letter,
+.home--3section h2.heading--h2::first-letter,
+.home--6section h2.heading--h2::first-letter,
+.home--section7 h2.heading--h2::first-letter,
+div.line_text-animation::first-letter {
+  text-transform: uppercase !important;
+}
+
+/* The one place the rule's own caveat bites. This heading is two sentences
+   split by a <br>, and `::first-letter` reaches only the first of them, so
+   lowercasing would ship "You can't scroll anymore. / better go chat." — a
+   transform corrupting the string next to the one it fixed, which is exactly
+   what the caveat is about. Its capitals live in the markup, so they stay.
+   Dropping Ginto Nord 700 for ggsans 600 already takes most of the shouting
+   out of it. Rewriting the copy is the real fix and is out of reach from a
+   stylesheet. */
+h2.heading--h2-center.is_2025 {
+  text-transform: none !important;
+  /* Negative tracking is for mixed case. If the capitals are staying, they get
+     set properly rather than crammed. */
+  letter-spacing: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Media containment
+
+   The characters, the 3D objects, the Lottie robot and the six product videos
+   are the entire argument this page makes, and they keep every bit of their
+   colour — including the presence dots and status pips inside the app shots,
+   where hue is the encoding. The rule is only that the colour stops at the
+   frame: the 60px radius the site puts on its media containers is a shape, not
+   content, and comes down to match the buttons.
+   -------------------------------------------------------------------------- */
+.radius-60,
+.home--group-chat-img-wr,
+[class*="w-background-video"] {
+  border-radius: 16px !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Buttons
+
+   Two filled buttons sit side by side in the hero: white "Download for Mac"
+   and blurple "Open Discord in your browser". Two filled peers of equal weight
+   state no preference, and the blurple one shares its viewport with the
+   Discord wordmark, where a filled accent outranks the mark. Download keeps
+   the fill; open-in-browser becomes an outline at the same height, radius and
+   padding, so the pair still reads as one control group.
+
+   One radius, 10px, across every button and the language select. The page
+   shipped 12px on large CTAs and 16px on the nav button and the select, which
+   is two conventions rather than one.
+   -------------------------------------------------------------------------- */
+[class*="button-ZGMevK"],
+a.button-bl.download-button,
+a#login.button-nav,
+a.button-nav.is-burger,
+.button-nav {
+  border-radius: 10px !important;
+  font-family: var(--sd-sans) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+  transition: background-color 160ms ease, color 160ms ease,
+    border-color 160ms ease !important;
+}
+
+a[class*="buttonWhite-"],
+a.button-bl.download-button,
+a#login.button-nav,
+a.button-nav.is-burger.download-button {
+  background-color: var(--sd-ink) !important;
+  color: var(--sd-canvas) !important;
+  border: 0 !important;
+}
+
+a[class*="buttonWhite-"]:hover,
+a.button-bl.download-button:hover,
+a#login.button-nav:hover,
+a.button-nav.is-burger.download-button:hover {
+  background-color: rgb(255 255 255 / 86%) !important;
+}
+
+button[class*="buttonBrand-"],
+a[class*="buttonBrand-"] {
+  background-color: transparent !important;
+  color: var(--sd-ink) !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+}
+
+button[class*="buttonBrand-"]:hover,
+a[class*="buttonBrand-"]:hover {
+  background-color: var(--sd-hover) !important;
+  border-color: var(--sd-ink) !important;
+}
+
+/* The closing chapter's download button carries its platform glyph as a
+   background-image, which is why the fills above are set with
+   `background-color` and not the `background` shorthand. */
+[class*="button-ZGMevK"] svg,
+[class*="button-ZGMevK"] path {
+  fill: currentColor !important;
+}
+
+/* The hero's action row is centred while the headline and the paragraph above
+   it are flush left, so the primary action does not sit under the copy that
+   argues for it. Centring here is a flex property on the container, not a
+   text-align on the buttons. */
+.ctaContainer-5100Xg,
+#landing-cta > div {
+  justify-content: flex-start !important;
+}
+
+/* Left-aligning the actions exposed the gap they were hiding: the copy block
+   sat 88px from the top of a 512px row and the buttons sit below the whole
+   row, leaving 244 measured pixels of nothing beside the text while the
+   illustration filled the same band on the right. The art cannot move up —
+   a character reaches to x=612 at exactly that height — so the copy comes down
+   to the row's optical centre instead, which halves the hole. What remains is
+   the honest cost of short copy beside a tall figure. */
+.home--2col_layout.is-hero {
+  align-items: center !important;
+}
+
+.home--2col_layout.is-hero > .home--text-wr {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.home--hero.is_2025 {
+  padding-bottom: 96px !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Navigation
+
+   Nine top-level items, six of them dropdown menus, plus log in. All of it
+   stays. The links drop to the supporting rung so the wordmark and the single
+   action are the only full-ink things in the bar.
+   -------------------------------------------------------------------------- */
+.nav,
+.nav_padding,
+.nav_wrapper {
+  background-color: transparent !important;
+}
+
+.nav_link,
+.nav_dd_trigger,
+.nav_link_dropdown,
+span.menu-title {
+  color: var(--sd-ink-2) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.nav_link:hover,
+.nav_dd_trigger:hover,
+.nav_link:hover span.menu-title,
+.nav_dd_trigger:hover span.menu-title,
+.nav_link_dropdown:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* Five of the six menu triggers hold their chevron 4px off the label; the
+   Developers one holds it at 12px, because its markup ends in a literal
+   `&nbsp;` that no `gap` value can reach. Collapsing the label box and putting
+   the size back on the two spans inside it is the only way to delete a
+   character from a stylesheet. Both spans keep their size, so the "8 of 9"
+   the screen reader announces is untouched. */
+.nav_dd_trigger > div:has(> span.menu-title) {
+  font-size: 0 !important;
+}
+
+.nav_dd_trigger > div:has(> span.menu-title) > span {
+  font-size: 16px !important;
+}
+
+/* Open menu. The original marks it with a filled blurple pill, which on an
+   otherwise neutral page becomes the single loudest element in the header and
+   sits two inches from the wordmark it outranks. A fill still marks the state
+   unambiguously, and the open panel plus the page scrim are already saying the
+   same thing twice. */
+.nav_dd_trigger.w--open,
+.nav_dd_trigger.w--open span.menu-title,
+.nav_link.w--open {
+  background-color: var(--sd-active) !important;
+  color: var(--sd-ink) !important;
+  border-radius: 10px !important;
+}
+
+.nav_dd_content-wr {
+  background-color: var(--sd-surface) !important;
+  background-image: none !important;
+  border: 1px solid var(--sd-rule) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+/* The mobile menu is a full-screen blurple sheet, and the colour is on
+   .nav_burger_content — an inner div — not on .nav_burger_list, which is the
+   only one a desktop pass ever sees. Its dividers, close button and bottom
+   scroll-fade are all painted separately and each had to be named. */
+.nav_burger_list,
+.nav_burger_content {
+  background-color: var(--sd-surface) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.nav_menu.is-burger li,
+.nav_menu.is-burger .nav_link,
+.nav_menu.is-burger .nav_dd_trigger,
+.nav-sider {
+  border-color: var(--sd-rule) !important;
+  background-color: transparent !important;
+}
+
+.nav_burger_close {
+  background-color: var(--sd-fill) !important;
+  border-radius: 10px !important;
+}
+
+/* A fade, not an ornament: it tells you the list scrolls, so it stays and just
+   fades to the sheet it sits on. */
+.nav_burger_bottom_grad {
+  background-image: linear-gradient(
+    to bottom,
+    rgb(20 20 20 / 0%),
+    var(--sd-surface)
+  ) !important;
+}
+
+/* The <nav> around the panel is 522x360 against the panel's 458x263: it is the
+   mouse-safe zone that keeps the menu open as the pointer travels, not a
+   surface. Painting it drew the menu twice, as a bordered box inside a taller
+   bordered box with dead space below. */
+.w-dropdown-list.nav_dd_list,
+.nav_dd_list_bg {
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.dd_nav-link {
+  color: var(--sd-ink-2) !important;
+  font-weight: 400 !important;
+}
+
+.dd_nav-link:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* "Resources", "Hubs" and the rest are the group labels inside a menu, not
+   links, and they take the same treatment as the footer's column headings:
+   full ink, smaller, 500. Leaving them on the same rung as the links they head
+   collapsed two rungs onto one and the menu lost its structure. */
+.nav_dd_link_title,
+.nav_dd_link_title.is-new,
+.nav_dd_link-group_title,
+.nav_dd_link-group_title.is-new {
+  color: var(--sd-ink) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+.nav_dd_separator {
+  background-color: var(--sd-rule) !important;
+  border-color: var(--sd-rule) !important;
+}
+
+/* The chevrons paint themselves with `stroke="white" stroke-opacity="0.5"` as
+   presentation attributes on the path, so setting a colour on the wrapper did
+   nothing at all and left them on a rung that exists nowhere else. Both
+   attributes have to be answered in CSS for the glyph to follow its label. */
+.nav_dd_arrow svg path,
+.nav_dd_arrow-wr-white svg path,
+.nav_dd_arrow-wr-black svg path,
+.nav_dd_link_arrow svg path {
+  stroke: currentColor !important;
+  stroke-opacity: 1 !important;
+}
+
+/* Illustrated ornaments tucked into the dropdown panels. A menu is chrome. */
+.nav-dd-decor {
+  display: none !important;
+}
+
+/* The keyboard skip link, which only appears on focus, ships on a #35ed7e
+   fill — the loudest single colour left anywhere in the chrome once the
+   gradients were gone, and the only thing the tint audit still found. Green is
+   not encoding anything here, so it takes the primary button's treatment and
+   becomes a real control when it appears. */
+.skip-link,
+a.skip-link {
+  background-color: var(--sd-ink) !important;
+  color: var(--sd-canvas) !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. The light band
+
+   Eight chapters of black canvas carrying eight similar media panels have no
+   beat. A dark page has no "very light fill" to alternate with, so the
+   substitute is one genuinely light interruption, and the marquee strip at the
+   page's midpoint is already the only full-bleed break in the stack.
+
+   It carries its own alpha-black ladder rather than borrowing the white one
+   from the canvas. The marks in it are Discord's white colourway, which would
+   vanish here, so they flip to the black colourway the brand also ships —
+   the mark keeps its shape and its identity, it just stops being invisible.
+
+   The row itself is translated by a Webflow interaction. Returning it to rest
+   means clearing that transform, not merely stopping it: frozen mid-run it
+   sits at an arbitrary offset with the first word sliced off the left edge.
+   -------------------------------------------------------------------------- */
+.line-wr-home,
+.line-animation,
+.line-animation.is_2025 {
+  background-color: var(--sd-band) !important;
+  background-image: none !important;
+  overflow: hidden !important;
+}
+
+.line-move {
+  transform: none !important;
+}
+
+.line_text-animation,
+.line_text-animation.is_2025 {
+  color: var(--sd-band-ink) !important;
+  font-size: 26px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.line-animation .discord-mark {
+  filter: invert(1) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Closing chapter
+
+   Heading and action are centred by `align-items` on a column flex container
+   while every other chapter on the page is flush left. Correcting the
+   text-align alone left the block centred with its text ragged-right inside
+   it, which is worse than where it started.
+   -------------------------------------------------------------------------- */
+.discord_banner .max-width-788px,
+.discord_banner .max-width-788px.home.is_2025 {
+  align-items: flex-start !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Footer
+
+   Denser than the page above it, same ladder. Column headings are labels and
+   read at full ink in a smaller size; the links they head sit on the
+   supporting rung. The original had this the other way round — 70% headings
+   over 100% links — so every label was quieter than its own contents.
+   -------------------------------------------------------------------------- */
+.desktop-only-footer-title,
+h3.desktop-only-footer-title {
+  color: var(--sd-ink) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* Below 992px the same four columns become accordions, and the heading stops
+   being a label and becomes the control that opens the group. It shipped at
+   70% white, which is off the ladder in both directions — quieter than the
+   links it reveals and louder than the section label above it. */
+.dropdown-toggle-footer,
+div.dropdown-toggle-footer.is_2026 {
+  color: var(--sd-ink) !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+/* The three dividers between the four accordions separate peers and are the
+   only thing grouping a collapsed list, so they stay — but at a hairline. They
+   shipped at 2px, which on a near-black canvas is a bar, not a rule. */
+.dropdown-footer,
+.dropdown-footer.line-none,
+.dropdown-toggle-footer {
+  border-bottom-width: 1px !important;
+  border-color: var(--sd-rule) !important;
+}
+
+.link-footer,
+.link-footer.top-new-link,
+a.link-footer,
+.dropdown-language-name {
+  color: var(--sd-ink-2) !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+}
+
+a.link-footer:hover,
+a.link-footer.top-new-link:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* "Language" and "Social" label the two controls under them, so they sit on
+   the supporting rung rather than the icon rung. */
+.p-footer,
+.p-footer.is_2026,
+.p-footer.hide-landscape {
+  color: var(--sd-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.dropdown-language-btn {
+  background-color: var(--sd-fill) !important;
+  border: 1px solid var(--sd-rule) !important;
+  border-radius: 10px !important;
+  color: var(--sd-ink) !important;
+}
+
+.dropdown-list-footer {
+  background-color: transparent !important;
+}
+
+/* The open language list is a full blurple panel with a 24px radius — the last
+   saturated surface on the page, and only reachable by clicking, which is why
+   a scroll-through capture never showed it. It becomes the same menu surface
+   the nav dropdowns use. */
+.dropdown-language-list-wr,
+nav.dropdown-language-list-wr {
+  background-color: var(--sd-surface) !important;
+  border: 1px solid var(--sd-rule) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.dropdown-language-item,
+li.dropdown-list-container {
+  color: var(--sd-ink-2) !important;
+  background-color: transparent !important;
+  border-radius: 8px !important;
+}
+
+.dropdown-language-item:hover,
+li.dropdown-list-container:hover .dropdown-language-item {
+  color: var(--sd-ink) !important;
+  background-color: var(--sd-hover) !important;
+}
+
+/* Social platform marks are third-party evidence, not this page's identity. */
+.link-s img,
+.top-soc-new img {
+  filter: grayscale(1) !important;
+  opacity: 0.56;
+  transition: opacity 160ms ease;
+}
+
+.link-s:hover img {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   10. Focus and state
+
+   Two pixels, not one. A hairline ring has no light field around it on a
+   near-black canvas and disappears into the control it is meant to mark.
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+.w-dropdown-toggle:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 3px !important;
+  border-radius: 4px;
+}
+
+/* Inside the light band the white ring would be the invisible one. */
+.line-animation a:focus-visible {
+  outline-color: #0a0a0a !important;
+}
+
+::selection {
+  background: rgb(255 255 255 / 22%);
+}
+
+/* --------------------------------------------------------------------------
+   11. Responsive
+
+   The two hero actions stack on mobile at two different widths and centred.
+   Matching their extent is what makes them read as one group rather than two
+   unrelated controls.
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .ctaContainer-5100Xg,
+  #landing-cta > div {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  [class*="button-ZGMevK"],
+  a.button-bl.download-button {
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
+
+  .line_text-animation,
+  .line_text-animation.is_2025 {
+    font-size: 20px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

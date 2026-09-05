@@ -1,0 +1,321 @@
+/* ==========================================================================
+   GOV.UK — Scandinavian override
+
+   VERDICT: no changes. This file contains zero declarations, deliberately.
+
+   GOV.UK is already the thing this skill is trying to produce. It is a
+   neutral, unornamented, left-aligned, single-family, zero-radius,
+   zero-shadow, zero-gradient system with one brand colour used structurally
+   and an ink ladder of exactly two values. Every candidate change I could
+   name either (a) failed the Operating Posture test — it improved no
+   comprehension, hierarchy, efficiency, accessibility or brand coherence and
+   was therefore only "it looks more Scandinavian", or (b) traded away a
+   density or accessibility property that GDS bought with user research I
+   cannot overrule from a screenshot.
+
+   The rest of this file is the inventory: what I looked at, what I measured,
+   what I considered changing, and why each item was left alone. On a page
+   this good, that record is the deliverable. Applying the skill here would
+   have produced a worse page.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. What was measured, not assumed
+
+   Probed live at 1440x900 and 390x844 via scripts/probe.js and direct
+   Playwright evaluation. Numbers below are computed values from the live
+   DOM, not readings off a screenshot.
+
+   Type family      "GDS Transport", arial, sans-serif — everywhere, including
+                    form controls. One family, no serif, no second face.
+   Font weights     Two @font-face entries only: normal and bold. A test span
+                    set to 100/200/300/400/500 renders at 323.83px; 600/700/
+                    800/900 renders at 336.72px. There is no 500 and no 600.
+   Ink              #0b0c0c body, #1a65a6 links, #ffffff on brand blue.
+   Brand            #1d70b8 hero band, section rules, footer edge, search
+                    submit. #d2e2f1 quiet blue fill. #f4f8fb footer/utility
+                    surface. Crown and royal arms in their shipped colours.
+   Contrast         #0b0c0c on #ffffff .......... 19.59:1
+                    #1a65a6 on #ffffff ........... 6.08:1
+                    #ffffff on #1d70b8 ........... 5.17:1
+                    #1a65a6 on #f4f8fb ........... 5.69:1
+                    #0b0c0c on #f4f8fb .......... 18.34:1
+                    #1d70b8 icon on #d2e2f1 ...... 3.91:1  (non-text, needs 3)
+                    Everything clears AA; most clears AAA.
+   Focus            background #ffdd00 plus box-shadow 0 -2px #ffdd00 and
+                    0 4px #0b0c0c. Not an outline — a solid yellow block with
+                    a black underline. Best-in-class; touching anything that
+                    could disturb it is off the table.
+   Radii            0px on every control. Systematic, not an oversight.
+   text-transform   none, on every element in the document. No caps to fix.
+   Motion           none worth naming. Nothing to gate behind reduced-motion.
+   Overflow         scrollWidth == clientWidth at both widths. No clipping.
+   Rhythm           5px base scale (5/10/15/20/25/30/40/50/60). Coherent.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   1. The palette — NOT CHANGED
+
+   Considered: neutralising the blue. Hero band to white or near-black, the
+   4px section rules to rgb(0 0 0 / 18%), links to #000, the #f4f8fb footer
+   and feedback surfaces to rgb(0 0 0 / 4%), the #d2e2f1 icon circles to a
+   quiet neutral fill.
+
+   Rejected, and this is the single most important rejection in this file.
+
+   - #1d70b8 is the identity of the United Kingdom government online. It is
+     not a design-system default that survived a neutralising pass; it is the
+     brand. SKILL.md's own colour section permits "a single established brand
+     accent" and says a brand mark is not chrome. On GOV.UK the blue *is* the
+     mark — it does the work a logo does elsewhere.
+   - It is load-bearing structurally, not decoratively. The 4px blue rule is
+     the only thing marking a chapter boundary between "Popular", "Services
+     and information" and "Government activity". Replacing it with a neutral
+     hairline would demote a chapter divider to the same weight as the fifteen
+     row dividers inside one chapter, collapsing two levels into one.
+   - #f4f8fb reads as a cool tinted neutral and trips SKILL.md's "tinted warm
+     or cool grays" escalation trigger. It is a tint of the brand blue, at the
+     same lightness as the rgb(0 0 0 / 4%) the skill would substitute
+     (245,245,245 vs 244,248,251). Swapping it changes the hue and nothing
+     else. That is a change whose only argument is the style guide.
+   - The palette is contrast-audited to a legal standard. Every substitution
+     above would need re-auditing to land, at best, where it already is.
+
+   The correct reading of the skill here is the sentence that says reject
+   changes whose only rationale is that they look more Scandinavian. This is
+   that change.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   2. Typography — NOT CHANGED
+
+   2a. Family. Considered switching body and controls to Inter, which the
+   harness preloads. Rejected: SKILL.md's first typography rule is to preserve
+   an existing well-made sans-serif product typeface, and GDS Transport is
+   one — descended from the Kinneir/Calvert road-sign face, drawn for
+   legibility under bad conditions, and applied consistently across headings,
+   body, links, buttons and text inputs. Swapping it for a general-purpose UI
+   grotesque is a lateral move that also throws away the only piece of GOV.UK
+   identity that is not colour.
+
+   2b. Weights. Considered restating headings at 500-600 and control labels at
+   500, per the skill's type scale. Rejected on measurement, not on taste.
+   GDS Transport ships two faces. CSS font matching resolves 500 down to 400
+   and 600 up to 700. So:
+
+       heading weight: 500  ->  renders 400  ->  identical to body copy
+       heading weight: 600  ->  renders 700  ->  identical to today
+
+   The first outcome deletes the only weight distinction on the page: every
+   heading (h1 64/40px, h2 36/32px, h3 19px) is bold against 19px regular
+   body. At h3 size, 19px bold vs 19px regular is the *entire* difference
+   between a topic title and its description — there is no size change to
+   fall back on. Applying the skill's weight guidance here would have
+   silently flattened 22 title/description pairs into undifferentiated text.
+   The second outcome is a no-op with extra CSS. Neither is worth writing.
+
+   2c. Scale. Four styles in use: 64/40 hero, 36/32 chapter, 19 bold title,
+   19 regular body. Within the skill's "three or four distinct text styles"
+   limit already.
+
+   2d. Measure. The topic descriptions run ~60 characters in the 630px column
+   — inside the 55-68 target. The "Featured" descriptions run ~23-30
+   characters in the 300px column, which is genuinely tight. See section 6.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   3. The twenty row dividers — NOT CHANGED
+
+   Considered: deleting the 1px rules between index rows and separating
+   records by whitespace instead, per the skill's guidance that repeated
+   records group on relative distance and need no line. Fifteen countable
+   rules in one chapter (and five more in the next) also trips the "more rules
+   on a screen than a reader can count" trigger.
+
+   Rejected on the trade the skill itself asks me to name. Each row is
+   currently 109px: 25px above the title, title, 10px, description, 20px
+   below. To make grouping unambiguous by distance alone, the between-record
+   gap has to clearly beat the title-to-description gap of 10px — call it
+   40px, which is a 20px-per-row increase and about 400px of extra scroll
+   across the two indexes. The primary task on this page is "find my topic and
+   leave". Adding half a viewport of scrolling to a lookup, to remove lines
+   that are correctly placed between peers and never cut through a
+   title/description pair, spends the user's time to satisfy a guideline.
+
+   Note also that the rules are already doing the thing the skill wants from
+   distance: they are what lets the row stay at 109px instead of 130px.
+
+   Also considered: sweeping border-color, since a design system's default
+   outline is usually a tinted gray that survives a neutralising pass. Checked
+   it — the dividers are rgb(206, 206, 206), a true neutral with no hue at
+   all. There is nothing to de-tint.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   4. Chapter spacing — NOT CHANGED
+
+   Measured: 60px above each chapter heading, 30px below it to first content;
+   60px between the end of a chapter and the next blue rule.
+
+   4a. Considered opening major transitions to the skill's 96-144px desktop
+   range. Rejected: the range is qualified with "when density permits", and
+   this is an index whose value is how much of it you can see at once. Three
+   chapters at +36 to +84px each is up to 250px of new scroll buying nothing —
+   the 4px blue rule already marks the transition unambiguously.
+
+   4b. Considered tightening to the skill's 3:1 heading ratio (gap above ~3x
+   gap below). Actual is 2:1. Rejected: 2:1 is already unambiguous — no reader
+   has ever wondered which content "Services and information" labels — and the
+   fix is to add space above, i.e. 4a again. The 3:1 heuristic exists to stop
+   people reaching for a rule; GOV.UK's rule here is a chapter marker, not a
+   compensation for weak spacing.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   5. "Popular on GOV.UK" grid alignment — NOT CHANGED
+
+   Found a real 4px/11px misalignment and still left it. ul.homepage-most-
+   viewed-list is display:grid with align-items:center. In row 2, the
+   single-line item ("Childcare account: sign in") is centred in a row sized
+   by its two-line neighbours, so its text sits ~11px below their first line
+   and its box sits 4px lower.
+
+   Considered align-items:start. Rejected after working out what it actually
+   buys. Inside each action link the arrow circle is centred against its own
+   label, so centring the grid rows puts every circle in a row on the same
+   centreline — in row 2 all three land at y=882 — and the circles are the
+   strongest horizontal anchor in an otherwise sparse grid. Top-aligning the
+   grid would align the text first-lines and misalign the circles by 4.5px
+   instead. It is not a bug with a fix; it is a trade between two alignments
+   that cannot both hold when one item wraps and another doesn't, and GDS
+   resolved it toward the icons. Swapping their answer for mine moves 4px and
+   improves nothing.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   6. Layout and the right-hand void — NOT CHANGED
+
+   The strongest structural case on the page, and still a rejection.
+
+   At 1440px the "Services and information" chapter runs 1939px tall in the
+   left 630px column while "Featured" ends after 804px, leaving ~1135px of
+   empty white beside the index. Considered: setting the topic list to two
+   columns to halve the chapter height, balance the composition, and remove
+   most of the scroll.
+
+   Rejected on task, not on looks.
+   - Reading order in a two-column alphabetical list is ambiguous — down then
+     across, or across then down — and this list is alphabetical precisely so
+     it can be scanned linearly.
+   - The descriptions are the disambiguator ("Benefits: includes eligibility,
+     appeals, tax credits and Universal Credit"). At ~300px they drop to ~35
+     characters and start wrapping to three lines, which claws back much of
+     the height saved and worsens the measure.
+   - GOV.UK already uses the two-column form in the footer, where the same
+     topics appear *without* descriptions. That is the shape the pattern is
+     right for, and they have applied it there.
+   - The void is peripheral to a left-aligned reading column, and the majority
+     of GOV.UK's traffic is mobile, where it does not exist at all.
+
+   Also considered and rejected: widening .govuk-width-container past 960px to
+   give the narrow "Featured" descriptions room. The 960px cap is a global,
+   researched constraint on every GOV.UK page; loosening it site-wide to fix
+   one column on one page is the wrong lever. The narrow measure there is a
+   consequence of the 80px icon tile inside a 300px column — a component-level
+   problem that wants markup, not an override.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   7. Components examined and left alone
+
+   Feedback bar. Has both a #f4f8fb fill and a 1px #8eb8dc border — the
+   skill's "count boundaries per control" note applies. Left alone: both
+   boundaries mark the same real distinction (utility region, not page
+   content), the border is what survives in forced-colours mode, and removing
+   one is a wash rather than an improvement. The Yes / No / Report a problem
+   buttons already share height, radius, border and weight.
+
+   Action-link arrow circles. The skill treats an icon that restates its
+   label as decoration. Left alone: these are GOV.UK's established
+   "start a task" affordance, and they raise the hit area from a 23px text
+   line to 48px. Removing them would cost a touch target to save a glyph.
+
+   Featured icon tiles. Pastel squares with saturated pictograms — the only
+   expressive colour on the page. Left alone: contained inside media exactly
+   as the skill permits, and they are recognition aids in a list of four
+   otherwise identical text blocks.
+
+   Zero corner radii. The skill suggests 6-12px. Left alone: 0 is applied
+   systematically to every control, and the GDS button treatment draws its
+   pressed affordance with a hard 2px bottom edge that a radius would break.
+
+   Hero headline rag. .homepage-header__intro already sets text-wrap: balance;
+   at 390px Chrome returns line widths of 308/299/149/285, which is a poor
+   balance. Left alone: GDS asked for the right thing and the browser gave a
+   mediocre answer at one width. Overriding to `pretty` or `wrap` chases a
+   single viewport with a browser-specific result and can be worse at 360 or
+   414px. That is a browser bug to wait out, not a design decision to reverse.
+
+   Small link targets. Standalone links render at 23px tall, one pixel under
+   WCAG 2.5.8's 24px minimum. Left alone: they qualify under both the inline
+   exception (height set by their own line-height) and the spacing exception
+   (rows are 109px apart), and padding them out would drag the underline into
+   the description below it. Conformant as shipped; the "fix" regresses it.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   8. Verification performed
+
+   Desktop 1440x900 and mobile 390x844, full page in segments, both states.
+   Menu dropdown and search dropdown opened and captured on mobile. Keyboard
+   focus applied to a link and the computed focus style read back. Contrast
+   computed arithmetically for every foreground/background pair in section 0.
+   Font weights verified by rendered-width probe rather than by reading the
+   stylesheet. scripts/lines.js run across y=0..3000.
+
+   Every line lines.js reports is one GOV.UK ships, since this file draws
+   none. Two of its categories are worth naming so nobody chases them later:
+
+   - `::before border 3px/0px` on every a.gem-c-cards__link is not a rule. It
+     is the row chevron, drawn as a rotated pseudo-element with two borders
+     and absolutely positioned at the right edge; lines.js reports it at the
+     anchor's own width and y because it reads the originating element's box.
+   - `::before border 0px/2px` at y=16 is the underline under the header
+     "Menu" toggle, not a header divider.
+
+   Real rules, all intended: 4px #1d70b8 chapter rules at y=807 and y=2750,
+   the same 4px rule above the app promo at y=1384, and the 1px #cecece row
+   dividers inside the two indexes.
+
+   Pixel diff of the captured pairs: desktop is byte-identical, 0 of 5,184,000
+   pixels differing. Mobile differs in 60 of 1,316,640 pixels, max channel
+   delta 12/255, all of them antialiasing on the header search glyph and a few
+   link underlines — repaint jitter from the harness's extra wait and its
+   injected (and unused) Inter link tag, not from this file, which declares
+   nothing that could move a pixel.
+
+   Not reachable in this harness: visited-link colour, form error and
+   validation states, the search autocomplete listbox with results, signed-in
+   views. None of those are touched by this file, since this file touches
+   nothing.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   9. What a source-level redesign might still do
+
+   Recorded so "no change" is not mistaken for "nothing could ever improve".
+   None of these are reachable through an injected stylesheet, and none are
+   Scandinavian-restyle work:
+
+   - Rebuild the Featured card so the 80px icon tile does not steal a quarter
+     of a 300px column, freeing a readable measure for its description.
+   - Give the homepage a wider grid than the 960px article container it
+     currently borrows, so a two-column index becomes possible without
+     shrinking the descriptions.
+   - Make the whole topic row a single link target. Today the <li> holds an
+     <h3><a> plus a sibling <p>; the chevron is a pseudo-element on the anchor
+     so it does navigate, but the description and the space between title and
+     chevron do not, and the row reads as though all of it should.
+   -------------------------------------------------------------------------- */
+
+/* End of file. No declarations follow, and that is the finding. */

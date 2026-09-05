@@ -1,0 +1,298 @@
+<!--
+  Woven Cloth (Verlet physics simulation)
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped: Tailwind/Iconify/GSAP scaffolding, marketing copy and CTA button, ScrollTrigger text reveals,
+  and the remote Supabase background image (replaced with a plain radial gradient). Kept: the Three.js
+  Verlet cloth mesh with its generated canvas texture and wind-driven physics loop, now driving a plain
+  requestAnimationFrame loop with no scroll or pointer dependency.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Woven Cloth</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(120% 100% at 50% 30%, #2a1113 0%, #1a0a0c 55%, #0f0607 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+  #cloth {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(90% 80% at 50% 46%, transparent 55%, rgba(10,5,6,.72) 100%);
+  }
+  .caption {
+    position: absolute;
+    right: 2.5rem;
+    bottom: 2rem;
+    z-index: 10;
+    text-align: right;
+    font-size: 0.72rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    line-height: 1.9;
+    color: #b99a8f;
+    font-weight: 500;
+    pointer-events: none;
+  }
+  @media (max-width: 640px) {
+    .caption { right: 1.25rem; bottom: 1.25rem; font-size: 0.62rem; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="stage">
+    <canvas id="cloth"></canvas>
+    <div class="vignette"></div>
+  </div>
+
+  <div class="caption">
+    Woven cloth simulation<br>
+    Verlet grid · wind field
+  </div>
+
+  <script src="three.min.js"></script>
+  <script>
+    (() => {
+      const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+      const canvas = document.getElementById('cloth');
+      if (!window.THREE) return;
+
+      // Generate woven texture
+      function makeClothTexture() {
+        const W = 1280, H = 800;
+        const c = document.createElement('canvas');
+        c.width = W;
+        c.height = H;
+        const x = c.getContext('2d');
+
+        const g = x.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, '#efe6d4');
+        g.addColorStop(0.5, '#e9dfca');
+        g.addColorStop(1, '#e3d7bf');
+        x.fillStyle = g;
+        x.fillRect(0, 0, W, H);
+
+        x.strokeStyle = '#a5202c';
+        x.lineWidth = 10;
+        x.strokeRect(46, 46, W - 92, H - 92);
+        x.lineWidth = 3;
+        x.strokeStyle = '#7c1622';
+        x.strokeRect(66, 66, W - 132, H - 132);
+
+        x.fillStyle = '#a5202c';
+        x.font = 'bold 78px Georgia, "Times New Roman", serif';
+        x.textAlign = 'center';
+        x.textBaseline = 'middle';
+        x.fillText('W C', W / 2, 190);
+
+        x.font = 'normal 20px Helvetica, Arial, sans-serif';
+        x.fillStyle = '#7c1622';
+        x.fillText('· WOVEN ·', W / 2, 246);
+
+        x.fillStyle = '#9e1e2a';
+        x.font = 'bold 118px Georgia, "Times New Roman", serif';
+        x.fillText('WOVEN', W / 2, 400);
+        x.fillText('CLOTH', W / 2, 520);
+
+        x.fillStyle = '#7c1622';
+        x.font = '600 30px Helvetica, Arial, sans-serif';
+        x.fillText('K I N E T I C   T E X T I L E', W / 2, 626);
+
+        x.globalAlpha = 1;
+        for (let yy = 0; yy < H; yy += 3) {
+          x.strokeStyle = 'rgba(60,30,20,0.05)';
+          x.lineWidth = 1;
+          x.beginPath(); x.moveTo(0, yy + .5); x.lineTo(W, yy + .5); x.stroke();
+        }
+        for (let xx = 0; xx < W; xx += 3) {
+          x.strokeStyle = 'rgba(255,250,235,0.06)';
+          x.lineWidth = 1;
+          x.beginPath(); x.moveTo(xx + .5, 0); x.lineTo(xx + .5, H); x.stroke();
+        }
+
+        const id = x.getImageData(0, 0, W, H), d = id.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const n = (Math.random() * 2 - 1) * 10;
+          d[i] += n; d[i + 1] += n; d[i + 2] += n;
+        }
+        x.putImageData(id, 0, 0);
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.anisotropy = 4;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+
+      const scene = new THREE.Scene();
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      let camera;
+
+      const BW = 4.4, BH = 2.75;
+      const GX = 40, GY = 26;
+      const geo = new THREE.PlaneGeometry(BW, BH, GX, GY);
+      const mat = new THREE.MeshPhongMaterial({
+        map: makeClothTexture(),
+        side: THREE.DoubleSide,
+        shininess: 6,
+        specular: 0x2a1410,
+        color: 0xffffff
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      scene.add(mesh);
+
+      scene.add(new THREE.AmbientLight(0xffe9d0, 0.62));
+      const key = new THREE.DirectionalLight(0xfff0dc, 1.15);
+      key.position.set(-3, 3.5, 3.2);
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0xb02330, 0.42);
+      rim.position.set(3, -1.5, 2.0);
+      scene.add(rim);
+
+      const pos = geo.attributes.position;
+      const N = (GX + 1) * (GY + 1);
+      const cur = new Float32Array(N * 3), prev = new Float32Array(N * 3), rest = new Float32Array(N * 3);
+      const pinned = new Uint8Array(N);
+
+      for (let i = 0; i < N; i++) {
+        const ax = pos.getX(i), ay = pos.getY(i), az = 0;
+        cur[i * 3] = prev[i * 3] = rest[i * 3] = ax;
+        cur[i * 3 + 1] = prev[i * 3 + 1] = rest[i * 3 + 1] = ay;
+        cur[i * 3 + 2] = prev[i * 3 + 2] = rest[i * 3 + 2] = az;
+      }
+
+      for (let ix = 0; ix <= GX; ix++) { pinned[ix] = 1; }
+      const idx = (ix, iy) => ix + iy * (GX + 1);
+
+      const restH = BW / GX, restV = BH / GY;
+      const GRAV = -3.1, DAMP = 0.985, DT = 0.016;
+
+      function wind(ix, iy, t) {
+        const cx = ix / GX, cy = iy / GY;
+        const travel = t * 1.7 - cy * 4.2;
+        const gust = 0.6 + 0.42 * Math.sin(t * 0.6) + 0.18 * Math.sin(t * 1.9 + 1.3);
+        const amp = 4.3 * cy;
+        const fz = (Math.sin(travel + cx * 3.3) + 0.5 * Math.sin(travel * 1.7 + cx * 6.0)) * amp * gust;
+        const fx = Math.sin(t * 0.9 + cy * 2.2) * 0.6 * cy;
+        const fy = -0.4 * cy;
+        return [fx, fy, fz];
+      }
+
+      function step(t) {
+        for (let iy = 0; iy <= GY; iy++) {
+          for (let ix = 0; ix <= GX; ix++) {
+            const i = idx(ix, iy);
+            if (pinned[i]) continue;
+            const [fx, fy, fz] = wind(ix, iy, t);
+            for (let k = 0; k < 3; k++) {
+              const j = i * 3 + k;
+              const a = (k === 0 ? fx : k === 1 ? (fy + GRAV) : fz);
+              const v = (cur[j] - prev[j]) * DAMP;
+              prev[j] = cur[j];
+              cur[j] = cur[j] + v + a * DT * DT;
+            }
+          }
+        }
+
+        for (let it = 0; it < 3; it++) {
+          for (let iy = 0; iy <= GY; iy++) {
+            for (let ix = 0; ix < GX; ix++) { solve(idx(ix, iy), idx(ix + 1, iy), restH); }
+          }
+          for (let iy = 0; iy < GY; iy++) {
+            for (let ix = 0; ix <= GX; ix++) { solve(idx(ix, iy), idx(ix, iy + 1), restV); }
+          }
+        }
+
+        for (let ix = 0; ix <= GX; ix++) {
+          const i = ix;
+          cur[i * 3] = rest[i * 3]; cur[i * 3 + 1] = rest[i * 3 + 1]; cur[i * 3 + 2] = rest[i * 3 + 2];
+          prev[i * 3] = rest[i * 3]; prev[i * 3 + 1] = rest[i * 3 + 1]; prev[i * 3 + 2] = rest[i * 3 + 2];
+        }
+      }
+
+      function solve(a, b, rl) {
+        const ax = cur[a * 3], ay = cur[a * 3 + 1], az = cur[a * 3 + 2];
+        const bx = cur[b * 3], by = cur[b * 3 + 1], bz = cur[b * 3 + 2];
+        let dx = bx - ax, dy = by - ay, dz = bz - az;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+        const diff = (d - rl) / d * 0.5;
+        dx *= diff; dy *= diff; dz *= diff;
+
+        const pa = pinned[a], pb = pinned[b];
+        if (!pa && !pb) {
+          cur[a * 3] += dx; cur[a * 3 + 1] += dy; cur[a * 3 + 2] += dz;
+          cur[b * 3] -= dx; cur[b * 3 + 1] -= dy; cur[b * 3 + 2] -= dz;
+        }
+        else if (pa && !pb) { cur[b * 3] -= dx * 2; cur[b * 3 + 1] -= dy * 2; cur[b * 3 + 2] -= dz * 2; }
+        else if (!pa && pb) { cur[a * 3] += dx * 2; cur[a * 3 + 1] += dy * 2; cur[a * 3 + 2] += dz * 2; }
+      }
+
+      function commit() {
+        for (let i = 0; i < N; i++) { pos.setXYZ(i, cur[i * 3], cur[i * 3 + 1], cur[i * 3 + 2]); }
+        pos.needsUpdate = true;
+        geo.computeVertexNormals();
+      }
+
+      function fit() {
+        const w = window.innerWidth, h = window.innerHeight;
+        renderer.setSize(w, h, false);
+        const aspect = w / h;
+        camera = new THREE.PerspectiveCamera(42, aspect, 0.1, 100);
+        const vFit = (BH / 2) / Math.tan(42 * Math.PI / 360);
+        const hFit = (BW / 2) / Math.tan(42 * Math.PI / 360) / aspect;
+        camera.position.set(0, 0.05, Math.max(vFit, hFit) * 1.16 + 0.4);
+        camera.lookAt(0, 0, 0);
+      }
+
+      window.addEventListener('resize', fit);
+      fit();
+
+      let running = false, raf = 0, t = 0;
+      function loop() {
+        if (!running) return;
+        t += DT;
+        step(t);
+        commit();
+        renderer.render(scene, camera);
+        raf = requestAnimationFrame(loop);
+      }
+
+      function start() { if (running) return; running = true; raf = requestAnimationFrame(loop); }
+      function stop() { running = false; cancelAnimationFrame(raf); }
+
+      if (reduce) {
+        for (let s = 0; s < 220; s++) step(s * DT);
+        commit();
+        renderer.render(scene, camera);
+      } else {
+        for (let s = 0; s < 40; s++) step(s * DT);
+        t = 40 * DT;
+        start();
+        document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+      }
+    })();
+  </script>
+</body>
+</html>

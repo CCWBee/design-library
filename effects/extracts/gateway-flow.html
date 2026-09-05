@@ -1,0 +1,543 @@
+<!--
+  Gateway Flow
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped/stubbed: Tailwind CDN, Iconify icons, GSAP/ScrollTrigger, Google Fonts and three remote
+  Supabase avatar images all removed; layout converted to plain CSS, icons replaced with inline SVG,
+  the heading reveal now runs on a plain CSS animation, and avatars are flat neutral tone blocks.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gateway Flow</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #000;
+    color: #cbd5e1;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Dither overlay */
+  .dither {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0.15;
+    background-image: url('data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%202%202%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%221%22%20height%3D%221%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E');
+    background-size: 2px 2px;
+  }
+
+  /* Visualisation background */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background: #000;
+  }
+  .bg-glow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.1;
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.01) 0%, rgba(0,0,0,0) 80%);
+  }
+  #flow-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+  }
+
+  main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 30;
+    padding: 3rem 1.5rem;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  .card {
+    max-width: 28rem;
+    width: 100%;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 1rem;
+    padding: 1.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .card-border {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 1rem;
+    pointer-events: none;
+  }
+
+  .header { text-align: center; margin-bottom: 2rem; width: 100%; position: relative; z-index: 20; }
+  .icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(51,65,85,0.5);
+    margin-bottom: 1.5rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .icon-badge svg { width: 24px; height: 24px; stroke: #e2e8f0; }
+
+  h1.title {
+    font-size: 2rem;
+    font-weight: 200;
+    letter-spacing: -0.02em;
+    color: #fff;
+    line-height: 1.2;
+    margin: 0 0 0.75rem;
+    text-transform: uppercase;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 0.5rem;
+  }
+  .reveal-wrap { overflow: hidden; display: inline-block; padding-top: 0.25rem; }
+  .reveal-word {
+    display: inline-block;
+    animation: revealUp 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--delay, 0s);
+    transform: translateY(120%);
+  }
+  @keyframes revealUp {
+    to { transform: translateY(0%); }
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 200;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  form { display: flex; flex-direction: column; gap: 1.25rem; position: relative; z-index: 20; }
+
+  .field label {
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: #94a3b8;
+    margin-bottom: 0.375rem;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .field-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.375rem; }
+  .link-muted {
+    font-size: 0.75rem;
+    font-weight: 200;
+    color: #94a3b8;
+    text-decoration: underline;
+    text-decoration-color: #334155;
+    text-underline-offset: 2px;
+  }
+  .input-wrap { position: relative; border-radius: 0.5rem; background: rgba(0,0,0,0.8); }
+  .input-border {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(30,41,59,0.8);
+    border-radius: 0.5rem;
+    pointer-events: none;
+  }
+  input[type="text"], input[type="password"] {
+    position: relative;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #e2e8f0;
+    z-index: 2;
+    font-weight: 200;
+    font-family: inherit;
+  }
+  input::placeholder { color: #334155; }
+  input:focus { outline: none; }
+  input[type="password"] { padding-right: 2.5rem; }
+
+  .eye-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: 0;
+    color: #475569;
+    cursor: pointer;
+    z-index: 3;
+    display: flex;
+  }
+  .eye-btn svg { width: 16px; height: 16px; }
+
+  .checkbox-row { display: flex; align-items: center; gap: 0.5rem; padding-top: 0.25rem; }
+  .checkbox-row input[type="checkbox"] {
+    width: 1rem; height: 1rem;
+    appearance: none;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.5);
+    cursor: pointer;
+  }
+  .checkbox-row input[type="checkbox"]:checked {
+    background: #cbd5e1;
+    border-color: #cbd5e1;
+  }
+  .checkbox-row label {
+    font-size: 0.75rem;
+    font-weight: 200;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: #0a0a0a;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 300;
+    padding: 0.65rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(255,255,255,0.03);
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: #111; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem 0;
+    z-index: 20;
+    position: relative;
+  }
+  .divider .line { flex-grow: 1; border-top: 1px solid rgba(30,41,59,0.6); }
+  .divider span {
+    flex-shrink: 0;
+    padding: 0 1rem;
+    font-size: 0.75rem;
+    font-weight: 200;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .alt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 20;
+  }
+  .alt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(30,41,59,0.8);
+    border-radius: 0.5rem;
+    padding: 0.65rem;
+    font-size: 0.875rem;
+    color: #94a3b8;
+    font-weight: 200;
+    cursor: pointer;
+  }
+  .alt-btn:hover { background: #0f172a; color: #cbd5e1; }
+  .alt-btn svg { width: 18px; height: 18px; }
+
+  .social-proof {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    z-index: 20;
+  }
+  .avatars { display: flex; }
+  .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 1px solid #1e293b;
+    background: linear-gradient(135deg, #334155, #0f172a);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    margin-left: -0.5rem;
+  }
+  .avatar:first-child { margin-left: 0; }
+  .avatar.plus {
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    font-weight: 200;
+  }
+  .proof-caption {
+    font-size: 0.75rem;
+    color: #475569;
+    font-weight: 200;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+
+  <div class="dither"></div>
+
+  <div class="bg-layer">
+    <div class="bg-glow"></div>
+    <canvas id="flow-canvas"></canvas>
+  </div>
+
+  <main>
+    <div class="card">
+      <div class="card-border"></div>
+
+      <div class="header">
+        <div class="icon-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2"/>
+            <path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/>
+          </svg>
+        </div>
+        <h1 class="title" id="reveal-title">
+          <span class="reveal-wrap"><span class="reveal-word" style="--delay:0s">Gateway</span></span>
+          <span class="reveal-wrap"><span class="reveal-word" style="--delay:0.15s">Flow</span></span>
+        </h1>
+        <p class="subtitle">Verify identity to initialise a secure connection with the primary framework.</p>
+      </div>
+
+      <form>
+        <div class="field">
+          <label for="identifier">Operative ID</label>
+          <div class="input-wrap">
+            <div class="input-border"></div>
+            <input type="text" id="identifier" placeholder="operative@example.net">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-row">
+            <label for="key" style="margin:0;">Security key</label>
+            <a href="#" class="link-muted">Recover access</a>
+          </div>
+          <div class="input-wrap">
+            <div class="input-border"></div>
+            <input type="password" id="key" placeholder="••••••••">
+            <button type="button" class="eye-btn" aria-label="Toggle visibility">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="session">
+          <label for="session">Maintain persistent uplink</label>
+        </div>
+        <button type="submit" class="btn-primary">Initialise uplink</button>
+      </form>
+
+      <div class="divider">
+        <div class="line"></div>
+        <span>Alternative auth</span>
+        <div class="line"></div>
+      </div>
+
+      <div class="alt-grid">
+        <button type="button" class="alt-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="1"/>
+            <path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>
+          </svg>
+          Corporate SSO
+        </button>
+        <button type="button" class="alt-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9 9l-2 3 2 3M15 9l2 3-2 3"/>
+          </svg>
+          Git auth
+        </button>
+      </div>
+    </div>
+
+    <div class="social-proof">
+      <div class="avatars">
+        <div class="avatar"></div>
+        <div class="avatar"></div>
+        <div class="avatar"></div>
+        <div class="avatar plus">+</div>
+      </div>
+      <p class="proof-caption">Validated by distributed consensus nodes</p>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('flow-canvas');
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      let explosions = [];
+
+      function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        buildPaths();
+      }
+
+      let paths = [];
+      const numPaths = 80;
+
+      function buildPaths() {
+        paths = [];
+        for (let i = 0; i < numPaths; i++) {
+          paths.push({
+            isLeft: i % 2 === 0,
+            startY: (i / numPaths) * height * 1.4 - height * 0.2,
+            particles: [{
+              t: Math.random(),
+              speed: 0.0015 + Math.random() * 0.002
+            }]
+          });
+        }
+      }
+
+      function getBezierPoint(t, p0, p1, p2, p3) {
+        const u = 1 - t;
+        return {
+          x: u ** 3 * p0.x + 3 * u ** 2 * t * p1.x + 3 * u * t ** 2 * p2.x + t ** 3 * p3.x,
+          y: u ** 3 * p0.y + 3 * u ** 2 * t * p1.y + 3 * u * t ** 2 * p2.y + t ** 3 * p3.y
+        };
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, width, height);
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        explosions.forEach(exp => {
+          exp.radius += 15;
+          exp.life -= 0.015;
+        });
+        explosions = explosions.filter(exp => exp.life > 0);
+
+        // Ambient auto-pulse so the field animates at rest with no interaction
+        if (Math.random() < 0.01) {
+          explosions.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 0,
+            life: 1
+          });
+        }
+
+        paths.forEach(path => {
+          const p0 = { x: path.isLeft ? 0 : width, y: path.startY };
+          const p1 = { x: path.isLeft ? centerX * 0.5 : width - centerX * 0.5, y: path.startY };
+          const p2 = { x: path.isLeft ? centerX * 0.8 : width - centerX * 0.8, y: centerY };
+          const p3 = { x: centerX, y: centerY };
+
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([1, 4]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          path.particles.forEach(p => {
+            p.t += p.speed;
+            if (p.t > 1) {
+              p.t = 0;
+              path.startY += (Math.random() - 0.5) * 10;
+            }
+
+            let pos = getBezierPoint(p.t, p0, p1, p2, p3);
+
+            let dxTotal = 0, dyTotal = 0;
+            explosions.forEach(exp => {
+              let dx = pos.x - exp.x;
+              let dy = pos.y - exp.y;
+              let dist = Math.hypot(dx, dy);
+              if (dist < exp.radius + 120 && dist > exp.radius - 120) {
+                let force = (1 - Math.abs(dist - exp.radius) / 120) * exp.life;
+                dxTotal += (dx / dist) * force * 80;
+                dyTotal += (dy / dist) * force * 80;
+              }
+            });
+
+            pos.x += dxTotal;
+            pos.y += dyTotal;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(pos.x - 1.5, pos.y - 1.5, 3, 3);
+          });
+        });
+
+        requestAnimationFrame(render);
+      }
+
+      window.addEventListener('resize', resize);
+      window.addEventListener('click', (e) => {
+        explosions.push({ x: e.clientX, y: e.clientY, radius: 0, life: 1 });
+      });
+
+      resize();
+      render();
+    })();
+  </script>
+</body>
+</html>

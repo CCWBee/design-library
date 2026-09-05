@@ -1,0 +1,949 @@
+/* ==========================================================================
+   GitHub · torvalds/linux — Scandinavian override sheet
+   Constrained CSS-override mode (no source access). Lower ceiling than a
+   source-level redesign: composition can only be bent as far as Primer's DOM
+   allows.
+
+   Structural read: the page is one dense operational surface wearing three
+   competing skins — a dark marketing bar, a tinted repo band (#f6f8fa), and a
+   white content sheet — with no dominant element and colour doing the job of
+   hierarchy (blue links, green CTA, orange tab rule, blue folder icons).
+   Target hierarchy, top to bottom:
+     1  repo identity (the page title, currently 20px and hue-coded)
+     2  the clone action — one filled black button, nothing else filled
+     3  the file tree — dense, unornamented, hairline-ruled
+     4  supporting chrome: tabs, sidebar, footer, on the ink opacity ladder
+   Everything else becomes ink on white at a fixed opacity ladder.
+
+   Typeface: Mona Sans is preserved. The skill's first typography rule is to
+   keep an existing well-made product sans, and Mona Sans is one — a real
+   grotesque with tabular figures and a text-grade optical size that holds up
+   in 41px table rows. Swapping it for Inter would cost density and identity
+   and buy nothing. Inter is kept only as the fallback before system fonts.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1 · Tokens
+   Primer defines its palette on [data-color-mode="light"][data-light-theme=...]
+   (specificity 0,2,0), so :root needs !important to win. Retargeting tokens
+   here is what carries Primer's own !important utilities (.color-fg-muted,
+   .bgColor-muted, .Counter, .Label …) along for free.
+
+   Deliberately NOT flattened: --fgColor-danger, --bgColor-danger-*,
+   --bgColor-attention-*, --bgColor-success-* and friends. Those carry status
+   meaning (failing checks, warnings, open/closed). The green Code button is
+   not a status — it is a primary action — so the fix is the *button* token,
+   not the success token.
+   -------------------------------------------------------------------------- */
+:root,
+html,
+html[data-color-mode],
+[data-color-mode="auto"][data-light-theme="light"],
+[data-color-mode="light"][data-light-theme="light"],
+body {
+  /* ink ladder */
+  --fgColor-default: #000 !important;
+  --fgColor-muted: rgb(0 0 0 / 62%) !important;
+  --fgColor-neutral: rgb(0 0 0 / 62%) !important;
+  --fgColor-disabled: rgb(0 0 0 / 32%) !important;
+  --fgColor-accent: #000 !important;
+  --fgColor-link: #000 !important;
+  --fgColor-onEmphasis: #fff !important;
+  --fgColor-onInverse: #fff !important;
+  --color-fg-default: #000 !important;
+  --color-fg-muted: rgb(0 0 0 / 62%) !important;
+  --color-fg-subtle: rgb(0 0 0 / 44%) !important;
+  --color-accent-fg: #000 !important;
+
+  /* surfaces — white canvas, alpha-black intermediates, no cool grays */
+  --bgColor-default: #fff !important;
+  --bgColor-muted: rgb(0 0 0 / 3%) !important;
+  --bgColor-inset: rgb(0 0 0 / 3%) !important;
+  --bgColor-neutral-muted: rgb(0 0 0 / 6%) !important;
+  --bgColor-neutral-emphasis: #000 !important;
+  --bgColor-emphasis: #0a0a0a !important;
+  --bgColor-accent-emphasis: #000 !important;
+  --bgColor-accent-muted: rgb(0 0 0 / 5%) !important;
+  --bgColor-transparent: transparent !important;
+  --color-canvas-default: #fff !important;
+  --color-canvas-subtle: rgb(0 0 0 / 3%) !important;
+  --color-canvas-inset: rgb(0 0 0 / 3%) !important;
+
+  /* borders */
+  --borderColor-default: rgb(0 0 0 / 12%) !important;
+  --borderColor-muted: rgb(0 0 0 / 9%) !important;
+  --borderColor-emphasis: rgb(0 0 0 / 28%) !important;
+  --borderColor-neutral-emphasis: rgb(0 0 0 / 28%) !important;
+  --borderColor-translucent: rgb(0 0 0 / 12%) !important;
+  --borderColor-accent-emphasis: #000 !important;
+  --borderColor-accent-muted: rgb(0 0 0 / 18%) !important;
+  --borderColor-disabled: rgb(0 0 0 / 8%) !important;
+  --color-border-default: rgb(0 0 0 / 12%) !important;
+  --color-border-muted: rgb(0 0 0 / 9%) !important;
+  --color-border-subtle: rgb(0 0 0 / 9%) !important;
+
+  /* controls: quiet by default */
+  --control-bgColor-rest: #fff !important;
+  --control-bgColor-hover: rgb(0 0 0 / 5%) !important;
+  --control-bgColor-active: rgb(0 0 0 / 9%) !important;
+  --control-fgColor-rest: #000 !important;
+  --control-transparent-bgColor-hover: rgb(0 0 0 / 5%) !important;
+  --control-transparent-bgColor-active: rgb(0 0 0 / 9%) !important;
+  --control-transparent-bgColor-selected: rgb(0 0 0 / 9%) !important;
+  --controlTrack-bgColor-rest: rgb(0 0 0 / 6%) !important;
+  --controlTrack-bgColor-hover: rgb(0 0 0 / 9%) !important;
+  --controlTrack-bgColor-active: rgb(0 0 0 / 12%) !important;
+  --controlTrack-fgColor-rest: rgb(0 0 0 / 62%) !important;
+  --control-checked-bgColor-rest: #000 !important;
+  --control-checked-bgColor-hover: #1a1a1a !important;
+  --control-checked-bgColor-active: #262626 !important;
+
+  /* the single primary action on the page — this is the lever that
+     de-greens the Code button; --bgColor-success-emphasis stays semantic */
+  --button-primary-bgColor-rest: #000 !important;
+  --button-primary-bgColor-hover: #1f1f1f !important;
+  --button-primary-bgColor-active: #333 !important;
+  --button-primary-bgColor-disabled: rgb(0 0 0 / 28%) !important;
+  --button-primary-fgColor-rest: #fff !important;
+  --button-primary-fgColor-disabled: rgb(255 255 255 / 80%) !important;
+  --button-primary-iconColor-rest: #fff !important;
+  --button-primary-borderColor-rest: #000 !important;
+  --button-primary-borderColor-hover: #1f1f1f !important;
+  --button-primary-borderColor-active: #333 !important;
+  --button-primary-borderColor-disabled: rgb(0 0 0 / 28%) !important;
+  --button-primary-shadow-selected: none !important;
+  --button-default-bgColor-rest: #fff !important;
+  --button-default-bgColor-hover: rgb(0 0 0 / 5%) !important;
+  --button-default-bgColor-active: rgb(0 0 0 / 9%) !important;
+  --button-default-bgColor-selected: rgb(0 0 0 / 9%) !important;
+  --button-default-fgColor-rest: #000 !important;
+  --button-default-borderColor-rest: rgb(0 0 0 / 18%) !important;
+  --button-default-shadow-resting: none !important;
+  --button-invisible-fgColor-rest: #000 !important;
+  --button-invisible-iconColor-rest: rgb(0 0 0 / 56%) !important;
+  --button-invisible-iconColor-hover: #000 !important;
+  --button-outline-bgColor-rest: #fff !important;
+  --button-outline-bgColor-hover: #000 !important;
+  --button-outline-fgColor-rest: #000 !important;
+  --button-outline-shadow-selected: none !important;
+
+  /* chrome */
+  --header-bgColor: #fff !important;
+  --header-fgColor-default: rgb(0 0 0 / 62%) !important;
+  --header-fgColor-logo: #000 !important;
+  --header-borderColor-divider: rgb(0 0 0 / 12%) !important;
+  --headerSearch-bgColor: #fff !important;
+  --headerSearch-borderColor: rgb(0 0 0 / 18%) !important;
+  --underlineNav-borderColor-active: #000 !important;
+  --counter-borderColor: transparent !important;
+  --avatar-bgColor: #fff !important;
+  --avatarStack-fade-bgColor-default: rgb(0 0 0 / 14%) !important;
+  --avatarStack-fade-bgColor-muted: rgb(0 0 0 / 8%) !important;
+  --overlay-backdrop-bgColor: rgb(0 0 0 / 44%) !important;
+  --overlay-bgColor: #fff !important;
+  --focus-outlineColor: #000 !important;
+
+  /* elevation: hairlines instead of drop shadows */
+  --shadow-resting-small: 0 0 0 1px rgb(0 0 0 / 8%) !important;
+  --shadow-resting-medium: 0 0 0 1px rgb(0 0 0 / 10%) !important;
+  --shadow-floating-small: 0 0 0 1px rgb(0 0 0 / 10%), 0 2px 8px rgb(0 0 0 / 8%) !important;
+  --shadow-floating-medium: 0 0 0 1px rgb(0 0 0 / 10%), 0 4px 16px rgb(0 0 0 / 8%) !important;
+  --shadow-floating-large: 0 0 0 1px rgb(0 0 0 / 10%), 0 8px 24px rgb(0 0 0 / 10%) !important;
+  --borderRadius-medium: 6px !important;
+}
+
+/* --------------------------------------------------------------------------
+   2 · Canvas and type
+   -------------------------------------------------------------------------- */
+html,
+body {
+  background: #fff !important;
+  color: #000 !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+body,
+input,
+select,
+textarea,
+button {
+  font-family: "Mona Sans VF", "Mona Sans", Inter, -apple-system, "Segoe UI",
+    Helvetica, Arial, sans-serif !important;
+}
+
+/* Sentence case everywhere; Primer's uppercase utilities carry !important. */
+h1, h2, h3, h4, h5, h6,
+a, button, span, p, li, label, summary, th, td, strong, small, time,
+.Label, .Counter, .btn,
+[class*="uppercase" i] {
+  text-transform: none !important;
+}
+
+/* No weight heavier than 600 anywhere in chrome. */
+h1, h2, h3, h4, h5, h6,
+strong, b,
+[class*="prc-Heading"],
+[class*="Text--weight-semibold"],
+.text-bold,
+.f1, .f2, .f3, .f4 {
+  font-weight: 600 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3 · Global masthead
+   The dark marketing bar and the tinted repo band split the top of the page
+   into three surfaces. Collapsing them into one white sheet separated by
+   hairlines is the single biggest structural change here.
+   The blanket `color: inherit` is a safety net: every white-on-dark label in
+   this header (logo, five nav dropdowns, Pricing, search, Sign in, Sign up,
+   appearance toggle) inherits ink instead, so no action can go invisible.
+   -------------------------------------------------------------------------- */
+/* Primer Brand pins this header with
+   `.MarketingHeader-module__root[data-marketing-header].MarketingHeader-module__default
+    { color: var(--brand-color-text-onEmphasis) !important }` — specificity 0,3,0
+   with !important, so a plain `header.HeaderMktg` override loses. Retarget the
+   variables it reads (scoped to the header so brand tokens stay intact
+   elsewhere) and back it with a selector that outranks it. */
+header.HeaderMktg,
+header[class*="MarketingHeader-module__root"] {
+  --MarketingHeader-canvas-default: #fff !important;
+  --brand-color-canvas-default: #fff !important;
+  --brand-color-text-default: #000 !important;
+  --brand-color-text-onEmphasis: #000 !important;
+  --brand-color-text-muted: rgb(0 0 0 / 62%) !important;
+  --fgColor-white: #000 !important;
+  --header-bgColor: #fff !important;
+  background: #fff !important;
+  background-image: none !important;
+  color: #000 !important;
+  border-bottom: 1px solid rgb(0 0 0 / 10%) !important;
+  box-shadow: none !important;
+}
+
+html body header.HeaderMktg[data-marketing-header][class*="MarketingHeader-module__root"][class*="MarketingHeader-module__default"] {
+  color: #000 !important;
+  background-color: #fff !important;
+}
+
+header.HeaderMktg *,
+header[class*="MarketingHeader-module__root"] * {
+  color: inherit !important;
+  text-shadow: none !important;
+}
+
+/* Hierarchy inside the header: nav items step down from the logo. */
+header.HeaderMktg [class*="NavDropdown-module__button"],
+header.HeaderMktg [class*="MarketingNavigation-module__navLink"],
+header.HeaderMktg [class*="HeaderSearch-module__trigger"] {
+  color: rgb(0 0 0 / 70%) !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+header.HeaderMktg [class*="NavDropdown-module__button"]:hover,
+header.HeaderMktg [class*="MarketingNavigation-module__navLink"]:hover {
+  color: #000 !important;
+}
+
+/* Restore the muted tier inside the (white) mega-menus. */
+header.HeaderMktg [class*="NavLink-module__subtitle"],
+header.HeaderMktg [class*="Text--muted"],
+header.HeaderMktg [class*="NavGroup-module__title"] {
+  color: rgb(0 0 0 / 58%) !important;
+}
+
+header.HeaderMktg [class*="NavDropdown-module__dropdown"],
+header.HeaderMktg [class*="MarketingHeader-module__menu"] [class*="dropdown"] {
+  background: #fff !important;
+  border: 1px solid rgb(0 0 0 / 10%) !important;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 8%) !important;
+}
+
+/* Search trigger: a field, not a pill. */
+header.HeaderMktg [class*="HeaderSearch-module__trigger"] {
+  background: #fff !important;
+  border: 1px solid rgb(0 0 0 / 16%) !important;
+  border-radius: 6px !important;
+}
+
+/* Account actions stay reachable but quiet — the page's primary action is
+   Code, not Sign up, so nothing up here is filled. */
+header.HeaderMktg [class*="AuthCTAs-module__button"] {
+  background: transparent !important;
+  border-color: rgb(0 0 0 / 18%) !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+
+header.HeaderMktg [class*="AuthCTAs-module__button"]:hover {
+  background: rgb(0 0 0 / 5%) !important;
+}
+
+header.HeaderMktg [class*="HeaderAppearanceSettings-module__trigger"] {
+  border-color: rgb(0 0 0 / 18%) !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+}
+
+/* Dark overlay chrome that survives on white: keep it neutral, not blue-black. */
+tool-tip,
+.tooltipped::after,
+[class*="prc-TooltipV2-Tooltip"] {
+  background: #0a0a0a !important;
+  color: #fff !important;
+  border-radius: 6px !important;
+}
+
+/* --------------------------------------------------------------------------
+   4 · Repo masthead
+   The repo name was 20px, two blue links of equal weight, floating on a
+   tinted band with no dominant element. It becomes the page title: owner in
+   secondary ink, name in black, on the same white sheet as everything else.
+   -------------------------------------------------------------------------- */
+#repository-container-header {
+  background: #fff !important;
+  padding-top: 28px !important;
+  border-bottom: 0 !important;
+}
+
+#repository-container-header .d-flex.flex-nowrap {
+  align-items: center !important;
+  margin-bottom: 20px !important;
+}
+
+/* The masthead and tabs sit at a 32px page gutter while everything below them
+   lives inside a centred 1280px container — so the repo name never lined up
+   with the file tree underneath it. Reproject the top of the page onto the
+   content grid so the whole page shares one left edge. */
+@media (min-width: 1280px) {
+  header.HeaderMktg [class*="MarketingHeader-module__bar"],
+  #repository-container-header > .d-flex.flex-nowrap,
+  nav.UnderlineNav,
+  footer.footer {
+    padding-left: calc((100% - 1280px) / 2 + 32px) !important;
+    padding-right: calc((100% - 1280px) / 2 + 32px) !important;
+  }
+
+  .UnderlineNav-actions {
+    padding-right: calc((100% - 1280px) / 2 + 32px) !important;
+  }
+}
+
+#repository-container-header .f3 {
+  font-size: 26px !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.012em !important;
+  gap: 0 !important;
+}
+
+#repository-container-header .f3 .author a,
+#repository-container-header .f3 a.url {
+  color: rgb(0 0 0 / 56%) !important;
+  font-weight: 400 !important;
+}
+
+#repository-container-header .f3 .author a:hover,
+#repository-container-header .f3 a.url:hover {
+  color: #000 !important;
+}
+
+#repository-container-header .f3 > span.mx-1 {
+  color: rgb(0 0 0 / 26%) !important;
+}
+
+#repository-container-header .f3 strong a {
+  color: #000 !important;
+  font-weight: 600 !important;
+}
+
+#repository-container-header .f3 > svg.octicon-repo {
+  color: rgb(0 0 0 / 40%) !important;
+  margin-right: 10px !important;
+}
+
+/* "Public" reads as a tag, not a control — pill is intentional here. */
+#repository-container-header .Label--secondary {
+  color: rgb(0 0 0 / 56%) !important;
+  border-color: rgb(0 0 0 / 14%) !important;
+  background: transparent !important;
+  font-weight: 500 !important;
+  margin-left: 12px !important;
+}
+
+/* Watch / Fork / Star: preserved, unfilled, on one shared control spec. */
+.pagehead-actions .btn,
+.pagehead-actions .btn-sm,
+#repository-details-watch-button,
+#fork-button {
+  background: #fff !important;
+  color: #000 !important;
+  border-color: rgb(0 0 0 / 18%) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+}
+
+.pagehead-actions .btn:hover,
+#repository-details-watch-button:hover,
+#fork-button:hover {
+  background: rgb(0 0 0 / 5%) !important;
+}
+
+.BtnGroup .btn:not(:last-child) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.BtnGroup .btn:not(:first-child) {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+/* Counters: quiet neutral chips with aligned figures. */
+.Counter,
+[class*="prc-CounterLabel"] {
+  background: rgb(0 0 0 / 6%) !important;
+  color: rgb(0 0 0 / 70%) !important;
+  border-color: transparent !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   5 · Section tabs
+   Orange active rule → a 2px black rule. Inactive tabs step back to
+   secondary ink so "where am I" is answered by weight and ink, not hue.
+   -------------------------------------------------------------------------- */
+nav.UnderlineNav {
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 0 rgb(0 0 0 / 10%) !important;
+  margin-bottom: 24px !important;
+}
+
+.UnderlineNav-item {
+  color: rgb(0 0 0 / 62%) !important;
+  border-radius: 0 !important;
+  font-weight: 400 !important;
+}
+
+.UnderlineNav-item:hover {
+  color: #000 !important;
+  background: transparent !important;
+}
+
+.UnderlineNav-item .octicon,
+.UnderlineNav-octicon {
+  color: rgb(0 0 0 / 42%) !important;
+}
+
+.UnderlineNav-item.selected,
+.UnderlineNav-item[aria-current="page"],
+.UnderlineNav-item[aria-selected="true"] {
+  color: #000 !important;
+  font-weight: 600 !important;
+  border-bottom-color: #000 !important;
+}
+
+.UnderlineNav-item.selected .octicon,
+.UnderlineNav-item[aria-current="page"] .octicon,
+.UnderlineNav-item[aria-selected="true"] .octicon {
+  color: #000 !important;
+}
+
+/* The overflow ("…") menu is an action — keep it, quiet it. */
+.UnderlineNav-actions .Button--secondary,
+.UnderlineNav-actions button {
+  background: transparent !important;
+  border-color: rgb(0 0 0 / 14%) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   6 · Controls
+   One control spec: 6px radius, hairline border, no shadow, no gradient.
+   Exactly one filled button on the page — Code.
+   -------------------------------------------------------------------------- */
+[class*="prc-Button-ButtonBase"],
+.btn,
+.Button {
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  font-weight: 500 !important;
+}
+
+/* Branch picker: a real field-like control. */
+#ref-picker-repos-header-ref-selector,
+[class*="overview-ref-selector"],
+[class*="RefSelectorAnchoredOverlay"] button {
+  background: #fff !important;
+  color: #000 !important;
+  border-color: rgb(0 0 0 / 18%) !important;
+}
+
+#ref-picker-repos-header-ref-selector:hover {
+  background: rgb(0 0 0 / 5%) !important;
+}
+
+/* Branch / Tags / Commits / icon buttons stay transparent link-buttons:
+   quieting a control is fine, boxing everything is not. */
+[class*="OverviewContent-module__Button"],
+[class*="LinkButton-module__linkButton"],
+[class*="prc-Button-IconButton"] {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: rgb(0 0 0 / 62%) !important;
+}
+
+[class*="OverviewContent-module__Button"]:hover,
+[class*="LinkButton-module__linkButton"]:hover,
+[class*="prc-Button-IconButton"]:hover {
+  background: rgb(0 0 0 / 5%) !important;
+  color: #000 !important;
+}
+
+/* The one primary action. */
+[class*="prc-Button-ButtonBase"][data-variant="primary"],
+.btn-primary,
+.Button--primary {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: #000 !important;
+  box-shadow: none !important;
+}
+
+[class*="prc-Button-ButtonBase"][data-variant="primary"]:hover,
+.btn-primary:hover {
+  background: #1f1f1f !important;
+  border-color: #1f1f1f !important;
+}
+
+[class*="prc-Button-ButtonBase"][data-variant="primary"] .octicon,
+[class*="prc-Button-ButtonBase"][data-variant="primary"] [class*="prc-Button-Visual"],
+.btn-primary .octicon {
+  color: #fff !important;
+}
+
+/* Destructive stays red — flattening it would remove meaning. */
+[class*="prc-Button-ButtonBase"][data-variant="danger"],
+.btn-danger {
+  color: var(--fgColor-danger) !important;
+  border-color: rgb(0 0 0 / 18%) !important;
+}
+
+[class*="prc-Button-ButtonBase"][data-variant="danger"]:hover,
+.btn-danger:hover {
+  background: var(--fgColor-danger) !important;
+  color: #fff !important;
+  border-color: var(--fgColor-danger) !important;
+}
+
+/* Text fields. */
+.TextInput-wrapper,
+[class*="prc-TextInput-Wrapper"],
+input[type="text"],
+input[type="search"] {
+  background: #fff !important;
+  border-color: rgb(0 0 0 / 18%) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   7 · File tree — the operational surface
+   Kept at its original 41px row rhythm. The card frame is replaced by
+   full-width hairlines so the table aligns with the toolbar above it and
+   reads as a ruled index rather than a boxed widget.
+   -------------------------------------------------------------------------- */
+table[class*="Table-module__Box"] {
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 1px solid rgb(0 0 0 / 12%) !important;
+  border-bottom: 1px solid rgb(0 0 0 / 12%) !important;
+  border-radius: 0 !important;
+}
+
+/* Tree metadata band: a neutral 3% fill, not a blue-gray toolbar. */
+td.bgColor-muted,
+td[class*="bgColor-muted"] {
+  background: rgb(0 0 0 / 3%) !important;
+  border-radius: 0 !important;
+}
+
+.react-directory-row td,
+.react-directory-row-name-cell-large-screen,
+.react-directory-row-name-cell-small-screen,
+.react-directory-row-commit-cell {
+  border-color: rgb(0 0 0 / 8%) !important;
+}
+
+.react-directory-row:hover {
+  background: rgb(0 0 0 / 3%) !important;
+}
+
+.react-directory-filename-column a,
+.react-directory-filename-cell a,
+a.Link--primary {
+  color: #000 !important;
+}
+
+/* Two steps apart on the ink ladder, both still above 4.5:1 on white — the
+   metadata tier is quiet, not unreadable. */
+.react-directory-commit-message a,
+a.Link--secondary {
+  color: rgb(0 0 0 / 66%) !important;
+}
+
+.react-directory-commit-age,
+[class*="react-directory-commit-age"] {
+  color: rgb(0 0 0 / 54%) !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Folder vs file is carried by icon shape plus one step of the ink ladder,
+   the same job the blue used to do. */
+.icon-directory,
+.octicon-file-directory-fill,
+.octicon-file-submodule {
+  color: rgb(0 0 0 / 58%) !important;
+  fill: currentColor !important;
+}
+
+.react-directory-filename-column .octicon-file,
+.octicon-file-symlink-file {
+  color: rgb(0 0 0 / 38%) !important;
+  fill: currentColor !important;
+}
+
+/* Row-level action, left-aligned onto the same column as the rows above it
+   rather than centred like leftover chrome. */
+[data-testid="view-all-files-row"] td {
+  text-align: left !important;
+  padding-left: 16px !important;
+}
+
+[data-testid="view-all-files-row"] a {
+  text-align: left !important;
+  justify-content: flex-start !important;
+  color: #000 !important;
+  font-weight: 500 !important;
+}
+
+/* Latest-commit line. */
+[class*="LatestCommit-module"] .Truncate-text,
+[class*="CommitAttribution-module"] {
+  color: rgb(0 0 0 / 62%) !important;
+}
+
+[class*="CommitAttribution-module"] a,
+[data-testid="author-avatar"] + a {
+  color: #000 !important;
+  font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   8 · Sidebar
+   Same content, given chapter rhythm: more air above each heading, one
+   hairline between sections, one ink ladder for icons and metadata.
+   -------------------------------------------------------------------------- */
+[class*="SidebarSection-module__sidebarSection"] {
+  padding: 24px 0 !important;
+  border-top: 1px solid rgb(0 0 0 / 9%) !important;
+}
+
+[class*="CodeViewSidebar-module__borderGrid"] > div:first-child,
+[class*="SidebarSection-module__sidebarSection"].border-0 {
+  border-top: 0 !important;
+  padding-top: 4px !important;
+}
+
+[class*="SidebarSection-module__sectionHeading"] {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #000 !important;
+  letter-spacing: -0.005em !important;
+  margin-bottom: 14px !important;
+}
+
+[class*="SidebarAbout-module__description"] {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  color: rgb(0 0 0 / 78%) !important;
+  max-width: 34em;
+}
+
+[class*="SidebarAbout-module__socialStat"],
+[class*="SidebarReleases-module__tagLabel"] {
+  color: rgb(0 0 0 / 62%) !important;
+}
+
+[class*="SidebarAbout-module__socialStat"] strong,
+[class*="SidebarReleases-module"] strong {
+  color: #000 !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Contributor faces are media — colour stays inside them; a hairline ring
+   keeps light avatars from dissolving into the white sheet. */
+[class*="prc-Avatar-Avatar"] {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 10%) !important;
+  background: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   9 · Language breakdown (data visualisation)
+   Neutral by default, but not arbitrary: a fixed descending opacity ladder
+   ordered by share, so darker literally means "more of this repo". The 2px
+   track gaps and the light track keep even the 1px segments readable.
+   -------------------------------------------------------------------------- */
+[class*="prc-ProgressBar-ProgressBarContainer"] {
+  background: rgb(0 0 0 / 6%) !important;
+  border-radius: 2px !important;
+}
+
+[class*="ProgressBarItem"],
+[class*="languageDot"] {
+  background-color: rgb(0 0 0 / 16%) !important;
+}
+
+[class*="prc-ProgressBar-ProgressBarContainer"] > span:nth-child(1),
+[class*="SidebarLanguages-module__languageList"] > li:nth-child(1) [class*="languageDot"] {
+  background-color: rgb(0 0 0 / 100%) !important;
+}
+
+[class*="prc-ProgressBar-ProgressBarContainer"] > span:nth-child(2),
+[class*="SidebarLanguages-module__languageList"] > li:nth-child(2) [class*="languageDot"] {
+  background-color: rgb(0 0 0 / 82%) !important;
+}
+
+[class*="prc-ProgressBar-ProgressBarContainer"] > span:nth-child(3),
+[class*="SidebarLanguages-module__languageList"] > li:nth-child(3) [class*="languageDot"] {
+  background-color: rgb(0 0 0 / 66%) !important;
+}
+
+[class*="prc-ProgressBar-ProgressBarContainer"] > span:nth-child(4),
+[class*="SidebarLanguages-module__languageList"] > li:nth-child(4) [class*="languageDot"] {
+  background-color: rgb(0 0 0 / 52%) !important;
+}
+
+[class*="prc-ProgressBar-ProgressBarContainer"] > span:nth-child(5),
+[class*="SidebarLanguages-module__languageList"] > li:nth-child(5) [class*="languageDot"] {
+  background-color: rgb(0 0 0 / 40%) !important;
+}
+
+[class*="prc-ProgressBar-ProgressBarContainer"] > span:nth-child(6),
+[class*="SidebarLanguages-module__languageList"] > li:nth-child(6) [class*="languageDot"] {
+  background-color: rgb(0 0 0 / 30%) !important;
+}
+
+[class*="prc-ProgressBar-ProgressBarContainer"] > span:nth-child(7),
+[class*="SidebarLanguages-module__languageList"] > li:nth-child(7) [class*="languageDot"] {
+  background-color: rgb(0 0 0 / 22%) !important;
+}
+
+[class*="SidebarLanguages-module__languageListItem"] {
+  margin-bottom: 4px !important;
+}
+
+[class*="SidebarLanguages-module__languageName"] {
+  color: #000 !important;
+  font-weight: 500 !important;
+}
+
+[class*="SidebarLanguages-module__languageLink"] > span:last-child {
+  color: rgb(0 0 0 / 54%) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   10 · Icons
+   One family, monochrome, on the text opacity ladder. Semantic alert icons
+   keep their colour.
+   -------------------------------------------------------------------------- */
+.octicon {
+  fill: currentColor !important;
+}
+
+.color-fg-muted .octicon,
+.octicon.color-fg-muted,
+[class*="SidebarSection-module"] .octicon,
+[class*="SidebarAbout-module"] .octicon,
+[class*="SidebarReleases-module"] .octicon {
+  color: rgb(0 0 0 / 46%) !important;
+}
+
+.flash .octicon,
+.flash-warn .octicon,
+.flash-error .octicon,
+[class*="fgColor-danger"] .octicon,
+[class*="fgColor-attention"] .octicon {
+  color: inherit !important;
+}
+
+/* --------------------------------------------------------------------------
+   11 · Panels, README, footer
+   -------------------------------------------------------------------------- */
+.Box,
+[class*="prc-Box"],
+.Layout-sidebar .Box {
+  background: #fff !important;
+  border-color: rgb(0 0 0 / 12%) !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+}
+
+/* The README is the page's second long section; it gets the same full-bleed
+   hairline treatment as the file tree so the two read as one ruled sheet
+   rather than a table plus a card. */
+#readme,
+[class*="OverviewRepoFiles-module__Box_2"],
+[class*="OverviewRepoFiles-module__Box_3"] {
+  background: #fff !important;
+  border-color: rgb(0 0 0 / 12%) !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* README / License tabs are a different Primer component from the repo tabs;
+   give them the same selected-state grammar. */
+[class*="UnderlineItem"],
+[class*="prc-UnderlineNav-Item"] {
+  color: rgb(0 0 0 / 62%) !important;
+  border-radius: 0 !important;
+  font-weight: 400 !important;
+}
+
+[class*="UnderlineItem"][aria-current]:not([aria-current="false"]),
+[class*="UnderlineItem"][aria-selected="true"],
+[class*="prc-UnderlineNav-Item"][aria-current]:not([aria-current="false"]) {
+  color: #000 !important;
+  font-weight: 600 !important;
+}
+
+.Box-header,
+.Box-row {
+  background: #fff !important;
+  border-color: rgb(0 0 0 / 9%) !important;
+}
+
+/* Loading placeholders are part of the system too. */
+[class*="prc-Skeleton"] {
+  background-color: rgb(0 0 0 / 6%) !important;
+  background-image: none !important;
+}
+
+.markdown-body h1,
+.markdown-body h2 {
+  border-bottom-color: rgb(0 0 0 / 10%) !important;
+  font-weight: 600 !important;
+}
+
+.markdown-body a {
+  color: #000 !important;
+  text-decoration-color: rgb(0 0 0 / 30%);
+  text-underline-offset: 3px;
+}
+
+.markdown-body code,
+.markdown-body pre,
+code {
+  background: rgb(0 0 0 / 4%) !important;
+  color: #000 !important;
+}
+
+.markdown-body blockquote {
+  border-left-color: rgb(0 0 0 / 12%) !important;
+  color: rgb(0 0 0 / 62%) !important;
+}
+
+footer.footer {
+  border-top: 1px solid rgb(0 0 0 / 9%) !important;
+  color: rgb(0 0 0 / 58%) !important;
+  margin-top: 48px !important;
+}
+
+/* Footers are left-aligned like everything else; the centring here is
+   leftover chrome, not a deliberate exception. */
+footer.footer .flex-justify-center,
+footer.footer nav ul.flex-justify-center {
+  justify-content: flex-start !important;
+}
+
+footer.footer .flex-justify-center > .mx-2:first-child {
+  margin-left: 0 !important;
+}
+
+footer.footer a {
+  color: rgb(0 0 0 / 66%) !important;
+}
+
+footer.footer a:hover {
+  color: #000 !important;
+}
+
+/* --------------------------------------------------------------------------
+   12 · Focus, hover, motion
+   -------------------------------------------------------------------------- */
+:focus-visible,
+.btn:focus-visible,
+[class*="prc-Button-ButtonBase"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid #000 !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn,
+  [class*="prc-Button-ButtonBase"],
+  .UnderlineNav-item,
+  .react-directory-row {
+    transition: background-color 120ms ease, color 120ms ease,
+      border-color 120ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  [class*="prc-Button-ButtonBase"],
+  .UnderlineNav-item,
+  .react-directory-row {
+    transition: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13 · Narrow viewports
+   Stack and simplify; do not shrink the desktop composition. Row density and
+   every control are preserved.
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  #repository-container-header {
+    padding-top: 20px !important;
+  }
+
+  #repository-container-header .f3 {
+    font-size: 22px !important;
+  }
+
+  #repository-container-header .d-flex.flex-nowrap {
+    margin-bottom: 14px !important;
+  }
+
+  nav.UnderlineNav {
+    margin-bottom: 16px !important;
+  }
+
+  [class*="SidebarSection-module__sidebarSection"] {
+    padding: 20px 0 !important;
+  }
+
+  header.HeaderMktg [class*="AuthCTAs-module__button"] {
+    border-color: rgb(0 0 0 / 20%) !important;
+  }
+}

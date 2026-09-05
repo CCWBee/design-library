@@ -1,0 +1,419 @@
+<!--
+  Interface Lines
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped/stubbed: Tailwind CDN and iconify-icon removed in favour of plain CSS; GSAP masked
+  text reveal replaced with a plain CSS keyframe stagger; remote Supabase background image
+  removed (no stand-in needed, canvas animation carries the scene); layout rebuilt as static CSS.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interface Lines</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0a0a0c;
+    color: #a1a1aa;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    overflow: hidden;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+  }
+  #bg-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  main {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 42rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+  }
+  section { position: relative; }
+  .panel-border {
+    position: absolute;
+    inset: -1px;
+    border-radius: 0.5rem;
+    opacity: 0.5;
+    transition: opacity 0.7s;
+  }
+  section:hover .panel-border { opacity: 1; }
+  .panel {
+    position: relative;
+    background: #0a0a0c;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .uppercase { text-transform: uppercase; }
+  .tracking-tight { letter-spacing: -0.02em; }
+  .tracking-wide { letter-spacing: 0.08em; }
+  .reveal-word {
+    display: inline-block;
+    overflow: hidden;
+    padding-bottom: 0.15rem;
+    margin-bottom: -0.15rem;
+    vertical-align: bottom;
+  }
+  .reveal-word span {
+    display: inline-block;
+    transform: translateY(120%);
+    animation: revealUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes revealUp {
+    to { transform: translateY(0%); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @keyframes ping {
+    0% { transform: scale(1); opacity: 1; }
+    75%, 100% { transform: scale(2); opacity: 0; }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .pulse { animation: pulse 4s ease-in-out infinite; }
+  .ping-dot { position: relative; width: 0.75rem; height: 0.75rem; }
+  .ping-dot::before, .ping-dot::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .ping-dot::before { animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+  /* Panel 1: CORE */
+  .core { color: #c87a65; }
+  .core .panel-border { background: linear-gradient(90deg, rgba(200,122,101,0.4), transparent 70%); }
+  .row-top {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
+    gap: 1rem; border-bottom: 1px solid rgba(200,122,101,0.2); padding-bottom: 0.5rem;
+  }
+  .row-top h1 { font-size: 2rem; font-weight: 500; margin: 0; }
+  .meta-cols { display: flex; gap: 1.5rem; font-size: 0.7rem; letter-spacing: 0.05em; }
+  .meta-col { display: flex; flex-direction: column; gap: 0.2rem; }
+  .dim { opacity: 0.65; }
+  .row-mid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; }
+  .matrix { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 0.25rem; opacity: 0.8; max-width: 220px; }
+  .dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; border: 1px solid currentColor; }
+  .dot.filled { background: currentColor; }
+  .dot.dim { opacity: 0.3; }
+  .controls { display: flex; flex-direction: column; gap: 0.5rem; min-width: 180px; }
+  .controls-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(200,122,101,0.2); padding-bottom: 0.25rem; }
+  .controls-left { display: flex; align-items: center; gap: 0.5rem; }
+  .plusplus { font-size: 1rem; letter-spacing: 0.15em; }
+  .tiny { font-size: 0.65rem; }
+  .status-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.65rem; padding-top: 0.25rem; }
+  .meter { width: 2rem; height: 0.75rem; border-radius: 999px; border: 1px solid rgba(200,122,101,0.5); display: flex; align-items: center; padding: 1px; }
+  .meter-fill { width: 0.5rem; height: 100%; background: currentColor; border-radius: 999px; }
+
+  /* Panel 2: SECURE */
+  .secure { color: #7a9f65; }
+  .secure .panel-border { background: linear-gradient(270deg, rgba(122,159,101,0.4), transparent 70%); }
+  .ruler { position: relative; width: 100%; height: 1rem; border-top: 1px solid rgba(122,159,101,0.3); display: flex; justify-content: space-between; }
+  .tick { width: 1px; background: rgba(122,159,101,0.5); }
+  .tick.short { height: 0.4rem; opacity: 0.6; }
+  .tick.tall { height: 0.6rem; }
+  .row-mid2 { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1.5rem; }
+  .dot-grid { display: flex; flex-direction: column; gap: 0.5rem; opacity: 0.9; }
+  .dot-line { display: flex; gap: 0.5rem; }
+  .dot2 { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; }
+  .dot2.dim { opacity: 0.2; }
+  .info-cluster { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
+  .info-row { display: flex; align-items: stretch; gap: 0.5rem; }
+  .info-box { border: 1px solid rgba(122,159,101,0.3); padding: 0.5rem; font-size: 0.65rem; display: flex; flex-direction: column; justify-content: center; min-width: 110px; }
+  .clock-box { border: 1px solid rgba(122,159,101,0.3); padding: 0.5rem; display: flex; align-items: center; justify-content: center; }
+  .clock-face { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1.5px solid currentColor; position: relative; }
+  .clock-face::after { content: ""; position: absolute; top: 50%; left: 50%; width: 0.35rem; height: 1px; background: currentColor; transform-origin: left center; transform: translateY(-50%) rotate(-40deg); }
+  .logo-box { width: 3rem; height: 3rem; background: #7a9f65; position: relative; overflow: hidden; flex-shrink: 0; }
+  .logo-box::before { content: ""; position: absolute; width: 4rem; height: 1rem; background: #0a0a0c; transform: rotate(-45deg); top: 1rem; left: -0.5rem; }
+  .secure h2 { font-size: 1.6rem; font-weight: 500; margin: 0; }
+  .bottom-row { display: flex; flex-wrap: wrap; justify-content: space-between; font-size: 0.7rem; margin-top: 0.5rem; opacity: 0.8; gap: 0.5rem; }
+  .white { color: #fff; opacity: 0.9; }
+
+  /* Panel 3: 909 */
+  .net { color: #756a9f; }
+  .net .panel-border { background: linear-gradient(0deg, rgba(117,106,159,0.4), transparent 70%); }
+  .net-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2rem; }
+  .node-diagram { position: relative; width: 8rem; height: 4rem; flex-shrink: 0; }
+  .node-line { position: absolute; background: rgba(117,106,159,0.5); }
+  .node-dot { position: absolute; width: 0.4rem; height: 0.4rem; border-radius: 50%; border: 1px solid #756a9f; background: #0a0a0c; }
+  .net-title { display: flex; align-items: center; gap: 1rem; }
+  .net-title h3 { font-size: 3rem; font-weight: 400; margin: 0; letter-spacing: -0.02em; }
+  .arrow { font-size: 1.1rem; }
+  .net-info { display: flex; align-items: center; gap: 1.5rem; }
+  .net-status { display: flex; flex-direction: column; font-size: 0.65rem; gap: 0.15rem; }
+  .stat-dots { display: flex; gap: 0.25rem; margin-top: 0.25rem; }
+  .stat-dot { width: 0.35rem; height: 0.35rem; border-radius: 50%; border: 1px solid currentColor; }
+  .stat-dot.filled { background: currentColor; }
+  .circle-wrap { position: relative; width: 3rem; height: 3rem; animation: spin 10s linear infinite; }
+  .circle-dot { position: absolute; width: 0.35rem; height: 0.35rem; border-radius: 50%; border: 1px solid currentColor; }
+  .circle-dot.filled { background: currentColor; }
+  .net-bottom { text-align: left; font-size: 0.7rem; display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; margin-top: 0.5rem; opacity: 0.8; }
+
+  @media (max-width: 640px) {
+    .node-diagram { display: none; }
+    .row-top h1 { font-size: 1.6rem; }
+    .net-title h3 { font-size: 2.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<main>
+
+  <!-- PANEL 1: CORE -->
+  <section class="core">
+    <div class="panel-border"></div>
+    <div class="panel">
+      <div class="row-top">
+        <h1 class="reveal uppercase pulse">[ core ]</h1>
+        <div class="meta-cols">
+          <div class="meta-col">
+            <span>CONF.SYS</span>
+            <span class="dim">RESTART</span>
+            <span class="dim">SLEEP</span>
+          </div>
+          <div class="meta-col">
+            <span>BUILD_11</span>
+            <span class="dim">ANALYSE</span>
+            <span class="dim">INPUT NEEDED</span>
+          </div>
+        </div>
+      </div>
+      <div class="row-mid">
+        <div class="matrix" id="matrix-1"></div>
+        <div class="controls">
+          <div class="controls-row">
+            <div class="controls-left">
+              <div class="ping-dot"></div>
+              <span class="plusplus">++</span>
+            </div>
+            <span class="tiny">HASH: 0x3C9A</span>
+          </div>
+          <div class="status-row">
+            <span>2B-44 &middot; TEMP: 61&deg;C</span>
+            <div class="meter"><div class="meter-fill"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL 2: SECURE -->
+  <section class="secure">
+    <div class="panel-border"></div>
+    <div class="panel">
+      <div class="ruler">
+        <div class="tick tall"></div>
+        <div class="tick short"></div>
+        <div class="tick tall"></div>
+        <div class="tick short"></div>
+        <div class="tick tall"></div>
+        <div class="tick short"></div>
+        <div class="tick tall"></div>
+      </div>
+      <div class="row-mid2">
+        <div class="dot-grid" id="dot-grid"></div>
+        <div class="info-cluster">
+          <div class="info-row">
+            <div class="info-box">
+              <span>APPROVED</span>
+              <span class="dim">ID: X7-44</span>
+              <span class="dim">SEQ: #0933</span>
+            </div>
+            <div class="clock-box"><div class="clock-face"></div></div>
+            <div class="logo-box"></div>
+          </div>
+          <h2 class="reveal uppercase">Secure</h2>
+        </div>
+      </div>
+      <div class="bottom-row">
+        <span>LOADING <span class="pulse">...</span></span>
+        <span>//KEY: <span class="white">0x7B11</span>//</span>
+      </div>
+      <div class="tiny dim">SYNCING &middot; ID: 88-K &middot; DATA DROP: 0.2% SECTOR 9</div>
+    </div>
+  </section>
+
+  <!-- PANEL 3: 909 -->
+  <section class="net">
+    <div class="panel-border"></div>
+    <div class="panel">
+      <div class="net-row">
+        <div class="node-diagram">
+          <div class="node-line" style="top:8px; left:8px; width:80px; height:1px;"></div>
+          <div class="node-line" style="top:40px; left:24px; width:64px; height:1px;"></div>
+          <div class="node-line" style="top:8px; left:88px; width:1px; height:32px; transform:rotate(45deg); transform-origin: top left;"></div>
+          <div class="node-line" style="top:40px; left:24px; width:1px; height:24px; transform:rotate(-45deg); transform-origin: top left;"></div>
+          <div class="node-dot" style="top:6px; left:6px;"></div>
+          <div class="node-dot" style="top:6px; left:86px;"></div>
+          <div class="node-dot" style="top:38px; left:22px;"></div>
+          <div class="node-dot" style="top:38px; left:86px;"></div>
+          <div class="node-dot" style="top:58px; left:6px;"></div>
+        </div>
+        <div class="net-title">
+          <span class="arrow">&rarr;</span>
+          <h3 class="reveal">909</h3>
+        </div>
+        <div class="net-info">
+          <div class="net-status">
+            <span>SECURITY-NET</span>
+            <span class="dim">ACTIVE</span>
+            <span class="dim">STAT: 0xBB02</span>
+            <div class="stat-dots">
+              <div class="stat-dot"></div>
+              <div class="stat-dot"></div>
+              <div class="stat-dot filled"></div>
+            </div>
+          </div>
+          <div class="circle-wrap" id="circle-dots"></div>
+        </div>
+      </div>
+      <div class="net-bottom">
+        <span>UPLINK STATUS &middot; <span class="white">ONLINE</span></span>
+        <span>POWER: 48V &middot; DRAW: 1.8A</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // Staggered word reveal (replaces GSAP masked reveal with plain CSS keyframes)
+  document.querySelectorAll('.reveal').forEach(el => {
+    const text = el.textContent;
+    const words = text.split(' ');
+    el.innerHTML = '';
+    words.forEach((word, i) => {
+      const outer = document.createElement('span');
+      outer.className = 'reveal-word';
+      const inner = document.createElement('span');
+      inner.style.setProperty('--d', (i * 0.1) + 's');
+      inner.textContent = word + (i < words.length - 1 ? ' ' : '');
+      outer.appendChild(inner);
+      el.appendChild(outer);
+    });
+  });
+
+  // Populate dot matrix (Panel 1)
+  const matrix = document.getElementById('matrix-1');
+  let matrixHTML = '';
+  for (let i = 0; i < 80; i++) {
+    const filled = Math.random() > 0.6;
+    const dim = Math.random() > 0.5;
+    matrixHTML += `<div class="dot${filled ? ' filled' : ''}${dim ? ' dim' : ''}"></div>`;
+  }
+  matrix.innerHTML = matrixHTML;
+
+  // Populate dot grid (Panel 2)
+  const dotGrid = document.getElementById('dot-grid');
+  let dotGridHTML = '';
+  for (let row = 0; row < 3; row++) {
+    dotGridHTML += '<div class="dot-line">';
+    for (let i = 0; i < 8; i++) {
+      const dim = Math.random() > 0.7;
+      dotGridHTML += `<div class="dot2${dim ? ' dim' : ''}"></div>`;
+    }
+    dotGridHTML += '</div>';
+  }
+  dotGrid.innerHTML = dotGridHTML;
+
+  // Populate circle dots (Panel 3)
+  const circle = document.getElementById('circle-dots');
+  let circleHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30) * (Math.PI / 180);
+    const x = 24 + 20 * Math.cos(angle) - 3;
+    const y = 24 + 20 * Math.sin(angle) - 3;
+    const filled = i % 3 === 0;
+    circleHTML += `<div class="circle-dot${filled ? ' filled' : ''}" style="left:${x}px; top:${y}px;"></div>`;
+  }
+  circle.innerHTML = circleHTML;
+
+  // Background particle-line network (the core genuine effect, kept as plain Canvas 2D)
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let width, height, particles;
+
+  function initCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.max(1, Math.floor(width * dpr));
+    canvas.height = Math.max(1, Math.floor(height * dpr));
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    particles = [];
+    const count = window.innerWidth < 640 ? 30 : 70;
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5
+      });
+    }
+  }
+
+  function drawLines() {
+    ctx.clearRect(0, 0, width, height);
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > width) p.vx *= -1;
+      if (p.y < 0 || p.y > height) p.vy *= -1;
+
+      for (let j = i + 1; j < particles.length; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(255,255,255,${0.28 + (1 - dist / 120) * 0.42})`;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(p.x - 0.75, p.y - 0.75, 1.5, 1.5);
+    }
+    requestAnimationFrame(drawLines);
+  }
+
+  window.addEventListener('resize', initCanvas);
+  initCanvas();
+  drawLines();
+</script>
+</body>
+</html>

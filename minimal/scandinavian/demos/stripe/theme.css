@@ -1,0 +1,1254 @@
+/* ==========================================================================
+   Stripe homepage — Scandinavian override
+
+   Stripe's composition is already good: real chapters, one idea each, a
+   dominant product visual per chapter, 96px section gaps. The work here is
+   not restructuring. It is removing the decoration layered on top of a
+   structure that already works, and repairing the two places where the
+   decoration was doing the structuring.
+
+   What the page paints that has no job:
+   - A full-height animated gradient canvas filling the right half of the hero.
+   - A 977px full-bleed sunrise behind the stats, with six more skies stacked
+     behind it for a time-of-day cross-fade.
+   - Radial gradient rings faked as card borders on the bento and startup cards.
+   - Gradient-filled display numerals in the developers chapter.
+   - A painted orange-to-magenta sheet behind the platform screenshot.
+   - Eight customer logos in eight brand colours across the social-proof band.
+
+   What the decoration was doing that still needs doing:
+   - The hero art gave the right half of a 685px band something to be, and the
+     copy was indented a column to clear it. With the art gone the band would
+     be a headline in the middle of nothing, so the hero recomposes: headline
+     and deck side by side, both starting on the page's real left margin.
+   - The card gradient rings were the only edge those cards had, so they
+     become a hairline, not nothing.
+   - The stats sky was the only thing the time-of-day control changed. The
+     control still works and the line drawing it sat behind is the actual
+     content, so the drawing is desaturated rather than deleted.
+
+   Everything else is a colour and type pass: the navy-tinted ramp
+   (#061b31 ink, #50617a body, #e5edf5 rules, #f8fafd fills) becomes alpha
+   black, the blurple becomes ink, the navy dark chapter becomes near-black,
+   and Söhne's 300/400 weight pair becomes Inter's 400/500 — Google's Inter
+   ships no 300, so leaving the weight tokens alone would have resolved both
+   rungs to 400 and silently un-emphasized every lead-in on the page.
+
+   Error, success, focus, and code syntax keep their colour. So does anything
+   inside a product screenshot or a photograph. So does the Stripe wordmark.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens — light
+   Every hds component reads these, including the custom elements
+   (<hds-button>, <modular-solutions-bento-card>) whose internals a stylesheet
+   cannot select. Retargeting the ramp reaches them; selectors would not.
+   The ramp is alpha black over white, so one token serves as fill and border
+   without a second value.
+
+   The selector list is wide on purpose. Stripe ships more than one homepage
+   bundle, and in some of them these tokens are declared on the component
+   rather than on :root — and inheritance loses to any declaration that
+   matches the element, !important or not. Naming the hds classes here is
+   what makes the override land in both builds.
+   -------------------------------------------------------------------------- */
+:root,
+html,
+body,
+.hds-color-mode,
+.hds-mode--light,
+.section,
+.section--white,
+[class*="hds-button"],
+[class*="hds-ui-button"],
+[class*="hds-link"],
+[class*="hds-text"],
+[class*="hds-heading"],
+[class*="hds-icon"],
+[class*="navigation-cta-button"],
+[class*="__cta"],
+[class*="charm"] {
+  --sd-sans: Inter, "Inter Variable", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-body: rgb(0 0 0 / 90%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  --sd-ink-3: rgb(0 0 0 / 46%);
+  --sd-rule: rgb(0 0 0 / 9%);
+  --sd-rule-strong: rgb(0 0 0 / 18%);
+  --sd-fill: rgb(0 0 0 / 4%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-active: rgb(0 0 0 / 9%);
+
+  /* Family and weights. Söhne's normal is 300 and its "bold" is 400; Inter as
+     loaded here has no 300, so both would land on 400 and every emphasized
+     run on the page would stop being emphasized. Shift the pair up a rung. */
+  --hds-font-family: var(--sd-sans) !important;
+  --hds-font-weight-normal: 400 !important;
+  --hds-font-weight-bold: 500 !important;
+
+  --hds-font-text-xxs-weight: 400 !important;
+  --hds-font-text-xs-weight: 400 !important;
+  --hds-font-text-sm-weight: 400 !important;
+  --hds-font-text-md-weight: 400 !important;
+  --hds-font-text-lg-weight: 400 !important;
+  --hds-font-text-xl-weight: 400 !important;
+  --hds-font-text-xxl-weight: 500 !important;
+
+  --hds-font-heading-xxs-weight: 500 !important;
+  --hds-font-heading-xs-weight: 500 !important;
+  --hds-font-heading-sm-weight: 500 !important;
+  --hds-font-heading-md-weight: 500 !important;
+  --hds-font-heading-lg-weight: 500 !important;
+  --hds-font-heading-xl-weight: 500 !important;
+  --hds-font-heading-xxl-weight: 500 !important;
+  --hds-font-heading-hero-sm-weight: 500 !important;
+  --hds-font-heading-hero-md-weight: 500 !important;
+  --hds-font-heading-hero-lg-weight: 500 !important;
+  --hds-font-quote-md-weight: 400 !important;
+  --hds-font-quoteAttribution-md-weight: 400 !important;
+  --hds-font-input-text-md-weight: 400 !important;
+  --hds-font-input-text-lg-weight: 400 !important;
+  --hds-font-input-description-weight: 400 !important;
+  --hds-font-input-groupHeading-weight: 500 !important;
+
+  /* Ink */
+  --hds-color-text-solid: var(--sd-ink-body) !important;
+  --hds-color-text-soft: var(--sd-ink-2) !important;
+  --hds-color-text-subdued: var(--sd-ink-2) !important;
+  --hds-color-text-quiet: var(--sd-ink-3) !important;
+  --hds-color-heading-solid: var(--sd-ink) !important;
+  /* 55% rather than the 44% metadata rung: this drives the second half of
+     every two-tone heading on the page, which is real reading. */
+  --hds-color-heading-subdued: rgb(0 0 0 / 55%) !important;
+
+  --hds-color-icon-emphasized: var(--sd-ink) !important;
+  --hds-color-icon-solid: var(--sd-ink-2) !important;
+  --hds-color-icon-subdued: var(--sd-ink-3) !important;
+  --hds-color-icon-quiet: rgb(0 0 0 / 24%) !important;
+  --hds-color-icon-surface: rgb(0 0 0 / 16%) !important;
+
+  /* Surfaces. bg-subdued was #f8fafd, a blue panel carrying the press
+     chapter, the closing CTA and the whole footer. */
+  --hds-color-surface-bg-quiet: #fff !important;
+  --hds-color-surface-bg-subdued: rgb(0 0 0 / 3%) !important;
+  --hds-color-surface-bg-subduedAdaptive: rgb(0 0 0 / 3%) !important;
+  --hds-color-surface-bg-shadow: #fff !important;
+  --hds-color-surface-border-quiet: var(--sd-rule) !important;
+  --hds-color-surface-border-quietAdaptive: var(--sd-rule) !important;
+  --hds-color-surface-border-shadow: transparent !important;
+  --hds-color-surface-border-shadowHover: var(--sd-rule-strong) !important;
+
+  /* Accent and action, de-hued. The blurple's one remaining job is the
+     primary button, which becomes ink; link text, arrows, icons and quiet
+     fills join the ink ladder. */
+  --hds-color-accent-text-solid: var(--sd-ink) !important;
+  --hds-color-accent-icon-solid: var(--sd-ink) !important;
+  --hds-color-accent-icon-solidAlt: var(--sd-ink) !important;
+  --hds-color-accent-surface-solid: var(--sd-ink) !important;
+  --hds-color-accent-surface-subdued: var(--sd-fill) !important;
+  --hds-color-accent-surface-subduedAlt: var(--sd-fill) !important;
+  --hds-color-accent-border-solid: var(--sd-ink) !important;
+  --hds-color-accent-border-quiet: var(--sd-rule) !important;
+  --hds-color-accent-charm-bg: var(--sd-ink) !important;
+  --hds-color-accent-charm-gradientStart: var(--sd-ink) !important;
+  --hds-color-accent-charm-gradientMiddle: var(--sd-ink) !important;
+  --hds-color-accent-charm-gradientEnd: var(--sd-ink) !important;
+
+  --hds-color-action-text-solid: var(--sd-ink) !important;
+  --hds-color-action-text-solidHover: var(--sd-ink-body) !important;
+  --hds-color-action-text-solidAlternate: var(--sd-ink) !important;
+  --hds-color-action-text-solidAlternateHover: var(--sd-ink-body) !important;
+  --hds-color-action-text-secondary: var(--sd-ink) !important;
+  --hds-color-action-text-onQuiet: var(--sd-ink) !important;
+  --hds-color-action-text-onSubdued: var(--sd-ink) !important;
+  --hds-color-action-text-onSolid: #fff !important;
+  --hds-color-action-text-onTranslucent: var(--sd-ink) !important;
+  --hds-color-action-text-onTransparent: var(--sd-ink) !important;
+  --hds-color-action-text-disabled: rgb(0 0 0 / 34%) !important;
+
+  --hds-color-action-icon-solid: var(--sd-ink) !important;
+  --hds-color-action-icon-solidHover: var(--sd-ink) !important;
+  --hds-color-action-icon-solidAlternate: var(--sd-ink) !important;
+  --hds-color-action-icon-solidAlternateHover: var(--sd-ink) !important;
+  --hds-color-action-icon-onQuiet: var(--sd-ink) !important;
+  --hds-color-action-icon-onSubdued: var(--sd-ink) !important;
+  --hds-color-action-icon-onSolid: #fff !important;
+  --hds-color-action-icon-onTranslucent: var(--sd-ink) !important;
+  --hds-color-action-icon-onTransparent: var(--sd-ink) !important;
+  --hds-color-action-icon-navigation-solid: var(--sd-ink) !important;
+  --hds-color-action-icon-navigation-soft: var(--sd-ink-2) !important;
+  --hds-color-action-icon-navigation-subdued: var(--sd-ink-3) !important;
+  --hds-color-action-icon-disabled: rgb(0 0 0 / 34%) !important;
+
+  --hds-color-action-bg-solid: var(--sd-ink) !important;
+  --hds-color-action-bg-solidHover: rgb(0 0 0 / 84%) !important;
+  --hds-color-action-bg-quiet: var(--sd-hover) !important;
+  --hds-color-action-bg-quietHover: var(--sd-active) !important;
+  --hds-color-action-bg-subdued: var(--sd-fill) !important;
+  --hds-color-action-bg-subduedHover: var(--sd-active) !important;
+  --hds-color-action-bg-disabled: rgb(0 0 0 / 6%) !important;
+  --hds-color-action-border-solid: var(--sd-ink) !important;
+  --hds-color-action-border-solidHover: var(--sd-ink) !important;
+  --hds-color-action-border-subdued: var(--sd-rule-strong) !important;
+  --hds-color-action-border-quiet: var(--sd-rule) !important;
+  --hds-color-action-border-disabled: var(--sd-rule) !important;
+
+  /* Focus stays a real two-tone ring so it reads on white and on ink. */
+  --hds-color-action-focus-outer: var(--sd-ink) !important;
+  --hds-color-action-focus-outerSoft: rgb(0 0 0 / 64%) !important;
+  --hds-color-action-focus-outerSubdued: rgb(0 0 0 / 24%) !important;
+  --hds-color-action-focus-inner-quiet: #fff !important;
+  --hds-color-action-focus-inner-subdued: #fff !important;
+
+  /* Buttons. One primary treatment (ink fill) and one secondary (hairline)
+     for the whole page, so the hero pair, the chapter CTAs and the nav CTA
+     stop being three shapes of the same idea. */
+  --hds-color-button-primary-bg: var(--sd-ink) !important;
+  --hds-color-button-primary-bgHover: rgb(0 0 0 / 84%) !important;
+  --hds-color-button-primary-bgDisabled: rgb(0 0 0 / 8%) !important;
+  --hds-color-button-primary-text: #fff !important;
+  --hds-color-button-primary-textHover: #fff !important;
+  --hds-color-button-primary-icon: #fff !important;
+  --hds-color-button-primary-iconHover: #fff !important;
+  --hds-color-button-primary-textDisabled: rgb(0 0 0 / 34%) !important;
+  --hds-color-button-primary-iconDisabled: rgb(0 0 0 / 34%) !important;
+
+  --hds-color-button-secondary-border: var(--sd-rule-strong) !important;
+  --hds-color-button-secondary-borderHover: var(--sd-ink) !important;
+  --hds-color-button-secondary-borderOnSubdued: var(--sd-rule-strong) !important;
+  --hds-color-button-secondary-borderDisabled: var(--sd-rule) !important;
+  --hds-color-button-secondary-text: var(--sd-ink) !important;
+  --hds-color-button-secondary-textHover: var(--sd-ink) !important;
+  --hds-color-button-secondary-icon: var(--sd-ink) !important;
+  --hds-color-button-secondary-iconHover: var(--sd-ink) !important;
+  --hds-color-button-secondary-textDisabled: rgb(0 0 0 / 34%) !important;
+
+  --hds-color-button-ui-bg: var(--sd-fill) !important;
+  --hds-color-button-ui-bgHover: var(--sd-active) !important;
+  --hds-color-button-ui-bgOnSubdued: var(--sd-fill) !important;
+  --hds-color-button-ui-bgOnSubduedHover: var(--sd-active) !important;
+  --hds-color-button-ui-icon: var(--sd-ink) !important;
+  --hds-color-button-ui-iconHover: var(--sd-ink) !important;
+  --hds-color-button-ui-borderDisabled: var(--sd-rule) !important;
+  --hds-color-button-ui-iconDisabled: rgb(0 0 0 / 34%) !important;
+
+  /* Inputs — locale switcher, the product-recommendation prompt, footer. */
+  --hds-color-input-text-solid: var(--sd-ink-body) !important;
+  --hds-color-input-text-label: var(--sd-ink-body) !important;
+  --hds-color-input-text-placeholder: var(--sd-ink-3) !important;
+  --hds-color-input-text-popover: var(--sd-ink-body) !important;
+  --hds-color-input-text-selected: var(--sd-ink) !important;
+  --hds-color-input-bg-default: #fff !important;
+  --hds-color-input-bg-hover: var(--sd-hover) !important;
+  --hds-color-input-bg-focus: #fff !important;
+  --hds-color-input-bg-popover: #fff !important;
+  --hds-color-input-bg-quiet: var(--sd-fill) !important;
+  --hds-color-input-bg-solid: #fff !important;
+  --hds-color-input-bg-accent: var(--sd-ink) !important;
+  --hds-color-input-bg-listboxIcon: var(--sd-fill) !important;
+  --hds-color-input-border-default: var(--sd-rule-strong) !important;
+  --hds-color-input-border-hover: var(--sd-ink) !important;
+  --hds-color-input-border-focus: var(--sd-ink) !important;
+  --hds-color-input-border-selected: var(--sd-ink) !important;
+  --hds-color-input-border-accent: var(--sd-ink) !important;
+  --hds-color-input-border-option: var(--sd-rule-strong) !important;
+  --hds-color-input-border-hoverSubdued: var(--sd-rule-strong) !important;
+  --hds-color-input-icon-solid: var(--sd-ink) !important;
+  --hds-color-input-icon-solidAlternate: var(--sd-ink) !important;
+  --hds-color-input-popover-divider: var(--sd-rule) !important;
+  --hds-color-input-selector-bg-selected: var(--sd-ink) !important;
+  --hds-color-input-selector-bg-selectedHover: var(--sd-ink-body) !important;
+  --hds-color-input-selector-bg-availableHover: var(--sd-hover) !important;
+  --hds-color-input-selector-bg-range: var(--sd-fill) !important;
+  --hds-color-input-selector-text-available: var(--sd-ink-body) !important;
+  --hds-color-input-selector-text-current: var(--sd-ink) !important;
+  --hds-color-input-selector-text-range: var(--sd-ink) !important;
+  --hds-color-input-selector-text-selected: #fff !important;
+  --hds-color-input-tile-bg-selected: var(--sd-fill) !important;
+  --hds-color-input-tile-border-hover: var(--sd-ink) !important;
+  --hds-color-input-tile-border-pressed: var(--sd-ink) !important;
+  --hds-color-input-tile-border-selected: var(--sd-ink) !important;
+  --hds-color-input-tile-text-hover: var(--sd-ink) !important;
+  --hds-color-input-tile-text-pressed: var(--sd-ink) !important;
+  --hds-color-input-tile-text-selected: var(--sd-ink) !important;
+
+  /* Elevation. Stripe's shadows are blue (#003b89 alpha); what stays is a
+     barely visible neutral, only where a surface really floats. */
+  --hds-color-shadow-xs-top: rgb(0 0 0 / 4%) !important;
+  --hds-color-shadow-xs-bottom: rgb(0 0 0 / 4%) !important;
+  --hds-color-shadow-sm-top: rgb(0 0 0 / 5%) !important;
+  --hds-color-shadow-sm-bottom: rgb(0 0 0 / 5%) !important;
+  --hds-color-shadow-md-top: rgb(0 0 0 / 6%) !important;
+  --hds-color-shadow-md-bottom: rgb(0 0 0 / 5%) !important;
+  --hds-color-shadow-lg-top: rgb(0 0 0 / 7%) !important;
+  --hds-color-shadow-lg-bottom: rgb(0 0 0 / 5%) !important;
+  --hds-color-shadow-xl-top: rgb(0 0 0 / 8%) !important;
+  --hds-color-shadow-xl-bottom: rgb(0 0 0 / 5%) !important;
+  --hds-color-shadow-popoverTop: rgb(0 0 0 / 8%) !important;
+  --hds-color-shadow-popoverBottom: rgb(0 0 0 / 10%) !important;
+
+  /* Radii: one restrained step for controls, one for media containers. */
+  --hds-space-core-radius-sm: 6px !important;
+  --hds-space-core-radius-md: 8px !important;
+  --hds-space-core-radius-lg: 12px !important;
+  --hds-space-core-radius-xl: 12px !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Ramps — light
+   The semantic layer above covers components; graphics, charms and one-off
+   marketing CSS reach past it into the raw ramps. Both ladders are
+   navy-tinted (#f8fafd … #061b31) or blurple, so leaving them would let the
+   cast back in through the side door.
+   -------------------------------------------------------------------------- */
+:root,
+html,
+body,
+.hds-color-mode,
+.hds-mode--light,
+[class*="hds-"],
+[class*="-graphic"],
+[class*="charm"] {
+  --hds-color-core-neutral-0: #fff !important;
+  --hds-color-core-neutral-25: rgb(0 0 0 / 3%) !important;
+  --hds-color-core-neutral-25A: rgb(0 0 0 / 3%) !important;
+  --hds-color-core-neutral-50: rgb(0 0 0 / 6%) !important;
+  --hds-color-core-neutral-50A: rgb(0 0 0 / 6%) !important;
+  --hds-color-core-neutral-100: rgb(0 0 0 / 10%) !important;
+  --hds-color-core-neutral-200: rgb(0 0 0 / 16%) !important;
+  --hds-color-core-neutral-200A: rgb(0 0 0 / 16%) !important;
+  --hds-color-core-neutral-300: rgb(0 0 0 / 34%) !important;
+  --hds-color-core-neutral-400: rgb(0 0 0 / 44%) !important;
+  --hds-color-core-neutral-500: rgb(0 0 0 / 55%) !important;
+  --hds-color-core-neutral-600: rgb(0 0 0 / 64%) !important;
+  --hds-color-core-neutral-700: rgb(0 0 0 / 72%) !important;
+  --hds-color-core-neutral-800: rgb(0 0 0 / 80%) !important;
+  --hds-color-core-neutral-900: rgb(0 0 0 / 86%) !important;
+  --hds-color-core-neutral-950: rgb(0 0 0 / 90%) !important;
+  --hds-color-core-neutral-975: rgb(0 0 0 / 94%) !important;
+  --hds-color-core-neutral-990: #000 !important;
+
+  --hds-color-util-neutral-0: #fff !important;
+  --hds-color-util-neutral-25: rgb(0 0 0 / 3%) !important;
+  --hds-color-util-neutral-50: rgb(0 0 0 / 6%) !important;
+  --hds-color-util-neutral-100: rgb(0 0 0 / 10%) !important;
+  --hds-color-util-neutral-200: rgb(0 0 0 / 16%) !important;
+  --hds-color-util-neutral-300: rgb(0 0 0 / 34%) !important;
+  --hds-color-util-neutral-400: rgb(0 0 0 / 44%) !important;
+  --hds-color-util-neutral-500: rgb(0 0 0 / 55%) !important;
+  --hds-color-util-neutral-600: rgb(0 0 0 / 64%) !important;
+  --hds-color-util-neutral-700: rgb(0 0 0 / 72%) !important;
+  --hds-color-util-neutral-800: rgb(0 0 0 / 80%) !important;
+  --hds-color-util-neutral-900: rgb(0 0 0 / 86%) !important;
+  --hds-color-util-neutral-950: rgb(0 0 0 / 90%) !important;
+  --hds-color-util-neutral-975: rgb(0 0 0 / 94%) !important;
+  --hds-color-util-neutral-990: #000 !important;
+
+  --hds-color-core-brand-25: rgb(0 0 0 / 3%) !important;
+  --hds-color-core-brand-25A: rgb(0 0 0 / 3%) !important;
+  --hds-color-core-brand-50: rgb(0 0 0 / 5%) !important;
+  --hds-color-core-brand-50A: rgb(0 0 0 / 5%) !important;
+  --hds-color-core-brand-75: rgb(0 0 0 / 6%) !important;
+  --hds-color-core-brand-100: rgb(0 0 0 / 10%) !important;
+  --hds-color-core-brand-100A: rgb(0 0 0 / 10%) !important;
+  --hds-color-core-brand-200: rgb(0 0 0 / 16%) !important;
+  --hds-color-core-brand-300: rgb(0 0 0 / 30%) !important;
+  --hds-color-core-brand-400: rgb(0 0 0 / 44%) !important;
+  --hds-color-core-brand-400A: rgb(0 0 0 / 44%) !important;
+  --hds-color-core-brand-500: rgb(0 0 0 / 64%) !important;
+  --hds-color-core-brand-600: #000 !important;
+  --hds-color-core-brand-700: rgb(0 0 0 / 84%) !important;
+  --hds-color-core-brand-800: #000 !important;
+  --hds-color-core-brand-900: #0a0a0a !important;
+  --hds-color-core-brand-925: #0a0a0a !important;
+  --hds-color-core-brand-950: #0a0a0a !important;
+  --hds-color-core-brand-975: #0a0a0a !important;
+
+  --hds-color-util-brand-25: rgb(0 0 0 / 3%) !important;
+  --hds-color-util-brand-50: rgb(0 0 0 / 5%) !important;
+  --hds-color-util-brand-75: rgb(0 0 0 / 6%) !important;
+  --hds-color-util-brand-100: rgb(0 0 0 / 10%) !important;
+  --hds-color-util-brand-200: rgb(0 0 0 / 16%) !important;
+  --hds-color-util-brand-300: rgb(0 0 0 / 30%) !important;
+  --hds-color-util-brand-400: rgb(0 0 0 / 44%) !important;
+  --hds-color-util-brand-500: rgb(0 0 0 / 64%) !important;
+  --hds-color-util-brand-600: #000 !important;
+  --hds-color-util-brand-700: rgb(0 0 0 / 84%) !important;
+  --hds-color-util-brand-800: #000 !important;
+  --hds-color-util-brand-900: #0a0a0a !important;
+  --hds-color-util-brand-925: #0a0a0a !important;
+  --hds-color-util-brand-950: #0a0a0a !important;
+  --hds-color-util-brand-975: #0a0a0a !important;
+
+  --hds-color-util-action-bg-solid: #000 !important;
+  --hds-color-util-action-bg-soft: rgb(0 0 0 / 64%) !important;
+  --hds-color-util-action-bg-quiet: rgb(0 0 0 / 5%) !important;
+  --hds-color-util-action-bg-subdued: rgb(0 0 0 / 8%) !important;
+  --hds-color-util-action-bg-min: rgb(0 0 0 / 4%) !important;
+  --hds-color-util-action-bg-max: #000 !important;
+  --hds-color-util-action-bg-emphasized: rgb(0 0 0 / 84%) !important;
+  --hds-color-util-action-border-solid: #000 !important;
+  --hds-color-util-action-border-quiet: rgb(0 0 0 / 12%) !important;
+  --hds-color-util-action-border-subdued: rgb(0 0 0 / 18%) !important;
+  --hds-color-util-action-border-emphasized: #000 !important;
+  --hds-color-util-action-border-max: #000 !important;
+  --hds-color-util-action-fg-solid: #000 !important;
+  --hds-color-util-action-fg-solidHover: #000 !important;
+  --hds-color-util-action-fg-solidAlternate: #000 !important;
+  --hds-color-util-action-fg-solidAlternateHover: #000 !important;
+  --hds-color-util-action-fg-onAlpha: #000 !important;
+  --hds-color-util-action-fg-onSolid: #fff !important;
+  --hds-color-util-action-icon-solid: #000 !important;
+  --hds-color-util-action-icon-soft: rgb(0 0 0 / 64%) !important;
+  --hds-color-util-action-icon-quiet: rgb(0 0 0 / 24%) !important;
+  --hds-color-util-action-icon-subdued: rgb(0 0 0 / 34%) !important;
+  --hds-color-util-action-icon-emphasized: #000 !important;
+  --hds-color-util-action-icon-max: #000 !important;
+  --hds-color-util-action-icon-min: #fff !important;
+  --hds-color-util-action-text-solid: #000 !important;
+  --hds-color-util-action-text-soft: rgb(0 0 0 / 64%) !important;
+  --hds-color-util-action-text-emphasized: #000 !important;
+  --hds-color-util-action-text-max: #000 !important;
+  --hds-color-util-action-text-min: #fff !important;
+
+  --hds-color-util-bg-min: #fff !important;
+  --hds-color-util-bg-quiet: rgb(0 0 0 / 3%) !important;
+  --hds-color-util-bg-subdued: rgb(0 0 0 / 6%) !important;
+  --hds-color-util-bg-soft: rgb(0 0 0 / 10%) !important;
+  --hds-color-util-black: #000 !important;
+  --hds-color-util-white: #fff !important;
+  --hds-color-util-border-quiet: rgb(0 0 0 / 9%) !important;
+  --hds-color-util-border-subdued: rgb(0 0 0 / 12%) !important;
+  --hds-color-util-border-soft: rgb(0 0 0 / 44%) !important;
+  --hds-color-util-border-solid: rgb(0 0 0 / 72%) !important;
+  --hds-color-util-border-emphasized: #000 !important;
+  --hds-color-util-text-solid: rgb(0 0 0 / 90%) !important;
+  --hds-color-util-text-soft: rgb(0 0 0 / 64%) !important;
+  --hds-color-util-text-subdued: rgb(0 0 0 / 64%) !important;
+  --hds-color-util-text-quiet: rgb(0 0 0 / 46%) !important;
+  --hds-color-util-text-inactive: rgb(0 0 0 / 34%) !important;
+
+  /* The decorative accent families exist to tint charm icons and stat
+     numerals. Only the 350/500 rungs are retargeted: the pale rungs are what
+     the product screenshots use for their own buttons and badges, and those
+     are inside the media. Error and success are untouched. */
+  --hds-color-accentColorMode-default-icon-solid: #000 !important;
+  --hds-color-accentColorMode-default-icon-solidAlt: #000 !important;
+  --hds-color-accentColorMode-magenta-icon-solid: #000 !important;
+  --hds-color-accentColorMode-magenta-icon-gradientStart: #000 !important;
+  --hds-color-accentColorMode-magenta-icon-gradientMiddle: #000 !important;
+  --hds-color-accentColorMode-magenta-icon-gradientEnd: #000 !important;
+  --hds-color-accentColorMode-ruby-icon-solid: #000 !important;
+  --hds-color-accentColorMode-ruby-icon-gradientStart: #000 !important;
+  --hds-color-accentColorMode-ruby-icon-gradientMiddle: #000 !important;
+  --hds-color-accentColorMode-ruby-icon-gradientEnd: #000 !important;
+  --hds-color-accentColorMode-orange-icon-solid: #000 !important;
+  --hds-color-accentColorMode-orange-icon-gradientStart: #000 !important;
+  --hds-color-accentColorMode-orange-icon-gradientMiddle: #000 !important;
+  --hds-color-accentColorMode-orange-icon-gradientEnd: #000 !important;
+  --hds-color-accentColorMode-lemon-icon-solid: #000 !important;
+  --hds-color-accentColorMode-lemon-icon-gradientStart: #000 !important;
+  --hds-color-accentColorMode-lemon-icon-gradientMiddle: #000 !important;
+  --hds-color-accentColorMode-lemon-icon-gradientEnd: #000 !important;
+
+  --hds-color-util-accent-magenta-350: rgb(0 0 0 / 55%) !important;
+  --hds-color-util-accent-orange-350: rgb(0 0 0 / 55%) !important;
+  --hds-color-util-accent-ruby-400: rgb(0 0 0 / 55%) !important;
+  --hds-color-util-accent-lemon-200: rgb(0 0 0 / 55%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Tokens — dark chapter
+   The developers chapter runs on #0d1738, a tinted navy, with a second navy
+   ramp underneath it. The skill's dark canvas is near-black with alpha-white
+   ink, so the ramp is rebuilt rather than darkened. These must be restated
+   here: .hds-mode--dark redefines them, so a :root override loses.
+   -------------------------------------------------------------------------- */
+.hds-mode--dark,
+.hds-mode--dark * {
+  --sd-dark-canvas: #0a0a0a;
+
+  --hds-color-text-solid: #fff !important;
+  --hds-color-text-soft: rgb(255 255 255 / 64%) !important;
+  --hds-color-text-subdued: rgb(255 255 255 / 64%) !important;
+  --hds-color-text-quiet: rgb(255 255 255 / 46%) !important;
+  --hds-color-heading-solid: #fff !important;
+  --hds-color-heading-subdued: rgb(255 255 255 / 60%) !important;
+
+  --hds-color-icon-emphasized: #fff !important;
+  --hds-color-icon-solid: rgb(255 255 255 / 72%) !important;
+  --hds-color-icon-subdued: rgb(255 255 255 / 54%) !important;
+  --hds-color-icon-quiet: rgb(255 255 255 / 28%) !important;
+  --hds-color-icon-surface: rgb(255 255 255 / 18%) !important;
+
+  --hds-color-surface-bg-quiet: var(--sd-dark-canvas) !important;
+  --hds-color-surface-bg-subdued: rgb(255 255 255 / 6%) !important;
+  --hds-color-surface-bg-subduedAdaptive: rgb(255 255 255 / 6%) !important;
+  --hds-color-surface-bg-shadow: rgb(255 255 255 / 6%) !important;
+  --hds-color-surface-border-quiet: rgb(255 255 255 / 12%) !important;
+  --hds-color-surface-border-quietAdaptive: rgb(255 255 255 / 12%) !important;
+  --hds-color-surface-border-shadow: rgb(255 255 255 / 12%) !important;
+  --hds-color-surface-border-shadowHover: rgb(255 255 255 / 24%) !important;
+
+  --hds-color-accent-text-solid: #fff !important;
+  --hds-color-accent-icon-solid: #fff !important;
+  --hds-color-accent-icon-solidAlt: var(--sd-dark-canvas) !important;
+  --hds-color-accent-surface-solid: #fff !important;
+  --hds-color-accent-surface-subdued: rgb(255 255 255 / 10%) !important;
+  --hds-color-accent-surface-subduedAlt: rgb(255 255 255 / 10%) !important;
+  --hds-color-accent-border-solid: rgb(255 255 255 / 24%) !important;
+  --hds-color-accent-border-quiet: rgb(255 255 255 / 12%) !important;
+  --hds-color-accent-charm-bg: #fff !important;
+  --hds-color-accent-charm-gradientStart: #fff !important;
+  --hds-color-accent-charm-gradientMiddle: #fff !important;
+  --hds-color-accent-charm-gradientEnd: #fff !important;
+
+  --hds-color-action-text-solid: #fff !important;
+  --hds-color-action-text-solidHover: rgb(255 255 255 / 80%) !important;
+  --hds-color-action-text-solidAlternate: #fff !important;
+  --hds-color-action-text-solidAlternateHover: rgb(255 255 255 / 80%) !important;
+  --hds-color-action-text-secondary: #fff !important;
+  --hds-color-action-text-onQuiet: #fff !important;
+  --hds-color-action-text-onSubdued: #fff !important;
+  --hds-color-action-text-onSolid: var(--sd-dark-canvas) !important;
+  --hds-color-action-text-onTransparent: #fff !important;
+  --hds-color-action-text-onTranslucent: #fff !important;
+  --hds-color-action-icon-solid: #fff !important;
+  --hds-color-action-icon-solidHover: #fff !important;
+  --hds-color-action-icon-solidAlternate: #fff !important;
+  --hds-color-action-icon-onSolid: var(--sd-dark-canvas) !important;
+  --hds-color-action-icon-onQuiet: #fff !important;
+  --hds-color-action-icon-onSubdued: #fff !important;
+  --hds-color-action-icon-onTransparent: #fff !important;
+  --hds-color-action-icon-onTranslucent: #fff !important;
+  --hds-color-action-icon-navigation-solid: #fff !important;
+  --hds-color-action-icon-navigation-soft: rgb(255 255 255 / 64%) !important;
+  --hds-color-action-icon-navigation-subdued: rgb(255 255 255 / 46%) !important;
+  --hds-color-action-bg-solid: #fff !important;
+  --hds-color-action-bg-solidHover: rgb(255 255 255 / 88%) !important;
+  --hds-color-action-bg-quiet: rgb(255 255 255 / 8%) !important;
+  --hds-color-action-bg-quietHover: rgb(255 255 255 / 14%) !important;
+  --hds-color-action-bg-subdued: rgb(255 255 255 / 8%) !important;
+  --hds-color-action-bg-subduedHover: rgb(255 255 255 / 14%) !important;
+  --hds-color-action-border-solid: rgb(255 255 255 / 30%) !important;
+  --hds-color-action-border-solidHover: #fff !important;
+  --hds-color-action-border-subdued: rgb(255 255 255 / 24%) !important;
+  --hds-color-action-border-quiet: rgb(255 255 255 / 12%) !important;
+  --hds-color-action-focus-outer: #fff !important;
+  --hds-color-action-focus-outerSoft: rgb(255 255 255 / 64%) !important;
+  --hds-color-action-focus-outerSubdued: rgb(255 255 255 / 30%) !important;
+  --hds-color-action-focus-inner-quiet: var(--sd-dark-canvas) !important;
+  --hds-color-action-focus-inner-subdued: var(--sd-dark-canvas) !important;
+
+  --hds-color-button-primary-bg: #fff !important;
+  --hds-color-button-primary-bgHover: rgb(255 255 255 / 88%) !important;
+  --hds-color-button-primary-text: var(--sd-dark-canvas) !important;
+  --hds-color-button-primary-textHover: var(--sd-dark-canvas) !important;
+  --hds-color-button-primary-icon: var(--sd-dark-canvas) !important;
+  --hds-color-button-primary-iconHover: var(--sd-dark-canvas) !important;
+  --hds-color-button-secondary-border: rgb(255 255 255 / 24%) !important;
+  --hds-color-button-secondary-borderHover: #fff !important;
+  --hds-color-button-secondary-borderOnSubdued: rgb(255 255 255 / 24%) !important;
+  --hds-color-button-secondary-text: #fff !important;
+  --hds-color-button-secondary-textHover: #fff !important;
+  --hds-color-button-secondary-icon: #fff !important;
+  --hds-color-button-secondary-iconHover: #fff !important;
+  --hds-color-button-ui-bg: rgb(255 255 255 / 8%) !important;
+  --hds-color-button-ui-bgHover: rgb(255 255 255 / 14%) !important;
+  --hds-color-button-ui-bgOnSubdued: rgb(255 255 255 / 8%) !important;
+  --hds-color-button-ui-bgOnSubduedHover: rgb(255 255 255 / 14%) !important;
+  --hds-color-button-ui-icon: #fff !important;
+  --hds-color-button-ui-iconHover: #fff !important;
+
+  /* neutralDark and brandDark are used for both ink and fills in this
+     chapter, so the ladder runs light-to-dark in the same direction Stripe
+     had it: low numbers are ink, high numbers are surfaces. */
+  --hds-color-core-neutralDark-25: rgb(255 255 255 / 96%) !important;
+  --hds-color-core-neutralDark-50: rgb(255 255 255 / 90%) !important;
+  --hds-color-core-neutralDark-100: rgb(255 255 255 / 84%) !important;
+  --hds-color-core-neutralDark-200: rgb(255 255 255 / 76%) !important;
+  --hds-color-core-neutralDark-300: rgb(255 255 255 / 66%) !important;
+  --hds-color-core-neutralDark-400: rgb(255 255 255 / 56%) !important;
+  --hds-color-core-neutralDark-500: rgb(255 255 255 / 44%) !important;
+  --hds-color-core-neutralDark-600: rgb(255 255 255 / 32%) !important;
+  --hds-color-core-neutralDark-700: rgb(255 255 255 / 22%) !important;
+  --hds-color-core-neutralDark-800: rgb(255 255 255 / 16%) !important;
+  --hds-color-core-neutralDark-800A: rgb(255 255 255 / 16%) !important;
+  --hds-color-core-neutralDark-900: rgb(255 255 255 / 10%) !important;
+  --hds-color-core-neutralDark-900A: rgb(255 255 255 / 10%) !important;
+  --hds-color-core-neutralDark-950: rgb(255 255 255 / 7%) !important;
+  --hds-color-core-neutralDark-950A: rgb(255 255 255 / 7%) !important;
+  --hds-color-core-neutralDark-975: rgb(255 255 255 / 5%) !important;
+  --hds-color-core-neutralDark-990: var(--sd-dark-canvas) !important;
+
+  --hds-color-util-neutral-0: var(--sd-dark-canvas) !important;
+  --hds-color-util-neutral-25: rgb(255 255 255 / 5%) !important;
+  --hds-color-util-neutral-50: rgb(255 255 255 / 7%) !important;
+  --hds-color-util-neutral-100: rgb(255 255 255 / 10%) !important;
+  --hds-color-util-neutral-200: rgb(255 255 255 / 16%) !important;
+  --hds-color-util-neutral-300: rgb(255 255 255 / 22%) !important;
+  --hds-color-util-neutral-400: rgb(255 255 255 / 32%) !important;
+  --hds-color-util-neutral-500: rgb(255 255 255 / 44%) !important;
+  --hds-color-util-neutral-600: rgb(255 255 255 / 56%) !important;
+  --hds-color-util-neutral-700: rgb(255 255 255 / 66%) !important;
+  --hds-color-util-neutral-800: rgb(255 255 255 / 76%) !important;
+  --hds-color-util-neutral-900: rgb(255 255 255 / 84%) !important;
+  --hds-color-util-neutral-950: rgb(255 255 255 / 90%) !important;
+  --hds-color-util-neutral-975: rgb(255 255 255 / 96%) !important;
+  --hds-color-util-neutral-990: #fff !important;
+
+  /* The integration diagram fills its nodes from the high rungs of this ramp
+     and labels them in white, so these stay dark fills rather than becoming
+     ink; taking them to white printed white text on white boxes. */
+  --hds-color-util-brand-25: rgb(255 255 255 / 5%) !important;
+  --hds-color-util-brand-50: rgb(255 255 255 / 6%) !important;
+  --hds-color-util-brand-75: rgb(255 255 255 / 7%) !important;
+  --hds-color-util-brand-100: rgb(255 255 255 / 8%) !important;
+  --hds-color-util-brand-200: rgb(255 255 255 / 10%) !important;
+  --hds-color-util-brand-300: rgb(255 255 255 / 12%) !important;
+  --hds-color-util-brand-400: rgb(255 255 255 / 14%) !important;
+  --hds-color-util-brand-500: rgb(255 255 255 / 16%) !important;
+  --hds-color-util-brand-600: rgb(255 255 255 / 18%) !important;
+  --hds-color-util-brand-700: rgb(255 255 255 / 20%) !important;
+  --hds-color-util-brand-800: rgb(255 255 255 / 22%) !important;
+  --hds-color-util-brand-900: rgb(255 255 255 / 24%) !important;
+  --hds-color-util-brand-925: rgb(255 255 255 / 26%) !important;
+  --hds-color-util-brand-950: rgb(255 255 255 / 28%) !important;
+  --hds-color-util-brand-975: rgb(255 255 255 / 30%) !important;
+
+  --hds-color-core-brandDark-25: rgb(255 255 255 / 96%) !important;
+  --hds-color-core-brandDark-50: rgb(255 255 255 / 90%) !important;
+  --hds-color-core-brandDark-75: rgb(255 255 255 / 84%) !important;
+  --hds-color-core-brandDark-100: rgb(255 255 255 / 80%) !important;
+  --hds-color-core-brandDark-200: rgb(255 255 255 / 72%) !important;
+  --hds-color-core-brandDark-300: rgb(255 255 255 / 62%) !important;
+  --hds-color-core-brandDark-400: rgb(255 255 255 / 52%) !important;
+  --hds-color-core-brandDark-500: rgb(255 255 255 / 40%) !important;
+  --hds-color-core-brandDark-600: rgb(255 255 255 / 28%) !important;
+  --hds-color-core-brandDark-700: rgb(255 255 255 / 18%) !important;
+  --hds-color-core-brandDark-700A: rgb(255 255 255 / 18%) !important;
+  --hds-color-core-brandDark-800: rgb(255 255 255 / 14%) !important;
+  --hds-color-core-brandDark-800A: rgb(255 255 255 / 14%) !important;
+  --hds-color-core-brandDark-900: rgb(255 255 255 / 10%) !important;
+  --hds-color-core-brandDark-925: rgb(255 255 255 / 8%) !important;
+  --hds-color-core-brandDark-925A: rgb(255 255 255 / 8%) !important;
+  --hds-color-core-brandDark-950: rgb(255 255 255 / 7%) !important;
+  --hds-color-core-brandDark-975: rgb(255 255 255 / 6%) !important;
+
+  --hds-color-core-brand-600: rgb(255 255 255 / 18%) !important;
+  --hds-color-core-brand-700: rgb(255 255 255 / 22%) !important;
+  --hds-color-core-brand-800: rgb(255 255 255 / 26%) !important;
+  --hds-color-core-brand-900: rgb(255 255 255 / 10%) !important;
+  --hds-color-core-brand-925: rgb(255 255 255 / 9%) !important;
+  --hds-color-core-brand-950: rgb(255 255 255 / 8%) !important;
+  --hds-color-core-brand-975: rgb(255 255 255 / 7%) !important;
+
+  --hds-color-util-bg-min: var(--sd-dark-canvas) !important;
+  --hds-color-util-bg-quiet: rgb(255 255 255 / 5%) !important;
+  --hds-color-util-bg-subdued: rgb(255 255 255 / 8%) !important;
+  --hds-color-util-bg-soft: rgb(255 255 255 / 12%) !important;
+  --hds-color-util-black: #fff !important;
+  --hds-color-util-white: var(--sd-dark-canvas) !important;
+  --hds-color-util-border-quiet: rgb(255 255 255 / 12%) !important;
+  --hds-color-util-border-subdued: rgb(255 255 255 / 16%) !important;
+  --hds-color-util-border-soft: rgb(255 255 255 / 44%) !important;
+  --hds-color-util-border-solid: rgb(255 255 255 / 72%) !important;
+  --hds-color-util-border-emphasized: #fff !important;
+  --hds-color-util-text-solid: #fff !important;
+  --hds-color-util-text-soft: rgb(255 255 255 / 64%) !important;
+  --hds-color-util-text-subdued: rgb(255 255 255 / 64%) !important;
+  --hds-color-util-text-quiet: rgb(255 255 255 / 46%) !important;
+  --hds-color-util-action-bg-solid: rgb(255 255 255 / 16%) !important;
+  --hds-color-util-action-bg-soft: rgb(255 255 255 / 14%) !important;
+  --hds-color-util-action-bg-quiet: rgb(255 255 255 / 8%) !important;
+  --hds-color-util-action-bg-subdued: rgb(255 255 255 / 10%) !important;
+  --hds-color-util-action-bg-min: rgb(255 255 255 / 6%) !important;
+  --hds-color-util-action-bg-max: rgb(255 255 255 / 20%) !important;
+  --hds-color-util-action-bg-emphasized: rgb(255 255 255 / 18%) !important;
+  --hds-color-util-action-border-solid: rgb(255 255 255 / 30%) !important;
+  --hds-color-util-action-border-quiet: rgb(255 255 255 / 14%) !important;
+  --hds-color-util-action-border-subdued: rgb(255 255 255 / 22%) !important;
+  --hds-color-util-action-border-emphasized: #fff !important;
+  --hds-color-util-action-border-max: #fff !important;
+  --hds-color-util-action-fg-solid: #fff !important;
+  --hds-color-util-action-fg-onAlpha: #fff !important;
+  --hds-color-util-action-fg-onSolid: #fff !important;
+  --hds-color-util-action-icon-solid: #fff !important;
+  --hds-color-util-action-icon-soft: rgb(255 255 255 / 72%) !important;
+  --hds-color-util-action-icon-quiet: rgb(255 255 255 / 28%) !important;
+  --hds-color-util-action-icon-subdued: rgb(255 255 255 / 40%) !important;
+  --hds-color-util-action-icon-min: #fff !important;
+  --hds-color-util-action-icon-max: #fff !important;
+  --hds-color-util-action-text-solid: #fff !important;
+  --hds-color-util-action-text-soft: rgb(255 255 255 / 72%) !important;
+  --hds-color-util-action-text-max: #fff !important;
+  --hds-color-util-action-text-min: #fff !important;
+
+  --hds-color-shadow-xs-top: rgb(0 0 0 / 24%) !important;
+  --hds-color-shadow-xs-bottom: rgb(0 0 0 / 24%) !important;
+  --hds-color-shadow-sm-top: rgb(0 0 0 / 28%) !important;
+  --hds-color-shadow-sm-bottom: rgb(0 0 0 / 28%) !important;
+  --hds-color-shadow-md-top: rgb(0 0 0 / 32%) !important;
+  --hds-color-shadow-md-bottom: rgb(0 0 0 / 32%) !important;
+  --hds-color-shadow-lg-top: rgb(0 0 0 / 36%) !important;
+  --hds-color-shadow-lg-bottom: rgb(0 0 0 / 36%) !important;
+  --hds-color-shadow-xl-top: rgb(0 0 0 / 40%) !important;
+  --hds-color-shadow-xl-bottom: rgb(0 0 0 / 40%) !important;
+}
+
+.hds-mode--dark,
+.section.hds-mode--dark {
+  background-color: #0a0a0a !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Canvas and type
+   Family on the token above and on body here; the icons are SVG, so nothing
+   depends on a glyph font staying put.
+   -------------------------------------------------------------------------- */
+html,
+body {
+  background: #fff !important;
+  font-family: var(--sd-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea,
+.hds-button,
+hds-button,
+hds-ui-button {
+  font-family: var(--sd-sans) !important;
+}
+
+/* Inter sets slightly wider at display sizes than Söhne, and the tokens'
+   -0.02em was tuned for Söhne. */
+.hds-heading--xxl,
+.hds-heading--xl,
+.hero-section__title {
+  letter-spacing: -0.022em !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Hero — remove the art, recompose the type
+   The right two-thirds was an animated gradient canvas with a static gradient
+   image behind it as the no-JS fallback, and the copy was pushed one grid
+   column right to clear it. Both go, the copy returns to the page's left
+   margin, and the 170-character display block splits into a headline and a
+   deck sitting beside it — which is what the freed horizontal space is for.
+   Stacking them instead would have spent the width on nothing and made a
+   seven-line wall of 48px type.
+   -------------------------------------------------------------------------- */
+.hero-wave-animation,
+.hero-wave-animation__canvas,
+.hero-section__background-media,
+.hero-section-container picture,
+.hero-section-container > div > img,
+.hero-section__gradient,
+.hero-section__image {
+  display: none !important;
+}
+
+.hero-section-container {
+  min-height: 0 !important;
+}
+
+.hero-section__layout {
+  min-height: 0 !important;
+  padding-top: 80px !important;
+  padding-bottom: 80px !important;
+}
+
+/* At 390px the artwork ran off the top of the band, so the reserved space
+   above the eyebrow was larger still and read as a loading state. */
+@media (max-width: 767px) {
+  .hero-section__layout {
+    padding-top: 40px !important;
+    padding-bottom: 48px !important;
+  }
+}
+
+.hero-section__layout-grid > * {
+  grid-column: 1 / -1 !important;
+}
+
+@media (min-width: 1024px) {
+  .hero-section__title {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    column-gap: 72px;
+    align-items: baseline;
+    max-width: 1150px !important;
+  }
+
+  .hero-section__title-main {
+    display: block;
+    font-style: normal;
+  }
+
+  /* Deck, not a second headline: body size, body tracking, one measure. */
+  .hero-section__title-copy {
+    display: block;
+    max-width: 34em;
+    font-size: 20px !important;
+    line-height: 1.5 !important;
+    letter-spacing: 0 !important;
+    font-weight: 400 !important;
+  }
+}
+
+/* The headline ships twice, stacked, in sentinel colours (#81b81a over
+   rgba(0,14,255,.5)) that only resolve into the two-tone effect once they
+   blend with the artwork behind them. With the artwork gone one copy is
+   redundant and the other is periwinkle, so hide the spare and state the
+   two rungs plainly. */
+.hero-section__title--background {
+  display: none !important;
+}
+
+.hero-section__title-main {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  mix-blend-mode: normal !important;
+}
+
+.hero-section__title-copy {
+  color: rgb(0 0 0 / 60%) !important;
+  -webkit-text-fill-color: rgb(0 0 0 / 60%) !important;
+  mix-blend-mode: normal !important;
+}
+
+/* Sign in was a knockout: a white pill with the label punched out of it, so
+   the letters showed whatever was behind — the hero gradient. Against white
+   the control disappeared entirely. The mask goes and the plain text label
+   the component already carries for measurement is shown instead. */
+.navigation-item__sign-in [class*="__mask"] {
+  display: none !important;
+}
+
+.navigation-item__sign-in .navigation-button-measure {
+  opacity: 1 !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Its 1px white outline was only ever visible against the artwork. On white
+   it is a boundary that paints nothing, and Sign in reads as a quiet text
+   control beside the one filled button, which is the hierarchy it wants. */
+.navigation-item__sign-in {
+  border: 0 !important;
+}
+
+/* The eyebrow is a live counter — metadata about the page, not a heading. */
+.hero-section__eyebrow,
+.hero-section__eyebrow-label,
+.hero-section__eyebrow-value {
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Stats chapter
+   Seven full-bleed radial skies stacked on each other (pre-dawn through
+   night) cross-fade on a timer behind this chapter. The line fan drawn over
+   them is the content — payment volume as radiating strands — and it reads
+   better as ink on white than as a silhouette on a sunrise. The
+   time-of-day control still switches skies; they are simply all white now.
+   -------------------------------------------------------------------------- */
+.stats-animation-gradient,
+.stats-animation-gradient__gradient,
+[class*="stats-animation-gradient__gradient--"] {
+  background: none !important;
+  background-image: none !important;
+  opacity: 0 !important;
+}
+
+/* Stat values and their labels are peers across four columns; centring each
+   pair inside its own column left four ragged axes instead of one. */
+.stats-menu__stat-wrapper {
+  align-items: flex-start !important;
+  text-align: left !important;
+}
+
+.stats-menu__stat,
+.stats-menu__stat-value,
+.stats-menu__stat-description,
+.stats-menu__stat-description__link,
+.customer-stories__customer-data-stat {
+  text-align: left !important;
+}
+
+.stats-menu__stat-description {
+  max-width: 240px !important;
+}
+
+/* The stat row spans the full container including its rails, so left-aligning
+   the columns put the first value on top of the left rule. */
+.stats-section__stats-menu {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.stats-section__title {
+  text-align: left !important;
+  margin-right: auto !important;
+}
+
+/* The rule marking the selected stat is a magenta-to-transparent sweep, and
+   it is the one line in this chapter that carries meaning, so it stays a
+   line and loses the hue. The sun control that cycles the sky strokes its
+   glyph from the same accent. */
+.stats-section__active-indicator {
+  background-image: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0%),
+    rgb(0 0 0 / 56%) 50%,
+    rgb(0 0 0 / 0%)
+  ) !important;
+}
+
+.time-of-day-select-icon,
+.time-of-day-select-icon * {
+  color: var(--sd-ink-2) !important;
+  stroke: var(--sd-ink-2) !important;
+}
+
+/* Its outline is tinted to whichever sky is showing, so it was still pink
+   after the glyph went to ink. */
+.time-of-day-select__trigger {
+  border-color: var(--sd-rule-strong) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Decoration painted with a canvas
+   Four of these draw brand gradients over otherwise finished graphics: the
+   stats line fan, the developers wave, and the bento card backdrops. A canvas
+   cannot be restyled from CSS, so they are desaturated in place rather than
+   deleted — the fan and the wave are drawings worth keeping, just not in
+   magenta.
+
+   The events carousel canvas is deliberately not in this list. It is not
+   decoration, it is how the news photography is composited, and desaturating
+   it took the page's one editorial break down with it.
+   -------------------------------------------------------------------------- */
+canvas.data-viz__canvas,
+canvas.developers-wave-animation__canvas,
+canvas[class*="__background-canvas"],
+canvas.globe__canvas {
+  filter: grayscale(1) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Card edges that were gradients
+   The bento and startup cards drew their border as a radial gradient ring
+   (blurple to magenta) and the ring was the only edge they had, so it
+   becomes a hairline rather than nothing. The billing card sat on four
+   stacked radial blobs, which were pure backdrop.
+   -------------------------------------------------------------------------- */
+.modular-solutions-bento-card__border-color-gradient,
+.startups-program-card__border-color-gradient,
+[class*="__border-color-gradient"] {
+  background: var(--sd-rule) !important;
+  background-image: none !important;
+}
+
+[class*="billing-plan-graphic__background-gradient"] {
+  background: none !important;
+  background-image: none !important;
+}
+
+/* The two startup program cards each end in a panel filling a third of the
+   card: one an SVG amber wedge, one a magenta gradient photograph. Different
+   mechanisms, same job, so both go grey rather than one of each. */
+.startups-program-card__graphic svg,
+.startups-program-card__graphic img,
+.startups-program-card__graphic picture,
+.startups__atlas-graphic-background {
+  filter: grayscale(1) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Painted sheets behind product screenshots
+   The platform chapter's screenshot floats on a 1232x532 orange-to-magenta
+   image. The container behind it already carries a neutral fill, restated
+   here because the site only applies it intermittently, so removing the
+   sheet leaves a quiet chapter surface rather than a hole.
+   -------------------------------------------------------------------------- */
+.platform-graphic__background-image,
+[class*="graphic__background-image"] {
+  display: none !important;
+}
+
+.platform-graphic__background {
+  background-color: rgb(0 0 0 / 3%) !important;
+}
+
+/* The floating browser mocks cast a 32px blue shadow (rgba(50,50,93,.12)).
+   The elevation is doing real work — these windows sit above the chapter
+   surface — so it stays, at a size and hue that stop announcing themselves. */
+[class*="dom-graphic__content"] {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 7%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Gradient-filled numerals in the developers chapter
+   500M+ / 10K+ / 150K+ were painted with background-clip: text over three
+   linear gradients. They are the largest type in the chapter and were the
+   last saturated colour in it.
+   -------------------------------------------------------------------------- */
+[class*="developers-scale-subsection__stats-grid-item-heading"] {
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Customer logo wall
+   Eight logos in eight brand colours read as eight competing marks. The SVGs
+   expose --customerLogoColor for exactly this, and grayscale catches the few
+   drawn with hardcoded fills (Google, Amazon, NVIDIA). Stripe's own wordmark
+   is untouched: it is the site's mark, not its social proof.
+   -------------------------------------------------------------------------- */
+.logo-carousel__item,
+.logo-carousel__item * {
+  --customerLogoColor: rgb(0 0 0 / 78%) !important;
+}
+
+.logo-carousel__item svg,
+.logo-carousel__item img {
+  filter: grayscale(1) !important;
+}
+
+/* The band was bracketed by two rules of different widths — an inset one
+   above and a full-bleed one below. The gap under the hero buttons already
+   separates it, so the inset one goes and the full-bleed one closes the
+   chapter on its own. */
+.logo-carousel {
+  border-top: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   11b. The integration diagram
+   The diagram distinguishes the customer's existing systems from Stripe's
+   products by filling the first group at 13% white and the second in
+   blurple. That distinction is real and worth keeping, so the blurple group
+   becomes the brighter rung of the same white ladder instead of a hue, and
+   the animated connection strokes stay brighter than the idle ones.
+   -------------------------------------------------------------------------- */
+.developer-systems-animation__grid-row-block,
+.developer-systems-animation__button,
+.developer-systems-animation__stripe-center,
+.hds-mode--dark .hds-button-primary {
+  background: rgb(255 255 255 / 22%) !important;
+  background-image: none !important;
+  color: #fff !important;
+}
+
+/* Stated as colours, not tokens: these nodes read their indigo from a
+   hardcoded value in some builds, so a token retarget reached them on
+   desktop and missed them at 390px. */
+.developer-systems-animation__system,
+.developer-systems-animation__psp-app,
+.developer-systems-animation__app {
+  background-color: rgb(255 255 255 / 12%) !important;
+  background-image: none !important;
+  color: #fff !important;
+}
+
+.developer-systems-animation__systems {
+  background-color: transparent !important;
+}
+
+/* Half the diagram is SVG, so the nodes are <rect> fills and the wires are
+   <path> strokes rather than anything a token reaches. The partner logos
+   inside it are also rects and stay as they shipped. */
+.developer-systems-animation rect:not(.developer-systems-animation__app-logo *) {
+  fill: rgb(255 255 255 / 14%) !important;
+}
+
+.developer-systems-animation__center-path-svg path,
+.developer-systems-animation__psp-connection-base-animated-stroke-svg path,
+.developer-systems-animation__psp-connection-path,
+[class*="developer-systems-animation"] [class*="connection-path"] {
+  stroke: rgb(255 255 255 / 24%) !important;
+}
+
+[class*="developer-systems-animation"] [class*="connection-path--active"],
+.developer-systems-animation__psp-connection-path--active {
+  stroke: rgb(255 255 255 / 72%) !important;
+}
+
+.developer-systems-animation__psp-app-container {
+  border-color: rgb(255 255 255 / 14%) !important;
+}
+
+/* The connector wires carry stroke="#5D64FE" as a presentation attribute,
+   which no token retarget can reach. */
+[class*="developer-systems-animation"] [class*="system-connection"] path,
+[class*="developer-systems-animation"] [class*="center-path"] path {
+  stroke: rgb(255 255 255 / 24%) !important;
+}
+
+/* The replay control for the platform animation is a real button, not part
+   of the screenshot, so its glyph belongs on the ink ladder. */
+[class*="__replay-button"] svg path {
+  fill: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Left-aligned by default
+   Two blocks were centred islands in an otherwise left-aligned page: the
+   Mindbody pull quote and the product-recommendation prompt. Neither is a
+   deliberate exception — both are centred because they are single columns in
+   a wide container, and every heading around them starts on the left margin.
+   The quote also sat at the 55% rung reserved for the second half of a
+   two-tone heading; it is the content of its chapter, so it moves up.
+   -------------------------------------------------------------------------- */
+.testimonial-card,
+.testimonial-card > *,
+[class*="testimonial-card__"],
+[class*="testimonial-carousel__content"] {
+  text-align: left !important;
+  align-items: flex-start !important;
+}
+
+.testimonial-card > *,
+[class*="testimonial-card__"] {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+.testimonial-card {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.testimonial-card__quote {
+  color: rgb(0 0 0 / 82%) !important;
+  max-width: 30em !important;
+}
+
+.personalize-section {
+  align-items: flex-start !important;
+  justify-items: start !important;
+  justify-content: flex-start !important;
+}
+
+.homepage-query-box,
+.homepage-query-box__header {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  align-items: flex-start !important;
+}
+
+.homepage-query-box,
+.homepage-query-box__header,
+[class*="homepage-query-box__title"],
+[class*="homepage-query-box__description"],
+[class*="homepage-query-box__subtitle"],
+[class*="homepage-query-box__disclaimer"] {
+  text-align: left !important;
+}
+
+/* --------------------------------------------------------------------------
+   12b. Boundaries the restyle would otherwise have promoted
+   Once the page went neutral, four sets of hairlines that had been lost in
+   colour started reading as structure. Each is removed for a reason rather
+   than for tidiness:
+
+   - The feature-summary icons sat in 40px boxed squares. Eight of them draw
+     thirty-two edges to hold eight glyphs that already read on their own.
+   - The customer-story expanders carried a 6% outline, half the weight of
+     every other outlined control; a quiet fill says the same thing without
+     adding to the count.
+   - The two Stripe Press links outlined themselves at 9% where every other
+     outlined button uses 18%.
+   - The footer drew a rule between each pair of link columns. The column
+     headings already separate them, so five vertical rules become two.
+   -------------------------------------------------------------------------- */
+.charm {
+  border: 0 !important;
+}
+
+.customer-story-button.hds-button--secondary-on-quiet {
+  border-color: transparent !important;
+  background-color: rgb(0 0 0 / 4%) !important;
+}
+
+a.book-button {
+  border-color: var(--sd-rule-strong) !important;
+}
+
+.footer-links-section__content {
+  border-right: 0 !important;
+  border-left: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Motion
+   The logo marquee, the sky cross-fade and the wave all animate forever with
+   nothing to communicate. Reduced motion stops them and everything else.
+   -------------------------------------------------------------------------- */
+/* The logo marquee scrolls forever and says nothing, which is motion without a
+   functional purpose. Stopping it is also what makes the band legible: left
+   running, it is caught at an arbitrary offset with the first and last marks
+   sliced off the container edges. Clearing the transform as well as the
+   animation returns it to its resting position rather than freezing it
+   wherever it happened to be. */
+.logo-carousel__marquee {
+  animation: none !important;
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   14. Sales chat launcher
+   Kept — it is the page's only live-contact affordance — but it floats over
+   every chapter as a navy pill above a card of navy and slate text, and it
+   is outside the hds token system, so it is restated by hand. The green
+   availability dot stays green: it is a status, not decoration.
+   -------------------------------------------------------------------------- */
+/* Order matters here. The card-wide colour rule and the button rule are both
+   single attribute selectors, so they carry identical specificity and the
+   later one wins outright — which previously painted the button's label in
+   near-black on its own black fill. The broad rule goes first, and the button
+   also takes an element qualifier so it cannot lose the tie again. */
+[class*="UniversalChatCtaCard"] {
+  color: var(--sd-ink-body) !important;
+}
+
+button[class*="UniversalChatCtaCard__cta"],
+[class*="UniversalChatCtaCard__cta"] {
+  background: #000 !important;
+  border-color: rgb(255 255 255 / 16%) !important;
+  color: #fff !important;
+}
+
+button[class*="UniversalChatCtaCard__cta"] * {
+  color: #fff !important;
+}
+
+[class*="UniversalChatCtaCard__subtitle"],
+[class*="UniversalChatCtaCard__close"] {
+  color: var(--sd-ink-2) !important;
+}
+
+[class*="UniversalChatCtaCard__close"] svg path {
+  stroke: var(--sd-ink-2) !important;
+}

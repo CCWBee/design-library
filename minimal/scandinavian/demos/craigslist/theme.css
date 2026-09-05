@@ -1,0 +1,1097 @@
+/* ===========================================================================
+   craigslist — SF bay area homepage
+   Scandinavian override sheet (injected last; no source access).
+
+   The page is a 433-link index. The job is to give it a typographic system —
+   one page grid, one type scale, one ink ladder — without removing a single
+   link or costing a single row of density.
+   =========================================================================== */
+
+:root {
+  --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --ink-1: #000;
+  --ink-2: rgb(0 0 0 / 74%);
+  --ink-3: rgb(0 0 0 / 56%);
+  --ink-4: rgb(0 0 0 / 42%);
+  --ink-5: rgb(0 0 0 / 30%);
+
+  --line: rgb(0 0 0 / 10%);
+  --line-strong: rgb(0 0 0 / 20%);
+  --fill-hover: rgb(0 0 0 / 5%);
+  --fill-sunken: rgb(0 0 0 / 4%);
+
+  --radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   1. Type foundation
+   Family is set on the document root, body and form controls only, so the
+   icomoon glyph font keeps its own explicit family and keeps rendering.
+   -------------------------------------------------------------------------- */
+
+html,
+body.en {
+  background: #fff !important;
+  color: var(--ink-2) !important;
+  font-family: var(--sans) !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+input,
+button,
+select,
+textarea,
+.bd-button,
+.cl-app-anchor,
+.bd-anchor {
+  font-family: var(--sans) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Desktop page frame
+   Was: a 942px blob floating in a 1440px viewport, flanked by two grey cards.
+   Now: one measured 1280px page — index in the middle, two quiet rails held
+   apart by hairlines rather than fills.
+   -------------------------------------------------------------------------- */
+
+.cl-desktop-homepage {
+  background: #fff !important;
+}
+
+.cl-desktop-homepage > .content {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 1340px !important;
+  margin: 0 auto !important;
+  padding: 16px 36px 0 !important;
+  gap: 28px !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+}
+
+.cl-desktop-homepage > .content > .left {
+  box-sizing: border-box !important;
+  flex: 0 0 236px !important;
+  width: 236px !important;
+  margin: 0 !important;
+  padding: 0 28px 48px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  font-size: 13px !important;
+}
+
+.cl-desktop-homepage > .content > .center {
+  box-sizing: border-box !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 0 48px !important;
+}
+
+.cl-desktop-homepage > .content > .right {
+  box-sizing: border-box !important;
+  flex: 0 0 204px !important;
+  width: 204px !important;
+  margin: 0 !important;
+  padding: 0 0 48px 28px !important;
+  background: transparent !important;
+  border: 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Masthead and the one primary action
+   The wordmark was 32px purple Times; the post button was green text with no
+   shape. Wordmark becomes Inter 500 in ink, and "post an ad" becomes the only
+   filled surface on the page.
+   -------------------------------------------------------------------------- */
+
+.logo-post-group {
+  width: 100% !important;
+  align-items: stretch !important;
+  height: auto !important;
+}
+
+.cl-goto-home {
+  color: var(--ink-1) !important;
+  font-family: var(--sans) !important;
+  font-size: 25px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.1 !important;
+  align-items: center !important;
+  height: auto !important;
+  width: 100% !important;
+}
+
+/* The peace mark is the brand, not chrome. It keeps the purple it shipped with
+   and becomes the one saturated element on an otherwise neutral page — which
+   is more identity than it carried when the whole page was blue and green. */
+.cl-goto-home .icon {
+  color: #800080 !important;
+  filter: none !important;
+  font-size: 24px !important;
+  line-height: 24px !important;
+  width: 30px !important;
+  height: 24px !important;
+  flex: 0 0 30px !important;
+}
+
+/* faves / post / acct render as colour emoji. Their labels already say what
+   they do, so the glyphs go rather than getting filtered into grey blobs. */
+.cl-thumb-anchor.unicode-icon .icon {
+  display: none !important;
+}
+
+/* Scoped to the rail: the banner's faves/post/acct thumbs share the
+   .cl-goto-post class and must stay quiet icon buttons, not a second CTA. */
+.logo-post-group a.cl-goto-post {
+  margin: 20px 0 0 !important;
+  padding: 0 14px !important;
+  height: 38px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: var(--ink-1) !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: var(--radius) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.logo-post-group a.cl-goto-post:hover {
+  background: rgb(0 0 0 / 82%) !important;
+}
+
+.logo-post-group a.cl-goto-post .label {
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  width: auto !important;
+}
+
+/* The label says "post an ad"; a glyph beside it repeats that and nothing more,
+   so the button is text only and pairs cleanly with the field below it. */
+.logo-post-group a.cl-goto-post .icon {
+  display: none !important;
+}
+
+/* Pairs with the button above it: same height, same radius, 8px apart so the
+   two read as one control group rather than two unrelated blocks. */
+.cl-home-search-query-ng {
+  margin: 8px 0 0 !important;
+  padding: 0 10px !important;
+  height: 38px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: #fff !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius) !important;
+  align-items: center !important;
+}
+
+.cl-home-search-query-ng .bd-posit-box {
+  height: auto !important;
+  align-items: center !important;
+}
+
+.cl-home-search-query-ng .cl-magnifier {
+  color: var(--ink-4) !important;
+  width: 22px !important;
+}
+
+.cl-home-search-query-ng input {
+  font-size: 14px !important;
+  color: var(--ink-1) !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Event calendar — a small data grid
+   Was #ddd cells on #ccc rules with a yellow "today". Now borderless, on seven
+   even columns, with today as an ink chip so state survives without colour.
+   -------------------------------------------------------------------------- */
+
+.calendar {
+  margin: 40px 0 0 !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+.calendar > a {
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  width: auto !important;
+  justify-content: flex-start !important;
+  color: var(--ink-4) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.calendar > a:hover {
+  color: var(--ink-1) !important;
+}
+
+/* Site CSS computes `display: flex` on the table, so the cells never stretch to
+   a percentage width — they stayed at their 187px content size inside a
+   full-width bordered box, which is what left the empty gap on the right.
+   Restoring real table display plus a fixed layout gives seven even columns. */
+table.cl-date-picker {
+  display: table !important;
+  table-layout: fixed !important;
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 0 !important;
+  height: auto !important;
+}
+
+table.cl-date-picker tbody {
+  display: table-row-group !important;
+  width: 100% !important;
+}
+
+table.cl-date-picker tr {
+  display: table-row !important;
+}
+
+/* A grid of lines around 35 two-digit numbers is more rule than data. The
+   columns already align, so spacing carries the structure. */
+table.cl-date-picker td {
+  display: table-cell !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--ink-2) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  font-variant-numeric: tabular-nums !important;
+  padding: 5px 0 !important;
+  height: auto !important;
+  text-align: center !important;
+}
+
+table.cl-date-picker tr.day-header td {
+  color: var(--ink-4) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  background: transparent !important;
+  padding: 0 0 6px !important;
+}
+
+table.cl-date-picker td.disabled {
+  color: var(--ink-5) !important;
+}
+
+/* Today is a chip that hugs the date, not a filled table cell. */
+table.cl-date-picker td.today {
+  background: var(--ink-1) !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  border-radius: 4px !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Left-rail utility links
+   Were centred blue links on 64px gaps. Now left-aligned on the rail's own
+   edge, in two grouped blocks on one rhythm.
+   -------------------------------------------------------------------------- */
+
+.link-group-1,
+.link-group-2 {
+  width: 100% !important;
+  /* 56px of space already separated these groups; the rule on top of it was
+     saying the same thing twice, and it was the last line left in the content
+     area once the index headings dropped theirs. */
+  margin: 40px 0 0 !important;
+  padding: 0 !important;
+  border-top: 0 !important;
+  text-align: left !important;
+  height: auto !important;
+}
+
+.link-group-2 {
+  margin-top: 28px !important;
+  padding-top: 0 !important;
+}
+
+.link-group-1 a,
+.link-group-2 a {
+  display: block !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 3px 0 !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+  color: var(--ink-3) !important;
+  font-size: 13px !important;
+  line-height: 16px !important;
+}
+
+.link-group-1 a:hover,
+.link-group-2 a:hover {
+  color: var(--ink-1) !important;
+}
+
+a.jim-charitable,
+a.craig-charitable {
+  width: 100% !important;
+  margin: 24px 0 0 !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  color: var(--ink-3) !important;
+  font-size: 13px !important;
+  line-height: 17px !important;
+  gap: 2px !important;
+}
+
+a.craig-charitable {
+  margin-top: 12px !important;
+}
+
+a.jim-charitable:hover,
+a.craig-charitable:hover {
+  color: var(--ink-1) !important;
+}
+
+a.jim-charitable span,
+a.craig-charitable span {
+  text-align: left !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* The charity emoji strip is decoration inside chrome, and decoration that
+   can't join the ink ladder doesn't earn its place. */
+a.jim-charitable span + span {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Top banner — the page's real title bar
+   "SF bay area" is the only thing on this page that behaves like an H1, so it
+   gets the largest type. Subareas become quiet chips; faves/post/acct become
+   monochrome icon buttons.
+   -------------------------------------------------------------------------- */
+
+.cl-homepage-top-banner {
+  margin: 0 0 16px !important;
+  height: auto !important;
+}
+
+/* Reset the shorthand before drawing the one edge we want — this element also
+   ships a border-top, so styling only the bottom left the band boxed. */
+.cl-homepage-top-banner > div {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--line-strong) !important;
+  align-items: flex-end !important;
+  padding: 0 0 8px !important;
+  height: auto !important;
+}
+
+/* These two containers still inherit the browser's default link blue. Nothing
+   renders in it today because every child sets its own colour, but it is a trap
+   for the next child that does not. */
+.location,
+.cl-subareas {
+  color: var(--ink-1) !important;
+}
+
+.location {
+  align-items: baseline !important;
+  gap: 14px !important;
+  height: auto !important;
+  flex-wrap: wrap !important;
+}
+
+button.cl-goto-location-picker {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  color: var(--ink-1) !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 26px !important;
+  justify-content: flex-start !important;
+  align-items: baseline !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+button.cl-goto-location-picker .label {
+  color: var(--ink-1) !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 26px !important;
+  text-align: left !important;
+  width: auto !important;
+}
+
+button.cl-goto-location-picker .icon {
+  color: var(--ink-4) !important;
+  font-size: 15px !important;
+  line-height: 20px !important;
+  width: auto !important;
+  padding: 0 7px 0 0 !important;
+  height: auto !important;
+}
+
+/* Six bordered chips beside the title were the noisiest thing in the band. The
+   subareas are a filter set, but boxing each one draws six containers to carry
+   three letters apiece — the words are the control. Spacing separates them and
+   the fill appears only on hover. */
+.cl-subareas {
+  gap: 2px !important;
+  height: auto !important;
+  align-items: baseline !important;
+}
+
+button.cl-subarea-button {
+  margin: 0 !important;
+  padding: 2px 6px !important;
+  height: auto !important;
+  width: auto !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  color: var(--ink-3) !important;
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+}
+
+button.cl-subarea-button:hover {
+  background: var(--fill-hover) !important;
+  color: var(--ink-1) !important;
+}
+
+button.cl-subarea-button span {
+  color: inherit !important;
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+}
+
+/* faves / post / acct were 40px icon buttons with a 10px caption slung
+   underneath. With the emoji gone they were empty boxes holding tiny floating
+   labels off everyone else's baseline. They are plain text links now, matching
+   the subareas so the whole right side of the band is one size and one rung. */
+.action-buttons {
+  gap: 2px !important;
+  align-items: baseline !important;
+  height: auto !important;
+}
+
+a.cl-thumb-anchor {
+  height: auto !important;
+  /* A 44px min-height sized for the removed icon was holding these open. */
+  min-height: 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 2px 6px !important;
+  border-radius: 5px !important;
+  color: var(--ink-3) !important;
+  align-items: baseline !important;
+}
+
+a.cl-thumb-anchor:hover {
+  background: var(--fill-hover) !important;
+  color: var(--ink-1) !important;
+}
+
+/* Each thumb wraps its label in a fixed-height flex column sized for the icon
+   that is no longer there, which held the labels 16px above the title's
+   baseline. Collapsing it drops them onto the same line. */
+a.cl-thumb-anchor > div {
+  height: auto !important;
+  min-height: 0 !important;
+  align-items: baseline !important;
+}
+
+a.cl-thumb-anchor .cl-label {
+  color: inherit !important;
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. The index itself
+   Was three ragged content-width stacks (208 / 206 / 135) whose sections were
+   spread apart by space-between, with a 1px rule under every one of the 433
+   links. Now: an even three-column grid, a fixed 30px chapter gap, one rule
+   per section instead of one rule per link.
+   -------------------------------------------------------------------------- */
+
+.categories {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  column-gap: 24px !important;
+  align-items: start !important;
+  height: auto !important;
+}
+
+.categories > .left,
+.categories > .center,
+.categories > .right {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+}
+
+.cl-link-table {
+  width: auto !important;
+  margin: 0 0 34px !important;
+  height: auto !important;
+}
+
+.categories > div > .cl-link-table:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Section heading: label flush with its own links, chaptered by space alone.
+   Craigslist boxes every heading top and bottom, which put eighteen rules
+   through a nine-section index to separate groups that a gap already separates.
+   Space does the work: 8px from a heading to the links it owns against 34px
+   between sections, so a heading reads as belonging to the list beneath it
+   without a rule to say so. */
+a.cl-app-anchor.heading {
+  box-sizing: border-box !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 0 8px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  width: auto !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  color: var(--ink-1) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.006em !important;
+  line-height: 19px !important;
+}
+
+a.cl-app-anchor.heading .label {
+  order: 1 !important;
+  color: var(--ink-1) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.006em !important;
+  line-height: 19px !important;
+  width: auto !important;
+  text-align: left !important;
+}
+
+/* No emoji. They are a separate visual language from the interface — a second
+   icon family with its own colour, weight and optical size that no amount of
+   filtering brings onto the ink ladder. The section labels carry the wayfinding
+   on their own once the type scale and column rhythm do their job. */
+.emoji {
+  display: none !important;
+}
+
+.cl-link-table > .link-container {
+  width: auto !important;
+  gap: 16px !important;
+  height: auto !important;
+  align-items: flex-start !important;
+}
+
+/* Sub-columns hug their content instead of absorbing the track's slack, so
+   the pair reads as one group and the gap between sections stays the
+   largest gap on the row. */
+.link-container > .column {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.link-container > .column > a.cl-app-anchor,
+.cl-link-table .link-container a.cl-app-anchor {
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 3px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--ink-2) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  line-height: 16px !important;
+  justify-content: flex-start !important;
+}
+
+.cl-link-table .link-container a.cl-app-anchor .label {
+  color: inherit !important;
+  font-size: 13.5px !important;
+  line-height: 16px !important;
+  width: auto !important;
+  text-align: left !important;
+}
+
+.cl-link-table .link-container a.cl-app-anchor:hover {
+  color: var(--ink-1) !important;
+}
+
+.cl-link-table .link-container a.cl-app-anchor:hover .label {
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+  text-decoration-thickness: 1px !important;
+  text-decoration-color: var(--line-strong) !important;
+}
+
+/* Visited stays legible as state, one step down the same ink ladder.
+   Browsers clamp the alpha of :visited colours to the unvisited value, so
+   these are the opaque equivalents of the alpha ink rather than var() tokens. */
+.cl-link-table .link-container a.cl-app-anchor:visited,
+.cl-link-table .link-container a.cl-app-anchor:visited .label {
+  color: #8f8f8f !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Right rail — language and the geography expandos
+   -------------------------------------------------------------------------- */
+
+/* A 176px bordered box made the least-used control on the page the heaviest
+   element in the band. It is a preference, so it reads as one: quiet text on
+   the same rung as the other utilities, with the fill only on hover. */
+.language-picker {
+  /* Sits in the right rail rather than the banner, so it needs a nudge to land
+     on the same baseline as faves / post / acct across the column boundary. */
+  margin: 7px 0 28px !important;
+  width: auto !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  align-items: center !important;
+  /* The rail stretches its children, so `width: auto` alone still filled the
+     column and stranded the chevron at the far edge. */
+  align-self: flex-start !important;
+}
+
+.language-picker:hover {
+  background: var(--fill-hover) !important;
+}
+
+/* Shrink to the word, so the chevron sits beside "english" instead of being
+   stranded at the far edge of a full-width box. */
+.language-picker .bd-posit-box,
+.language-picker .bd-combo-box {
+  height: auto !important;
+  width: auto !important;
+}
+
+.language-picker button {
+  color: var(--ink-3) !important;
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+  padding: 2px 6px !important;
+  height: auto !important;
+  width: auto !important;
+  gap: 6px !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.language-picker .label {
+  color: inherit !important;
+  font-size: 12.5px !important;
+  line-height: 18px !important;
+}
+
+.language-picker .arrow {
+  color: var(--ink-4) !important;
+}
+
+.cl-link-expando-group {
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 0 4px !important;
+}
+
+.cl-link-expando-group > button.bd-button {
+  width: 100% !important;
+  height: auto !important;
+  padding: 0 0 5px !important;
+  margin: 12px 0 7px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  line-height: 15px !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.cl-link-expando-group > button.bd-button:hover {
+  color: var(--ink-1) !important;
+}
+
+.cl-link-expando-group > button.bd-button span {
+  color: inherit !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+}
+
+.cl-link-expando-group .list {
+  width: 100% !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  height: auto !important;
+}
+
+.cl-link-expando-group .list a.cl-app-anchor,
+.cl-link-expando-group .list button.bd-button {
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 3px 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--ink-3) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 16px !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.cl-link-expando-group .list a.cl-app-anchor .label,
+.cl-link-expando-group .list button.bd-button span {
+  color: inherit !important;
+  font-size: 13px !important;
+  text-align: left !important;
+  width: auto !important;
+}
+
+.cl-link-expando-group .list a.cl-app-anchor:hover,
+.cl-link-expando-group .list button.bd-button:hover {
+  color: var(--ink-1) !important;
+}
+
+.cl-link-expando-group .list a.cl-app-anchor:visited,
+.cl-link-expando-group .list a.cl-app-anchor:visited .label {
+  color: #a3a3a3 !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Footer — same system, denser, aligned to the page's own left edge
+   -------------------------------------------------------------------------- */
+
+/* Same measure and gutters as .content, so the footer rule and its first
+   item land on the page's own left edge. */
+footer.cl-footer {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 1340px !important;
+  background: transparent !important;
+  border-top: 1px solid var(--line) !important;
+  margin: 0 auto !important;
+  padding: 0 36px !important;
+  height: 56px !important;
+  justify-content: flex-start !important;
+  gap: 20px !important;
+}
+
+footer.cl-footer .link-container {
+  padding: 0 !important;
+  width: auto !important;
+  justify-content: flex-start !important;
+  gap: 18px !important;
+  height: auto !important;
+}
+
+footer.cl-footer .link-container-nowrap {
+  gap: 18px !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+footer.cl-footer a {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  color: var(--ink-3) !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+footer.cl-footer a:hover {
+  color: var(--ink-1) !important;
+}
+
+footer.cl-footer a .label {
+  color: inherit !important;
+  font-size: 12px !important;
+}
+
+footer.cl-footer .copyright {
+  padding: 0 !important;
+  width: auto !important;
+  color: var(--ink-5) !important;
+  font-size: 12px !important;
+  text-align: left !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Mobile (390px) — a different app shell: header, search, and a
+   master/detail category picker. Same ink ladder, same type scale.
+   -------------------------------------------------------------------------- */
+
+.cl-mobile-homepage {
+  background: #fff !important;
+}
+
+header.cl-header-ng,
+header.cl-header-ng .cl-left-group,
+header.cl-header-ng .cl-header-main-menu {
+  background: #fff !important;
+}
+
+header.cl-header-ng {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  border-bottom: 1px solid var(--line) !important;
+  height: 52px !important;
+  align-items: center !important;
+  padding: 0 4px !important;
+}
+
+.cl-mobile-homepage a.cl-goto-home {
+  color: var(--ink-1) !important;
+  padding: 10px 8px !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+}
+
+.cl-mobile-homepage a.cl-goto-home .icon {
+  color: var(--ink-1) !important;
+  font-size: 22px !important;
+  line-height: 24px !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+header.cl-header-ng .cl-left-group {
+  box-sizing: border-box !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+header.cl-header-ng .cl-header-main-menu {
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+}
+
+button.location-button {
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  height: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+  min-width: max-content !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  text-align: left !important;
+}
+
+button.location-button > span:first-child {
+  color: var(--ink-4) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 13px !important;
+  text-align: left !important;
+}
+
+button.location-button > span:first-child span {
+  color: var(--ink-4) !important;
+  font-size: 10px !important;
+}
+
+button.location-button .label {
+  color: var(--ink-1) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  line-height: 20px !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  width: auto !important;
+}
+
+.cl-mobile-homepage .cl-home-search-query-ng {
+  box-sizing: border-box !important;
+  margin: 10px !important;
+  width: calc(100% - 20px) !important;
+  max-width: calc(100% - 20px) !important;
+  height: 40px !important;
+}
+
+.bd-tree-selector {
+  border-top: 0 !important;
+}
+
+.level-section {
+  background: var(--fill-sunken) !important;
+  border-right: 1px solid var(--line) !important;
+}
+
+button.bd-tree-selector-item {
+  background: transparent !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  color: var(--ink-3) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  padding: 14px 12px !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+button.bd-tree-selector-item .label {
+  color: inherit !important;
+  font-size: 14px !important;
+  font-weight: inherit !important;
+  text-align: left !important;
+  width: auto !important;
+}
+
+button.bd-tree-selector-item.selected {
+  background: #fff !important;
+  border-right: 0 !important;
+  color: var(--ink-1) !important;
+  font-weight: 600 !important;
+  box-shadow: inset 2px 0 0 0 var(--ink-1) !important;
+}
+
+.level-category {
+  background: #fff !important;
+}
+
+.level-category a.bd-anchor {
+  color: var(--ink-2) !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  padding: 12px 16px !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.level-category a.bd-anchor .label {
+  color: inherit !important;
+  font-size: 15px !important;
+  text-align: left !important;
+}
+
+.level-category a.bd-anchor:visited,
+.level-category a.bd-anchor:visited .label {
+  color: #8f8f8f !important;
+}
+
+.level-category a.bd-anchor:active {
+  background: var(--fill-hover) !important;
+}
+
+.cl-mobile-homepage > .footer {
+  box-sizing: border-box !important;
+  background: #fff !important;
+  border-top: 1px solid var(--line) !important;
+  padding: 0 14px !important;
+  gap: 13px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.cl-mobile-homepage > .footer a.cl-app-anchor {
+  margin: 0 !important;
+  padding: 4px 0 !important;
+  height: auto !important;
+  width: auto !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--ink-3) !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.cl-mobile-homepage > .footer a.cl-app-anchor .label {
+  color: inherit !important;
+  font-size: 12px !important;
+}
+
+.cl-mobile-homepage > .footer .copyright {
+  color: var(--ink-5) !important;
+  font-size: 12px !important;
+  padding: 0 !important;
+  width: auto !important;
+  text-align: left !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Focus, hover feedback, motion
+   -------------------------------------------------------------------------- */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--ink-1) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px !important;
+}
+
+.cl-home-search-query-ng:focus-within {
+  border-color: var(--ink-1) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cl-app-anchor,
+  .bd-anchor,
+  .bd-button {
+    transition: color 120ms ease, background-color 120ms ease,
+      border-color 120ms ease !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-app-anchor,
+  .bd-anchor,
+  .bd-button {
+    transition: none !important;
+  }
+}

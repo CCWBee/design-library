@@ -1,0 +1,1424 @@
+/* ==========================================================================
+   ESPN homepage — Scandinavian override
+
+   Structural problem: a 6,300px page assembled from roughly thirty white
+   rounded cards, each with the same 10px radius and the same
+   `0 1px 4px rgba(0,0,0,.24)` drop shadow, floating on an #edeef0 grey moat.
+   Nothing is dominant because everything is a card. Inside those cards the
+   type runs from 10px to 24px across eight styles, score rows are divided by
+   dotted rules stacked on top of the card edges, and the one thing a visitor
+   came for — the score — is set at 10-11px in #a5a6a7, the lightest ink on
+   the page, while a subscribe button is the most saturated object on it.
+
+   Target hierarchy: white canvas, no shadows, no moat. The three columns
+   separate on space. The feed becomes a sequence of chapters divided by a
+   3:1 heading gap rather than by card edges. Scores move onto the primary
+   ink rung with tabular figures; records, odds and networks drop to
+   metadata. Colour survives in exactly four places, and nowhere else:
+
+     1. the ESPN mark, in full red, as the skill requires of a product's own
+        logo;
+     2. live / winner / loser state, which is semantic;
+     3. photography and video thumbnails, which are expressive media;
+     4. team logos — argued at length in section 12, because that is the
+        interesting call on this page.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   ESPN ships no custom properties — the whole site is literal hex in
+   component CSS — so there is no token layer to retarget and every rule here
+   has to win on specificity. The ladder below is declared on :root purely so
+   the rest of the file can reference it.
+
+   ESPN's own neutrals (#1d1e1f, #48494a, #6c6d6f, #a5a6a7, #dcdddf, #edeef0)
+   are already within two or three points of neutral, so they are not tints to
+   correct under the skill's own spread test. They are replaced anyway, because
+   the ramp is used arbitrarily: #a5a6a7 carries both hairlines and live score
+   text. Rebuilding it as alpha-black is what makes the rungs mean something.
+   -------------------------------------------------------------------------- */
+:root {
+  --sd-sans: BentonSans, Inter, "Inter Variable", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-body: rgb(0 0 0 / 88%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 56%, not the 40-50% metadata rung. Almost every piece of metadata here —
+     tip-off time, broadcast network, betting line, W-L record — is set at
+     11-12px and is real reading, so it still has to clear 4.5:1 on white.
+     56% black gives 4.96:1; 50% gives 3.95:1 and fails. */
+  --sd-ink-3: rgb(0 0 0 / 56%);
+  /* Icons and glyphs only. Never text. */
+  --sd-ink-4: rgb(0 0 0 / 44%);
+
+  --sd-rule: rgb(0 0 0 / 9%);
+  --sd-rule-strong: rgb(0 0 0 / 16%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-active: rgb(0 0 0 / 9%);
+  --sd-fill: rgb(0 0 0 / 4%);
+
+  /* The masthead stays a dark band — see section 4. Its ladder is separate,
+     because the same alpha buys different contrast on a dark surface. */
+  --sd-bar: #2b2c2d;
+  --sd-on-bar: #fff;
+  --sd-on-bar-2: rgb(255 255 255 / 68%);
+  --sd-on-bar-3: rgb(255 255 255 / 46%);
+  --sd-bar-rule: rgb(255 255 255 / 14%);
+
+  /* Semantic red. ESPN's live/status red is #d00; it is kept as the one
+     state colour on the page, not neutralised. */
+  --sd-live: #d00;
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas and type family
+   The grey moat is what made every module read as a floating card. Removing
+   it is the single change that does the most work here, because it takes the
+   justification for thirty drop shadows away with it.
+
+   Family: BentonSans is ESPN's own typeface and it ships 400/500/700/900, so
+   Typography rule 1 applies — preserve the existing well-made product
+   typeface rather than defaulting to Inter. The oddity is that ESPN only uses
+   it for eight uppercase section headings and sets the other 1,850 elements
+   in the OS system stack, which is precisely the mixed system the skill
+   objects to. Promoting BentonSans to the whole surface resolves that in the
+   direction that keeps the brand voice. Inter is the fallback if the webfont
+   fails; the system stack is behind it.
+   -------------------------------------------------------------------------- */
+html,
+body,
+body.index,
+#global-viewport,
+#pane-main,
+#main-container,
+.main-content,
+.main-content.layout-dbc,
+.col-one,
+.col-two,
+.col-three,
+#news-feed {
+  background: #fff !important;
+  color: var(--sd-ink-body) !important;
+}
+
+/* Two vertical hairlines, and they are the most load-bearing rules in the file.
+   The grey moat was the only thing giving this page a column architecture, and
+   removing it exposed a problem the moat had been hiding: the left rail ends at
+   about 1,950px and the right rail at about 3,300px, while the feed runs to
+   5,500px. Below that point a 660px column of stories sits in 1,440px of
+   undifferentiated white with nothing establishing where the page is. Two rules
+   on the feed's own edges run the full height of the tallest column, so the
+   emptiness on either side reads as margin rather than as an unfinished page.
+
+   Two is a number a reader can hold, which is the test the skill actually sets.
+   They also replace the thirty card edges that used to do this job badly.
+
+   Desktop only. There are no columns to separate on a phone, and applying this
+   unscoped spent 56 of 390 available pixels insetting media that ESPN correctly
+   runs full-bleed. */
+@media (min-width: 768px) {
+  #news-feed.col-two {
+    border-left: 1px solid var(--sd-rule) !important;
+    border-right: 1px solid var(--sd-rule) !important;
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+    box-sizing: border-box !important;
+  }
+}
+
+body,
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: var(--sd-sans) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ESPN sets BentonSans and IgniteDisplayCondensed directly on a handful of
+   headings, so inheritance from body never reaches them. Ignite is a 900
+   condensed display face used for one promo; it goes. Everything named here
+   is chrome — the icon font is deliberately absent from the list, because
+   naming it would stop 76 glyphs from rendering. */
+h1,
+h2,
+h3,
+h4,
+.contentItem__header h2,
+.contentItem__title,
+.module__header,
+.quicklinks__heading,
+.dtc-upsell__header,
+.dtc-upsell__subheader,
+.scoreLabel_title,
+.scoreEvent__title,
+.PageFooter h2 {
+  font-family: var(--sd-sans) !important;
+}
+
+/* Every number on this page is compared against the number above it. */
+.cscore_score,
+.cscore_time,
+.cscore_date,
+.cscore_odds,
+.cscore_rank,
+.scoreEvent__score,
+.scoreEvent__time,
+.scoreEvent__position,
+.cscore_notes_game {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* --------------------------------------------------------------------------
+   3. Forced uppercase
+   Scoped deliberately. `.cscore_name--abbrev` is excluded: "CLE" and "DET"
+   arrive uppercase in the markup and are team codes, which are data rather
+   than styled chrome — the skill's rule targets casing applied by CSS, and
+   removing the transform there would only risk corrupting a soccer code that
+   ships mixed-case.
+   -------------------------------------------------------------------------- */
+.contentItem__header h2,
+.contentItem__header__headings h2,
+.dtc-upsell__header,
+.dtc-upsell__subheader,
+.scoreLabel_title,
+.scoreEvent__title,
+.scoreEvent__secondary,
+.media-duration,
+.contentItem__content--action .button-alt,
+.cscore_notes_series,
+.module__header {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Masthead
+   The dark bar stays. It is ESPN's identity, it answers "where am I" at a
+   glance, and on an otherwise white page one full-bleed dark band reads as
+   deliberate structure rather than leftover chrome. The skill permits a
+   deliberately inverted surface provided it carries its own consistent
+   ladder, which is what the --sd-on-bar rungs are for.
+
+   The red lozenge behind the wordmark is untouched. It is the product's own
+   mark on the product's own page, and section 12 turns on that distinction.
+   -------------------------------------------------------------------------- */
+#global-header,
+#global-nav,
+#global-header .container {
+  background-color: var(--sd-bar) !important;
+}
+
+/* A 4px drop shadow under a black bar sitting on white paints nothing except
+   a grey smudge. The bar is its own boundary. The shadow is declared on the
+   nav rather than on the header, so zeroing it on `#global-header` alone left
+   it exactly where it was — the audit script found it still painting at y=44. */
+body.index.page-context-top #global-viewport #global-header,
+#global-header,
+#global-nav {
+  box-shadow: none !important;
+}
+
+/* The Watch / Fantasy / Where to Watch marks in the nav bar. Monochrome, on
+   the rule this file uses everywhere: colour survives where a mark identifies
+   a specific competitor in a specific record. A league or product badge is a
+   category label, and the label is already the word beside it. Greying the
+   ESPN+ badge in particular leaves the red lozenge as the masthead's only
+   colour, which is the whole point of keeping the lozenge. */
+#global-nav > ul > li.watch > a > .nav-logo-wrap img,
+#global-nav > ul > li.fantasy > a > .nav-logo-wrap img,
+#global-nav > ul > li.where-to-watch > a > .nav-logo-wrap img,
+#global-nav .nav-logo-wrap > img.main {
+  filter: grayscale(1) !important;
+}
+
+/* An animated red-and-white "All of ESPN" strapline that flies into the nav
+   bar over the Watch item, in a 900-weight condensed display face. Motion
+   without a functional purpose, plus merchandising colour. Stilled and pulled
+   onto the bar's ladder; the link underneath it still works. */
+#global-nav > ul > li.watch .animated-menu-container > a {
+  animation: none !important;
+}
+
+#global-nav .all-of-espn-animated-menu,
+#global-nav .all-in-one-place-animated-menu {
+  color: var(--sd-on-bar) !important;
+  font-family: var(--sd-sans) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+#global-nav > ul > li > a,
+#global-nav > ul > li > a .link-text,
+#global-nav > ul > li > a .link-text-short,
+#global-header .container .tools > li > a {
+  color: var(--sd-on-bar) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* The mobile scores trigger ships as the literal string "scores" and relies on
+   `text-transform: capitalize` to render. Blanket-clearing the transform above
+   turned it into all-lowercase chrome, which the skill treats as the same
+   failure as all-caps rather than as a fix for it. */
+#scores-link > a,
+#global-header .container .tools > li#scores-link > a {
+  text-transform: capitalize !important;
+}
+
+/* Top-level nav items are already at full white, so a colour hover has nowhere
+   to go — the original relied entirely on the submenu appearing. A quiet fill
+   gives the row feedback before the menu opens without adding a second weight. */
+#global-nav > ul > li > a:hover,
+#global-nav > ul > li.hover > a,
+#global-header .container .tools > li > a:hover {
+  color: var(--sd-on-bar) !important;
+  background: rgb(255 255 255 / 10%) !important;
+}
+
+/* The submenu chevron is a nonessential icon and sat at full white beside the
+   label it belongs to, giving a nav item two peers of equal weight. */
+#global-nav .submenu-button svg,
+#global-nav .submenu-button-inner svg {
+  fill: var(--sd-on-bar-3) !important;
+}
+
+#global-nav .submenu-button:hover svg {
+  fill: var(--sd-on-bar) !important;
+}
+
+/* Dropdown panels: one hairline, restrained radius, no elevation theatre.
+   Matched on `.submenu-wrapper` rather than on `#global-nav > ul > li > div`,
+   which is how the first pass drew a boxed outline around the animated
+   strapline in the Watch item — the audit found it as two stray white rules in
+   the middle of the bar. */
+#global-nav .submenu-wrapper,
+#global-header .global-user {
+  background: var(--sd-bar) !important;
+  border: 1px solid var(--sd-bar-rule) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+#global-nav .submenu-wrapper a,
+#global-nav > ul > li > div ul li a {
+  color: var(--sd-on-bar-2) !important;
+  text-transform: none !important;
+}
+
+#global-nav .submenu-wrapper a:hover,
+#global-nav > ul > li > div ul li a:hover {
+  color: var(--sd-on-bar) !important;
+  background: rgb(255 255 255 / 8%) !important;
+}
+
+/* Search. A field, not a call to action: one boundary instead of a border
+   plus a submit button plus a magnifier background. */
+#global-search .global-search-input-wrapper {
+  background: rgb(255 255 255 / 10%) !important;
+  border-radius: 8px !important;
+  border: 0 !important;
+  overflow: hidden;
+}
+
+#global-search-input.search-box {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--sd-on-bar) !important;
+  font-size: 13px !important;
+}
+
+#global-search-input.search-box::placeholder {
+  color: var(--sd-on-bar-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Score ticker
+   Every capability survives: the league filter, the horizontal carousel, both
+   scroll arrows, the per-game Gamecast link and the full-scoreboard button.
+
+   What changes is that each league stopped being a card. ESPN gives every
+   league group a white fill, a 1px #f1f2f3 border, a 10px radius and a
+   `0 1px 4px rgba(0,0,0,.24)` shadow on top of an #f1f2f3 rail — four
+   mechanisms drawing the same box. On white the group needs none of them; the
+   vertical hairline already between games does the whole job, and that rule
+   is buying density, not decorating.
+   -------------------------------------------------------------------------- */
+#global-scoreboard,
+#global-scoreboard .wrap,
+#global-scoreboard .scoreboard-content,
+#global-scoreboard .scores-carousel,
+#global-scoreboard .wrap .scoreboard-content .scores-carousel,
+.scores-carousel #leagues,
+#global-scoreboard .scoreboard-dropdown-wrapper {
+  background: #fff !important;
+  background-color: #fff !important;
+}
+
+/* One rule under the whole ticker, separating live data from the masthead. */
+#global-scoreboard {
+  border-bottom: 1px solid var(--sd-rule) !important;
+}
+
+#global-scoreboard .wrap .scoreboard-content .scores-carousel #leagues .league {
+  background: #fff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+}
+
+/* The hairline between games is the ticker's only structure; it stays, pulled
+   onto the ink ladder from #a5a6a7, which read as a grey stripe. */
+#global-scoreboard .cscore,
+#global-scoreboard .scores-carousel #leagues .league .scoreboard > div,
+.scores-carousel #leagues:last-child > .league:last-child > .scoreboard:last-child > div:last-child {
+  border-color: var(--sd-rule) !important;
+}
+
+/* The league filter is a dense operational control, not a CTA. ESPN gives it
+   a 40px pill on an #f9f9fb fill with a #cbccce outline; the skill reserves
+   pills for actions and tags, so a quiet fill and the page radius. */
+#global-scoreboard .scoreboard-dropdown-wrapper {
+  border-right: 1px solid var(--sd-rule) !important;
+}
+
+#global-scoreboard .button.button-filter,
+#global-scoreboard .dropdown-toggle.current-league-name {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--sd-ink-body) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+#global-scoreboard .button.button-filter:hover {
+  background: var(--sd-hover) !important;
+}
+
+#global-scoreboard .dropdown-menu.league-nav {
+  background: #fff !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%) !important;
+}
+
+#global-scoreboard .dropdown-menu.league-nav a {
+  color: var(--sd-ink-2) !important;
+}
+
+#global-scoreboard .dropdown-menu.league-nav .active > a,
+#global-scoreboard .dropdown-menu.league-nav a:hover {
+  color: var(--sd-ink) !important;
+  background: var(--sd-hover) !important;
+}
+
+/* Carousel arrows. These are the ticker's only scroll affordance, so they keep
+   their edge rule and get real ink instead of #a5a6a7. */
+#global-scoreboard .scores-prev,
+#global-scoreboard .scores-next {
+  background: #fff !important;
+  border-color: var(--sd-rule) !important;
+  color: var(--sd-ink-2) !important;
+}
+
+#global-scoreboard .scores-prev:hover,
+#global-scoreboard .scores-next:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+#global-scoreboard #fullbtn,
+#global-scoreboard .view-full {
+  color: var(--sd-ink-2) !important;
+  border-color: var(--sd-rule) !important;
+  text-transform: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Score rows — the product
+   This is the reason anyone opens the page, and in the original it is the
+   quietest thing on it: the score sits at #a5a6a7, two rungs below the
+   headline beside it. Promoting it is the highest-value change in the file.
+
+   `.cscore_score` is overloaded — it holds the live score on a game in
+   progress and the W-L record on a game that has not started. The two are
+   separated here by `.cscore_score--record`, so the number that changes gets
+   primary ink and the number that does not gets metadata.
+   -------------------------------------------------------------------------- */
+.cscore_name,
+.cscore_name--long,
+.cscore_name--short,
+.cscore_name--abbrev,
+.cscore_truncate {
+  color: var(--sd-ink-body) !important;
+  font-weight: 500 !important;
+}
+
+.cscore_score {
+  color: var(--sd-ink) !important;
+  font-weight: 600 !important;
+}
+
+/* Records, odds, tip-off time and broadcast channel are the row's metadata.
+   They sit one rung down and bind to the row by proximity, not by a rule. */
+.cscore_score--record,
+.cscore_odds,
+.cscore_date-time,
+.cscore_time,
+.cscore_date,
+.cscore_network,
+.cscore_channels,
+.cscore_notes,
+.cscore_notes_game,
+.cscore_info,
+.cscore_commentary {
+  color: var(--sd-ink-3) !important;
+  font-weight: 400 !important;
+}
+
+.cscore_score.cscore_score--record {
+  font-weight: 400 !important;
+}
+
+/* Exception, and an important one: on a live game the clock is not metadata,
+   it is the state. ESPN sets "Top 1st" in #d00 where a scheduled game shows
+   "10:35 AM PT" in grey, and that single difference is how you read the ticker.
+   The metadata rule above swept it flat on the first pass — visible in a 3x
+   crop, invisible at page scale, which is why the skill asks for zoomed
+   inspection of small controls. */
+.cscore--live .cscore_time,
+.cscore--live .cscore_date-time,
+.cscore--live .cscore_date-time .cscore_time,
+#global-scoreboard .cscore--live .cscore_time {
+  color: var(--sd-live) !important;
+  font-weight: 600 !important;
+}
+
+/* Gamecast / Full Scorecard / Watch above each ticker game. Quiet, but a
+   control, so it keeps enough ink to read as one. */
+.cscore_header-link {
+  color: var(--sd-ink-2) !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+.cscore_header-link:hover {
+  color: var(--sd-ink) !important;
+}
+
+.cscore_link:hover,
+.cscore:hover {
+  background: var(--sd-hover) !important;
+}
+
+/* Row separators inside a score collection. ESPN draws them as a dotted
+   #dcdddf `::before` bar; dotted is texture rather than structure, so they
+   become solid hairlines at 9%. They are kept rather than replaced with
+   space because six games in a 2x3 grid at 70px each would cost roughly 40%
+   more height to separate on whitespace alone, and this surface cannot pay
+   that — the named trade the skill asks for. */
+.scoreCollection .cscore:before,
+.gamelist .cscore:before,
+.contentFeed .cscore:before {
+  border-top: 1px solid var(--sd-rule) !important;
+  border-top-style: solid !important;
+}
+
+.scoreCollection,
+.scoreCollection__content,
+.gamelist,
+.gamelist.scoreboard,
+.scoreLabel_content {
+  background: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Live, winner and loser states
+   The only colour left in the interface chrome. `.scoreEvent--live` sets its
+   status text to #d00 and that is kept exactly, because it is the difference
+   between a game happening now and a game that finished.
+
+   Where ESPN carries a state in colour alone, the accompanying shape is kept
+   with it: `.cscore_team:after` is the caret marking the winning side, and
+   the tennis final rule that drops the loser to #a5a6a7 while the winner sits
+   at #1d1e1f is a real one-rung distinction, restated here on the alpha
+   ladder rather than flattened.
+   -------------------------------------------------------------------------- */
+.scoreEvent--live .scoreEvent__status,
+.scoreEvent--live .scoreEvent__title,
+.contentFeed .scoreEvent--live .scoreEvent__status,
+.scoreEvent__status--live {
+  color: var(--sd-live) !important;
+}
+
+/* The red play triangle before a broadcast name. It looks like decoration and
+   the first pass had it queued for the ink ladder, but it appears only on games
+   you can watch right now — a scheduled game shows the network with no glyph at
+   all. It is the shape that accompanies the live colour, so it keeps both, and
+   the ticker ends up with exactly one meaning for red. */
+.cscore_channels.icon-play-arrow-solid-before:before,
+.scoreEvent__channels.icon-play-arrow-solid-before:before {
+  color: var(--sd-live) !important;
+}
+
+/* Baseball bases. Occupied is #06c against #cbccce for empty, so the state is
+   carried by fill rather than by hue and moving the fill to ink keeps the
+   encoding intact — and widens it. Enumerated against ESPN's own state classes
+   rather than blanket-set on `.diamond`, because a blanket rule would paint
+   occupied and empty the same colour, which is the exact failure the skill's
+   flattened-state trigger describes. */
+:is(.base-1-0-0, .base-1-1-0, .base-1-0-1, .base-1-1-1) .first-base,
+:is(.base-0-1-0, .base-1-1-0, .base-0-1-1, .base-1-1-1) .second-base,
+:is(.base-0-0-1, .base-1-0-1, .base-0-1-1, .base-1-1-1) .third-base {
+  border-bottom-color: var(--sd-ink) !important;
+}
+
+:is(.base-1-0-0, .base-1-1-0, .base-1-0-1, .base-1-1-1) .first-base:after,
+:is(.base-0-1-0, .base-1-1-0, .base-0-1-1, .base-1-1-1) .second-base:after,
+:is(.base-0-0-1, .base-1-0-1, .base-0-1-1, .base-1-1-1) .third-base:after {
+  border-top-color: var(--sd-ink) !important;
+}
+
+/* The winner caret. ESPN paints it with the icon font on `.cscore_team:after`
+   and it is the only non-colour carrier of who won, so it survives at full
+   ink rather than dropping to the icon rung. */
+.cscore_item--winner .cscore_team:after,
+.cscore--away-winner .cscore_item--away .cscore_team:after,
+.cscore--home-winner .cscore_item--home .cscore_team:after,
+.cscore_team.icon-font-after:after {
+  color: var(--sd-ink) !important;
+}
+
+/* Loser stays one rung down from winner — the distinction ESPN already makes
+   with #a5a6a7 against #1d1e1f, which is three rungs and too far. */
+.cscore--final .cscore_item:not(.cscore_item--winner) .cscore_truncate,
+.cscore--final .cscore_item:not(.cscore_item--winner) .cscore_score,
+.tennis.cscore--final .cscore_truncate,
+.tennis.cscore--final .cscore_score {
+  color: var(--sd-ink-3) !important;
+}
+
+.cscore_item--winner .cscore_truncate,
+.cscore_item--winner .cscore_score,
+.tennis.cscore--final .cscore_item--winner .cscore_truncate,
+.tennis.cscore--final .cscore_item--winner .cscore_score {
+  color: var(--sd-ink) !important;
+  font-weight: 600 !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. The feed — cards become chapters
+   Ten collections stacked 10px apart, each a white rounded card with a drop
+   shadow, on grey. On white the shadow and radius have nothing to do, and the
+   card edge was the only thing marking a chapter boundary. Space replaces it:
+   roughly 3:1 above each heading against the gap below it, which is what makes
+   the break legible without adding ten more rules to a page that already has
+   plenty.
+   -------------------------------------------------------------------------- */
+.contentItem,
+.contentItem--collection,
+.headlineStack,
+.contentItem--headlineStack,
+.sub-module,
+.sub-module.editorial,
+.sub-module.quicklinks,
+.module,
+.contentItem__padding--border,
+.contentItem__content--media-card .contentItem__padding {
+  background: #fff !important;
+  background-color: #fff !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#news-feed > .contentItem,
+#news-feed > .contentItem--collection {
+  margin: 0 0 44px !important;
+  padding: 0 !important;
+}
+
+#news-feed > .contentItem:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Chapter heading. Was 14px/700 uppercase BentonSans with no space above it,
+   which made it read as a card label rather than as the start of something.
+   Sentence case, one weight down, and the space carries the hierarchy. */
+.contentItem__header,
+.contentItem__header--borderDotted,
+.contentItem__header--borderSolid {
+  border: 0 !important;
+  margin: 0 0 14px !important;
+  padding: 0 !important;
+}
+
+.contentItem__header:before,
+.contentItem__header:after,
+.contentItem__header--borderDotted:before,
+.contentItem__header--borderSolid:before {
+  display: none !important;
+}
+
+.contentItem__header h2,
+.contentItem__header__headings h2 {
+  color: var(--sd-ink) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+
+/* Story and video titles. One style for both; the original had 22px/700 for a
+   hero, 17px/700 for a story and 16px/700 for a video, which is three weights
+   of the same thing. */
+.contentItem__title,
+.contentItem__title--video,
+.contentItem__titleWrapper h1,
+.contentItem__titleWrapper h2,
+.contentItem__titleWrapper a {
+  color: var(--sd-ink) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.005em !important;
+  text-align: left !important;
+}
+
+.contentItem--hero .contentItem__title,
+.contentItem__content--hero .contentItem__title {
+  font-size: 26px !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Bylines and timestamps. ESPN sets these at #a5a6a7, which is 2.5:1 on white
+   — the audit turned up ninety of them, and they were the worst contrast
+   failure on the page. `.contentItem__contentMeta--bottom span` carries its own
+   `!important`, so the span has to be named at matching specificity rather than
+   relying on the parent. */
+.contentItem__description,
+.contentItem__subhead,
+.contentItem__contentMeta,
+.contentItem__contentMeta--bottom,
+.contentItem__contentMeta--bottom span,
+.contentMeta__timestamp,
+.contentMeta__author,
+.contentItem .metaData,
+.sub-module .text-container .item-meta,
+.timestamp,
+.byline {
+  color: var(--sd-ink-3) !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+}
+
+/* #6c6d6f set on 150 content wrappers, which every child inherits unless it
+   declares its own colour. Left in place it quietly holds half the feed one
+   rung below where this file put it. */
+.contentItem__content,
+.contentItem__content--fullWidth,
+.contentItem__content--story,
+.contentItem__content--video,
+.contentItem__contentWrapper {
+  color: var(--sd-ink-body) !important;
+}
+
+/* "Complete scoreboard", "Standings", "Wild Card standings" — the footer links
+   under a score collection. ESPN's #06c is the last blue on the page. */
+.contentItem__footer > a,
+.contentItem__footer__link,
+.no-touch .contentItem__footer > a:hover,
+.no-touch .contentItem__footer__link:hover {
+  color: var(--sd-ink-2) !important;
+  font-weight: 500 !important;
+}
+
+.contentItem__footer > a:hover,
+.contentItem__footer__link:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* The ESPN Insider glyph, an #ff790d flash at 9px. It marks premium content, so
+   the glyph stays and carries the meaning by shape; the orange at that size was
+   1.9:1 and told nobody anything. */
+.icon-brand-insider-solid-before:before,
+.icon-brand-insider-solid-after:after {
+  color: var(--sd-ink-2) !important;
+}
+
+/* League marks at the head of a chapter. Category labels, not competitors — see
+   section 12 for where that line is drawn. */
+.contentItem__header img,
+.contentItem__header__wrapper img {
+  filter: grayscale(1) !important;
+}
+
+/* The card body kept 16px of side padding that only existed to hold the card
+   edge off the text. With the card gone it is an inset the column does not
+   need, and closing it is what stops the freed space reading as a void. */
+.contentItem__padding,
+.contentItem__padding--border,
+.contentItem__header,
+.contentFeed .headlineStack .headlineStack__listContainer,
+.contentFeed .headlineStack .module__header {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* ESPN runs its media full-bleed to the card edge and insets the caption 16px
+   inside it, so every headline in the feed started 16px right of the photograph
+   above it. That reads as a mistake once the card edge that justified it is
+   gone. The featured overlay is excluded: there the wrapper is absolutely
+   positioned over the image and its padding is holding text off the edge of a
+   photograph, which is a different job.
+
+   Desktop only, for the same reason as the column rules: on a phone the media
+   really is full-bleed to the viewport, and zeroing this would put the headline
+   hard against the screen edge. */
+@media (min-width: 768px) {
+  .contentItem__contentWrapper:not(.contentItem__padding--featured .contentItem__contentWrapper) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+/* `picture` is inline, so its line box left a strip of the figure's placeholder
+   fill showing under every photograph. Not a spacing value to tune — inherited
+   structure, and the fix belongs on the display mode. */
+figure.media-wrapper,
+.feed-item-figure {
+  line-height: 0 !important;
+}
+
+figure.media-wrapper picture,
+.feed-item-figure picture,
+figure.media-wrapper img,
+.feed-item-figure img {
+  display: block !important;
+}
+
+/* The 3px team-colour gradient bar across the top of a game card. It encodes
+   nothing the logo and the team name beside it do not already carry, which
+   puts it in the skill's merchandising category rather than the semantic one. */
+.contentItem__teamBorder {
+  background-image: none !important;
+  background: var(--sd-rule) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Headline lists
+   The densest text on the page and the second reason people come. Bullets
+   stay — they are the only thing separating one headline from the next now
+   that the dotted underline between rows is gone.
+   -------------------------------------------------------------------------- */
+/* The rule above a story's related-links list. Kept, and the one place in the
+   feed where a rule survives: the list sits immediately under a headline and a
+   byline at a similar size, so without a boundary the first related link reads
+   as the story's own standfirst. Solid at 9% rather than ESPN's dotted #dcdddf,
+   because dotted is texture pretending to be structure. */
+.headlineStack__listContainer,
+.contentFeed .contentItem__content + .headlineStack .headlineStack__listContainer,
+.contentFeed .contentItem__footer + .headlineStack .headlineStack__listContainer {
+  border-top: 1px solid var(--sd-rule) !important;
+  border-top-style: solid !important;
+}
+
+/* Same line, drawn a second way, under a score collection: a dotted `::before`
+   bar on the collection's footer. A border sweep never touches it. */
+.contentItem__footer:before,
+.contentItem__footer--collection:before,
+.contentItem__footer--borderSolid:before,
+.scoreCollection + .contentItem__footer:before,
+.headlineStack + .contentItem__footer:before {
+  border-top: 1px solid var(--sd-rule) !important;
+  border-top-style: solid !important;
+}
+
+.headlineStack__list > li > a,
+.contentItem--headlineStack__list > li > a {
+  color: var(--sd-ink-body) !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+}
+
+.no-touch .headlineStack__list > li > a:hover,
+.no-touch .contentItem--headlineStack__list > li > a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+}
+
+.headlineStack:not(.top-headlines) .headlineStack__list > li:before {
+  color: var(--sd-ink-4) !important;
+}
+
+/* Top Headlines. ESPN underlines every row, which is nine rules inside a 276px
+   module and the largest single concentration on the first screen. The reason
+   they look necessary is that the rows mix one-line and two-line headlines, so
+   without something you cannot tell a wrapped line from a new item.
+
+   Distance does that on its own once the two gaps differ enough: 3px between
+   the lines of one headline against 17px between headlines. That is the
+   relative-distance grouping the skill prefers, it costs about 70px in a rail
+   that runs 3,300, and it takes eight rules off the fold. */
+.headlineStack.top-headlines .headlineStack__list > li > a {
+  border: 0 !important;
+  color: var(--sd-ink-body) !important;
+  line-height: 1.32 !important;
+  padding: 0 !important;
+}
+
+.headlineStack.top-headlines .headlineStack__list > li {
+  border: 0 !important;
+}
+
+.headlineStack.top-headlines .headlineStack__list > li + li {
+  margin-top: 17px !important;
+}
+
+/* Declared after the rule above rather than with the other link hovers: the two
+   selectors tie on specificity, so whichever comes last wins, and grouping this
+   with its siblings further up left the rail's nine headlines with no hover
+   state. Not scoped to `.no-touch` — a hover state should not depend on a class
+   the site adds by feature detection. */
+.headlineStack.top-headlines .headlineStack__list > li > a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+}
+
+.module__header,
+.headlineStack__header .module__header {
+  color: var(--sd-ink) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-bottom: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Media
+   Photography and video thumbnails keep their colour; nothing in this file
+   filters them. What changes is the chrome around them: the #6c6d6f block
+   ESPN paints behind a loading figure is an opaque mid-grey rectangle that
+   reads as a colour field until the image lands.
+   -------------------------------------------------------------------------- */
+figure.media-wrapper,
+.media-wrapper,
+.feed-item-figure,
+.img-wrap {
+  background: var(--sd-fill) !important;
+  border-radius: 0 !important;
+}
+
+.photo-credit {
+  background: rgb(0 0 0 / 44%) !important;
+  color: #fff !important;
+}
+
+/* The duration / live badge on a thumbnail sits over photography, so it keeps
+   its own light ladder rather than the page's. */
+.media-duration,
+.video-length {
+  background: rgb(255 255 255 / 88%) !important;
+  color: var(--sd-ink) !important;
+  border-radius: 4px !important;
+}
+
+.media-duration.live {
+  color: var(--sd-live) !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Buttons
+   ESPN already runs one button system: a 40px pill at 32px high, filled
+   #3772df for primary and outlined for secondary, with a green variant on the
+   fantasy module and a red one behind it. The pill is the product's own
+   convention and stays; the four different fills do not.
+
+   These go to ink rather than keeping the blue, for the reason the skill
+   gives directly: a filled accent action sitting in the same region as the
+   product's own mark outranks it, and the ESPN lozenge is thirty pixels above
+   the Subscribe button in the left rail. Neutral buttons leave the mark as
+   the only colour there.
+   -------------------------------------------------------------------------- */
+.button,
+a.button,
+button.button,
+.button--flagship,
+.scoreEvent__button,
+#sideLogin-left-rail .button,
+.quicklinks_list__item .button {
+  background-color: var(--sd-ink) !important;
+  background-image: none !important;
+  /* Transparent rather than ink: the border only exists so a filled button and
+     an outlined one land on the same height. Painting it ink draws the fill's
+     own edge a second time, which the audit reports as a rule. */
+  border: 1px solid transparent !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+
+.button:hover,
+a.button:hover,
+button.button:hover,
+.button--flagship:hover,
+.scoreEvent__button:hover,
+#sideLogin-left-rail .button:hover {
+  background-color: rgb(0 0 0 / 80%) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+.button-alt,
+a.button-alt,
+button.button-alt,
+#sideLogin-left-rail .button-alt {
+  background: transparent !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  /* A fully transparent inset shadow that paints nothing and reports as a rule
+     on every audit run. Cheaper to delete than to keep explaining. */
+  box-shadow: none !important;
+}
+
+/* `#sideLogin-left-rail .button-alt` in the rule above carries an id, so a
+   plain `.button-alt:hover` loses to it and Log In had no hover state at all —
+   a specificity loss that is invisible in a screenshot and only turns up if you
+   measure the computed style with the pointer over the control. */
+.button-alt:hover,
+a.button-alt:hover,
+button.button-alt:hover,
+#sideLogin-left-rail .button-alt:hover {
+  background: var(--sd-hover) !important;
+  border-color: var(--sd-ink) !important;
+  color: var(--sd-ink) !important;
+}
+
+.button:active,
+.button-alt:active,
+.dtc-upsell__cta__btn:active {
+  transform: scale(0.98);
+}
+
+/* --------------------------------------------------------------------------
+   12. Marks — the call this page turns on
+   The skill's brand-mark paragraph and its customer-logo bullet are both
+   written about social proof: a partner badge or a payment mark is evidence
+   for a claim, its shape carries the recognition, and desaturating it costs
+   nothing. Neither paragraph is written about a mark used as a data label.
+
+   A team logo in a score row is a data label. It occupies the leftmost cell
+   of a two-row table, the position a row header holds everywhere else on the
+   page, and it identifies which team the number beside it belongs to. It is
+   not evidence that ESPN is trustworthy; it is the subject of the record.
+
+   Two things settle it. First, the marks are 16px. Grayscaling collapses the
+   Reds' red C and the White Sox's black C into one object, and the Cardinals'
+   and the Phillies' birds into the same smudge — at that size hue is doing
+   most of the discrimination, so desaturating does not quiet these, it
+   degrades them. Second, this is the same logic the skill already applies to
+   a product's own mark: on a page where nothing else is coloured, two hundred
+   small colour marks distributed one per data row read as a data field, not
+   as a loud band. The failure the customer-logo bullet warns about is a band
+   of marks in a row; here they are the content.
+
+   So they keep their colour, and the page pays for it by having none anywhere
+   else. The line drawn is by job, not by ownership: a mark that identifies a
+   datum keeps its colour, a mark that decorates a link does not.
+   -------------------------------------------------------------------------- */
+
+/* Identifies a datum — untouched, deliberately. Listed with no declarations
+   other than the ones that keep them crisp, so a later blanket rule cannot
+   quietly catch them. */
+.cscore_logo img,
+.cscore_image,
+.gs-logo-away,
+.gs-logo-home,
+.nav-logo-wrap img,
+.team-logo {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Decorates a link. The left rail stacks roughly thirty league marks down its
+   full height next to labels that already name the league — "NFL Preseason"
+   beside an NFL shield. That is the customer-logo band, rotated ninety
+   degrees, and it is the loudest column on the page once the canvas goes
+   white. Monochrome, and one rung down so the label leads. */
+.quicklinks_list__icon img,
+.PageFooter .quicklinks_list__icon img,
+.sub-module.editorial header img,
+.module__header > span img {
+  filter: grayscale(1) !important;
+  opacity: 0.66 !important;
+}
+
+/* Social-network glyphs in the rail are set to Facebook blue and Twitter blue
+   by class. Third-party marks, and the glyph carries the recognition. */
+.quicklinks_list__icon.icon-facebook-solid-before,
+.quicklinks_list__icon.icon-twitter-solid-before,
+.quicklinks_list__icon.icon-instagram-solid-before,
+.quicklinks_list__icon.icon-youtube-solid-before,
+.quicklinks_list__icon.icon-tiktok-solid-before {
+  color: var(--sd-ink-4) !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Left rail
+   -------------------------------------------------------------------------- */
+/* The subscription promo. Its red #f33 heading in a 900-weight condensed
+   display face over a photographic texture is merchandising colour — it
+   encodes no state and identifies nothing — so it is neutralised while the
+   card stays black, which gives the rail one deliberate anchor.
+
+   The two lines become the skill's two-tone heading: "All of ESPN." at full
+   white and "All in one place." at 60%, one size, one weight, one baseline. */
+.dtc-upsell,
+.sub-module.dtc-upsell {
+  background-image: none !important;
+  background-color: #111 !important;
+  border-radius: 0 !important;
+  min-height: 0 !important;
+  padding: 28px 20px !important;
+}
+
+.dtc-upsell__inner {
+  text-align: left !important;
+}
+
+.dtc-upsell__wrapper {
+  align-items: stretch !important;
+}
+
+.dtc-upsell__header,
+.dtc-upsell__subheader {
+  font-size: 19px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em !important;
+  text-align: left !important;
+}
+
+.dtc-upsell__header {
+  color: #fff !important;
+}
+
+.dtc-upsell__subheader {
+  color: rgb(255 255 255 / 60%) !important;
+}
+
+.dtc-upsell__cta__btn,
+.dtc-upsell__cta__btn.unentitled {
+  background-color: #fff !important;
+  border: 1px solid transparent !important;
+  color: #111 !important;
+  font-weight: 500 !important;
+}
+
+.dtc-upsell__cta__btn:hover {
+  background-color: rgb(255 255 255 / 86%) !important;
+  border-color: transparent !important;
+  color: #111 !important;
+}
+
+/* Rail modules. The #f9f9fb fill was the only thing distinguishing one group
+   from the next; on white a heading plus space does it, and one hairline
+   under the heading is enough boundary for the list beneath. */
+.sub-module.quicklinks,
+.quicklinks__container,
+#sideLogin-left-rail,
+.module.sideLogin {
+  background: #fff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.col-one .quicklinks__header,
+.col-three .quicklinks__header,
+.PageFooter .quicklinks__header,
+.sideLogin__headline {
+  border-bottom: 1px solid var(--sd-rule) !important;
+}
+
+/* Thirty-odd dotted hairlines, one under every rail row, drawn as an `::after`
+   bar so nothing in a border sweep touches them. The audit counted them before
+   I could see them: they are what made the rail read as a grid. Every row is a
+   single link opening with an icon in a fixed 20px gutter, so a wrapped second
+   line is visibly indented past that gutter and the grouping is never in
+   question. Nothing here would be ambiguous without them. */
+.col-one .quicklinks_list__item:after,
+.col-two .quicklinks_list__item:after,
+.col-three .quicklinks_list__item:after,
+.col-c .quicklinks_list__item:after,
+.PageFooter .quicklinks_list__item:after {
+  display: none !important;
+}
+
+/* Same rule in the right rail's editorial modules, dividing each item from the
+   next. Each item opens with a photograph, which separates two records far more
+   emphatically than a hairline can. */
+.sub-module .text-container,
+.sub-module .text-container .text-container,
+.sub-module .text-container .text-container.bordered {
+  border-bottom: 0 !important;
+}
+
+.quicklinks__heading,
+.sideLogin__headline {
+  color: var(--sd-ink) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+}
+
+/* "📍Watch on ESPN". An emoji used as section iconography, and the one on this
+   page that lives in a text node rather than in CSS, where a stylesheet cannot
+   reach it. `::first-letter` can: it matches the pin as the heading's first
+   typographic unit and zeroes it, leaving the label to carry the meaning.
+
+   The `:has()` guard is the whole safety of this rule. `::first-letter` applied
+   to `.quicklinks__heading` generally would eat the Q of "Quick Links" and both
+   Fs of "Favorites" and "Fantasy", so it is scoped to the module whose links
+   carry the pin in their tracking name — the only handle ESPN gives. Verified
+   against every heading in both rails; the other eleven are untouched. */
+.quicklinks__container:has(a[name*="📍"]) .quicklinks__heading::first-letter {
+  font-size: 0 !important;
+}
+
+.quicklinks_list__link,
+.quicklinks_list__name,
+.col-one .quicklinks_list__name,
+.col-three .quicklinks_list__name,
+.PageFooter .quicklinks_list__link {
+  color: var(--sd-ink-body) !important;
+  font-weight: 400 !important;
+}
+
+.quicklinks_list__detail {
+  color: var(--sd-ink-3) !important;
+}
+
+.quicklinks_list__link:hover,
+.PageFooter .quicklinks_list__link:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. Right rail and footer
+   -------------------------------------------------------------------------- */
+.sub-module.editorial header,
+.sub-module.editorial header h2,
+.sub-module.editorial header a {
+  color: var(--sd-ink) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  border-bottom: 0 !important;
+}
+
+.sub-module.editorial .text-container h2 a,
+.sub-module.editorial ul.content h2 a {
+  color: var(--sd-ink-body) !important;
+  font-weight: 500 !important;
+}
+
+.sub-module.editorial ul.content p {
+  color: var(--sd-ink-3) !important;
+}
+
+/* The fantasy signup module. It arrives as a navy card with a photographic
+   texture, a green primary button and a blue one behind it. The first pass
+   flattened it to a 4% fill and left its white type on top, which made three
+   working controls invisible — a change that looked right in the stylesheet and
+   was only caught by reading the render.
+
+   It stays a dark surface instead. Together with the subscription promo in the
+   left rail that gives the page one consistent answer for a promotional module,
+   and it keeps the white ESPN Fantasy lockup legible. */
+.fantasySignup,
+.sub-module.fantasySignupV2,
+.fantasySignup:not(.fantasySignup--light),
+.fantasySignup--light {
+  background-image: none !important;
+  background-color: #111 !important;
+  border-radius: 0 !important;
+}
+
+.fantasySignup h2,
+.fantasySignup h3,
+.fantasySignup p,
+.fantasySignup .content,
+.sub-module.fantasySignupV2 a:not(.button):not(.button-alt) {
+  color: rgb(255 255 255 / 68%) !important;
+}
+
+.fantasySignup__cta .button,
+.fantasySignup:not(.fantasySignup--light) .fantasySignup__cta .button,
+.fantasySignup--light .fantasySignup__cta .button {
+  background-color: #fff !important;
+  border: 1px solid transparent !important;
+  color: #111 !important;
+  font-weight: 500 !important;
+}
+
+.fantasySignup__cta .button:hover,
+.fantasySignup:not(.fantasySignup--light) .fantasySignup__cta .button:hover {
+  background-color: rgb(255 255 255 / 86%) !important;
+  color: #111 !important;
+}
+
+.fantasySignup__footer .button-alt,
+.fantasySignup:not(.fantasySignup--light) .fantasySignup__footer .button-alt {
+  background: transparent !important;
+  border: 1px solid rgb(255 255 255 / 30%) !important;
+  color: #fff !important;
+}
+
+.fantasySignup:not(.fantasySignup--light) .fantasySignup__footer .button-alt:hover {
+  background: rgb(255 255 255 / 10%) !important;
+  border-color: #fff !important;
+  color: #fff !important;
+}
+
+/* The lockup is white line art with an NFL shield in it. Desaturated as a
+   third-party mark, but not dimmed — on a dark card, opacity is contrast. */
+.fantasySignup__logo img {
+  filter: grayscale(1) !important;
+  opacity: 1 !important;
+}
+
+/* The footer may be denser, but it keeps the same alignment and ladder.
+   Two rules here, not four: one where the footer starts and one above the legal
+   block. `.PageFooter__QuickLinks` draws its bottom edge as an `::after` bar at
+   exactly the y of the legal block's border-top, so the two were painting a
+   single line twice. */
+.PageFooter,
+.PageFooter__Footer,
+#favfeed-footer {
+  background: #fff !important;
+  border-top: 1px solid var(--sd-rule) !important;
+}
+
+.PageFooter__QuickLinks {
+  border-top: 0 !important;
+}
+
+.PageFooter__QuickLinks:after,
+.PageFooter__QuickLinks:before {
+  display: none !important;
+}
+
+/* The one vertical rule in the footer, holding the ESPN mark off the legal
+   text. ESPN draws it in #cbccce, which is the last off-ladder neutral left. */
+.PageFooter__Legal .text,
+.PageFooter__Legal > div.text {
+  border-left-color: var(--sd-rule) !important;
+}
+
+.PageFooter a,
+#favfeed-footer a {
+  color: var(--sd-ink-2) !important;
+  text-decoration: none !important;
+}
+
+.PageFooter a:hover,
+#favfeed-footer a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+}
+
+.PageFooter__Legal__Disclaimer,
+.PageFooter__Legal__Copyright {
+  color: var(--sd-ink-3) !important;
+}
+
+.PageFooter .logo img,
+.PageFooter__Legal .logo img {
+  filter: grayscale(1) !important;
+  opacity: 0.5 !important;
+}
+
+/* --------------------------------------------------------------------------
+   15. Links, focus, selection
+   ESPN's link hover is #06c and its focus ring is a 2px #06c outline. Both go
+   to ink; the ring keeps two pixels rather than dropping to a hairline,
+   because on the dark masthead a one-pixel ring has no light field to
+   register against.
+   -------------------------------------------------------------------------- */
+.no-touch a:hover,
+.no-touch .contentItem__title:hover,
+a:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* Declared on the universal selector rather than on an enumerated list. ESPN
+   focuses things this file never touched, and anything missed from a list falls
+   back to Chrome's own 1px blue ring — which is both the wrong colour and the
+   easiest thing in a restyle to believe you handled. */
+:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+}
+
+/* On the dark bar and inside the two dark promo cards the ink ring disappears,
+   so those surfaces get a white one, offset inward where the control sits hard
+   against the surface edge. */
+#global-nav *:focus-visible,
+#global-header *:focus-visible,
+#global-search-input:focus-visible,
+.dtc-upsell *:focus-visible,
+.fantasySignup *:focus-visible {
+  outline: 2px solid #fff !important;
+  outline-offset: 2px !important;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+/* --------------------------------------------------------------------------
+   16. Mobile
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  #global-scoreboard .wrap,
+  #global-scoreboard .scores-carousel {
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  #news-feed > .contentItem,
+  #news-feed > .contentItem--collection {
+    margin-bottom: 32px !important;
+  }
+
+  .contentItem--hero .contentItem__title,
+  .contentItem__content--hero .contentItem__title {
+    font-size: 22px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   17. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

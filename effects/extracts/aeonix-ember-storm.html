@@ -1,0 +1,217 @@
+<!--
+  Effect: Ember Storm Vortex (WebGL particle spiral over a breathing ember core)
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped/stubbed: Tailwind CDN + config (converted to plain CSS), Google Fonts (system stack),
+  Iconify icons, GSAP/ScrollTrigger entrance choreography (replaced with plain CSS animations),
+  the Supabase remote background image (removed), and all marketing copy / nav / metrics / CTAs
+  (product name, headings, telemetry readouts, buttons). Kept: the Three.js point-vortex shader,
+  the breathing core glow, the rotating conic ember ring, and the grain overlay, driven by a
+  plain requestAnimationFrame loop.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ember Storm Vortex</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #080503; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+
+  .ground {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(60% 60% at 60% 47%, rgba(255,80,24,0.30) 0%, rgba(200,40,12,0.10) 30%, rgba(8,5,3,0) 58%),
+      radial-gradient(120% 90% at 14% 116%, rgba(255,90,26,0.22) 0%, rgba(8,5,3,0) 52%),
+      radial-gradient(140% 130% at 50% 50%, rgba(20,10,6,0) 38%, rgba(4,2,1,0.74) 100%),
+      linear-gradient(180deg,#0b0604 0%,#080403 100%);
+  }
+
+  .core {
+    position: fixed; z-index: 1; left: 60%; top: 47%;
+    width: 34vmax; height: 34vmax;
+    transform: translate(-50%,-50%);
+    pointer-events: none; mix-blend-mode: screen; will-change: filter;
+    background: radial-gradient(circle, rgba(255,150,70,0.42) 0%, rgba(255,70,20,0.16) 28%, rgba(190,30,10,0.05) 48%, rgba(8,5,3,0) 66%);
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.35); }
+  }
+
+  .ring {
+    position: fixed; z-index: 1; left: 60%; top: 47%;
+    width: 30vmax; height: 30vmax;
+    transform: translate(-50%,-50%);
+    pointer-events: none; mix-blend-mode: screen; border-radius: 50%; will-change: transform;
+    background: conic-gradient(from 0deg, rgba(255,120,40,0) 0deg, rgba(255,140,55,0.18) 60deg, rgba(255,90,30,0) 130deg, rgba(255,150,70,0.12) 220deg, rgba(255,90,30,0) 300deg, rgba(255,120,40,0) 360deg);
+    -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%, #000 70%, transparent 72%);
+    mask: radial-gradient(circle, transparent 60%, #000 61%, #000 70%, transparent 72%);
+    animation: spin 46s linear infinite;
+  }
+  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  #gl {
+    position: fixed; inset: 0; z-index: 2;
+    width: 100%; height: 100%; display: block;
+    pointer-events: none; mix-blend-mode: screen;
+  }
+
+  .grain {
+    position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .core, .ring { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="ground"></div>
+  <div class="core"></div>
+  <div class="ring"></div>
+  <canvas id="gl"></canvas>
+  <div class="grain"></div>
+
+  <script src="three.min.js"></script>
+  <script>
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    (function(){
+      const canvas = document.getElementById('gl');
+      if(!window.THREE) return;
+      const RES = 0.5;
+      let renderer;
+      try{
+        renderer = new THREE.WebGLRenderer({canvas, antialias:false, alpha:true, powerPreference:'high-performance'});
+      }catch(e){ return; }
+      renderer.setPixelRatio(1);
+      renderer.setClearColor(0x000000, 0);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+
+      const COUNT = 12000;
+      const seeds = new Float32Array(COUNT);
+      const angs  = new Float32Array(COUNT);
+      const rads  = new Float32Array(COUNT);
+      for(let i=0;i<COUNT;i++){
+        seeds[i] = Math.random();
+        angs[i]  = Math.random()*Math.PI*2.0;
+        rads[i]  = Math.sqrt(Math.random());
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(COUNT*3), 3));
+      geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+      geo.setAttribute('aAng',  new THREE.BufferAttribute(angs, 1));
+      geo.setAttribute('aRad',  new THREE.BufferAttribute(rads, 1));
+
+      const uniforms = {
+        uTime:   { value: 0 },
+        uScale:  { value: 1 },
+        uAspect: { value: 1.6 },
+      };
+
+      const mat = new THREE.ShaderMaterial({
+        uniforms,
+        transparent:true,
+        depthTest:false,
+        depthWrite:false,
+        blending:THREE.AdditiveBlending,
+        vertexShader:`
+          attribute float aSeed;
+          attribute float aAng;
+          attribute float aRad;
+          uniform float uTime;
+          uniform float uScale;
+          uniform float uAspect;
+          varying float vHeat;
+          varying float vFlick;
+          varying float vCore;
+          float hash(float n){ return fract(sin(n*12.9898)*43758.5453); }
+          void main(){
+            float life = hash(aSeed*7.31);
+            float u = fract(uTime*(0.045 + life*0.06) + aSeed);
+            float rmax = 0.58 + aRad*0.48;
+            float r = max(rmax*(1.0 - u*0.82), 0.018);
+            float omega = (0.55 + life*0.55) / (r*0.9 + 0.12);
+            float spiral = (rmax - r)*5.2;
+            float theta = aAng + uTime*omega*0.34 + spiral;
+            float t1 = sin(theta*3.0 + aSeed*10.0 + uTime*0.8);
+            float t2 = sin(r*9.0 - uTime*1.1 + aSeed*4.0);
+            r += t1*0.022 + t2*0.016;
+            float cx = 0.20, cy = 0.06;
+            float x = cx + (cos(theta)*r)/uAspect;
+            float y = cy + sin(theta)*r;
+            y += u*0.11 + sin(uTime*5.0 + aSeed*30.0)*0.006;
+            x += sin(uTime*3.3 + aSeed*22.0)*0.004/uAspect;
+
+            vCore  = 1.0 - smoothstep(0.0, 0.17, r);
+            vHeat  = clamp(pow(1.0-u, 1.3) * (0.5 + 0.5*(1.0-r)), 0.0, 1.0);
+            vFlick = 0.55 + 0.45*sin(uTime*9.0 + aSeed*40.0);
+            float sz = (0.7 + hash(aSeed*12.3)*2.7) * (0.45 + vHeat*1.55 + vCore*1.4);
+            gl_Position = vec4(x, y, 0.0, 1.0);
+            gl_PointSize = sz * uScale;
+          }
+        `,
+        fragmentShader:`
+          precision mediump float;
+          varying float vHeat;
+          varying float vFlick;
+          varying float vCore;
+          void main(){
+            vec2 p = gl_PointCoord*2.0 - 1.0;
+            float d = dot(p,p);
+            if(d>1.0) discard;
+            float core = (1.0-d); core *= core;
+            vec3 crimson = vec3(0.72,0.10,0.03);
+            vec3 amber   = vec3(1.0,0.55,0.12);
+            vec3 white   = vec3(1.0,0.93,0.78);
+            vec3 c = mix(crimson, amber, vHeat);
+            c = mix(c, white, vCore*0.85);
+            float a = core*(0.28 + 0.85*vHeat)*vFlick + core*vCore*0.55;
+            gl_FragColor = vec4(c*(1.0 + vHeat*0.5 + vCore*0.7), a);
+          }
+        `
+      });
+
+      const points = new THREE.Points(geo, mat);
+      points.frustumCulled = false;
+      scene.add(points);
+
+      function resize(){
+        const w = window.innerWidth, h = window.innerHeight;
+        renderer.setSize(Math.round(w*RES), Math.round(h*RES), false);
+        canvas.style.width = w+'px';
+        canvas.style.height = h+'px';
+        uniforms.uAspect.value = Math.max(0.6, w/h);
+        uniforms.uScale.value = Math.max(0.6, (h*RES)/900);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      let raf=0, running=true, last=performance.now();
+      function frame(now){
+        if(!running) return;
+        const dt = Math.min(0.05,(now-last)/1000); last=now;
+        uniforms.uTime.value += dt;
+        renderer.render(scene,camera);
+        raf=requestAnimationFrame(frame);
+      }
+      if(REDUCED){
+        uniforms.uTime.value = 9.1;
+        renderer.render(scene,camera);
+      } else {
+        raf=requestAnimationFrame(frame);
+      }
+      document.addEventListener('visibilitychange',()=>{
+        if(document.hidden){ running=false; cancelAnimationFrame(raf); }
+        else if(!REDUCED){ running=true; last=performance.now(); raf=requestAnimationFrame(frame); }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!--
+  Amber Halftone
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped: Tailwind/Iconify/GSAP scaffolding, product copy, headshots, remote Supabase
+  image and Google Fonts; kept only the Three.js point-halftone shader, now full-viewport
+  and driven by a plain requestAnimationFrame loop with local three.min.js.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amber Halftone</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  canvas#webgl-halftone {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .label {
+    position: fixed;
+    left: 2rem;
+    bottom: 1.75rem;
+    z-index: 10;
+    color: rgba(255,255,255,0.55);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="webgl-halftone"></canvas>
+  </div>
+  <span class="label">amber halftone</span>
+
+  <script src="three.min.js"></script>
+  <script>
+    const initHalftoneWebGL = () => {
+      const canvas = document.getElementById('webgl-halftone');
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setClearColor(0x0a0a0a, 1);
+      const scene = new THREE.Scene();
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+
+      const resize = () => {
+        const width = Math.max(1, window.innerWidth || 1);
+        const height = Math.max(1, window.innerHeight || 1);
+        renderer.setSize(width, height, false);
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        const aspect = width / height;
+        camera.left = -aspect;
+        camera.right = aspect;
+        camera.bottom = -1;
+        camera.top = 1;
+        camera.updateProjectionMatrix();
+      };
+      window.addEventListener('resize', resize);
+      resize();
+      camera.position.z = 1;
+
+      const gridSize = 26;
+      const geometry = new THREE.BufferGeometry();
+      const positions = [];
+      const scales = [];
+
+      for (let x = -gridSize; x <= gridSize; x++) {
+        for (let y = -gridSize; y <= gridSize; y++) {
+          positions.push(x * 0.13, y * 0.13, 0);
+          scales.push(1);
+        }
+      }
+
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('scale', new THREE.Float32BufferAttribute(scales, 1));
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          color1: { value: new THREE.Color(0xFBBF24) },
+          color2: { value: new THREE.Color(0xFFFFFF) }
+        },
+        vertexShader: `
+          attribute float scale;
+          varying vec2 vUv;
+          varying float vScale;
+          uniform float time;
+
+          void main() {
+            vUv = position.xy;
+            float dist = length(position.xy);
+            float animatedScale = scale * (sin(dist * 6.0 - time * 2.5) * 0.5 + 0.5);
+            vScale = animatedScale;
+
+            gl_PointSize = animatedScale * 5.0;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 color1;
+          uniform vec3 color2;
+          varying vec2 vUv;
+          varying float vScale;
+
+          void main() {
+            vec2 coord = gl_PointCoord - vec2(0.5);
+            if (length(coord) > 0.5) discard;
+
+            vec3 finalColor = mix(color2, color1, (vUv.y + 1.0) * 0.5);
+            gl_FragColor = vec4(finalColor, vScale * 0.9);
+          }
+        `,
+        transparent: true
+      });
+
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+
+      const clock = new THREE.Clock();
+      const animate = () => {
+        requestAnimationFrame(animate);
+        material.uniforms.time.value = clock.getElapsedTime();
+        renderer.render(scene, camera);
+      };
+      animate();
+    };
+
+    initHalftoneWebGL();
+  </script>
+</body>
+</html>

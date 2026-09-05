@@ -75,7 +75,12 @@ SCAN_SETS = [
     ("effects/extracts/*.html", "effects", "html", True),
     ("effects/extracts/components/*.html", "components", "html", True),
     ("patterns/ai-native/*.tsx", "ai-native", "tsx", False),
+    ("patterns/ai-native/primitives/*.tsx", "ai-native", "tsx", False),
+    ("patterns/ai-native/primitives/*.css", "ai-native", "css", False),
     ("glass/liquid-glass/apple/**/*.swift", "apple", "swift", False),
+    ("minimal/scandinavian/**/*.css", "scandinavian", "css", False),
+    ("minimal/scandinavian/**/*.js", "scandinavian", "js", False),
+    ("minimal/scandinavian/**/*.html", "scandinavian", "html", True),
     ("**/*.md", "docs", "md", False),
 ]
 
@@ -85,6 +90,7 @@ CATEGORY_ORDER = [
     ("effects", "Effects"),
     ("apple", "Apple"),
     ("ai-native", "AI-native"),
+    ("scandinavian", "Scandinavian"),
     ("docs", "Docs"),
 ]
 
@@ -219,8 +225,15 @@ def group_for(item, catalogue_themes) -> str:
         return family.title() if family else "Components"
     if category == "effects":
         return catalogue_themes.get(item["name"], "Effects")
+    rel = item.get("relpath", "")
     if category == "ai-native":
-        return "AI-native"
+        return "AI-native primitives" if "/primitives/" in rel else "AI-native"
+    if category == "scandinavian":
+        if "/demos/" in rel:
+            return "Scandinavian demos"
+        if "/scripts/" in rel:
+            return "Scandinavian scripts"
+        return "Scandinavian site"
     if category == "apple":
         return "Apple"
     if category == "docs":

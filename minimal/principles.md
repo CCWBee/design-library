@@ -288,3 +288,10 @@ When fixing an existing surface, work in this order. Do not tune motion before t
 - Add dependencies when existing components solve the problem.
 - Hide advanced functionality for a cleaner screenshot.
 - Confuse novelty with refinement.
+
+## The code
+
+The source system's own code is kept verbatim in `./scandinavian/` (see its `README.md`): 18 demo
+restyle themes that show these rules applied to real, dense product surfaces, and the 11 verification
+scripts (density, rule counting, tint detection, the evaluation runner) that make the checklist above
+mechanical. Reference those files rather than re-deriving a theme or a check from this prose.

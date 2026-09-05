@@ -1,0 +1,1376 @@
+/* ==========================================================================
+   IKEA — KALLAX product detail page — Scandinavian override
+
+   Structural problem: the media is not the anchor. A 656px photograph sits
+   beside a 546px column that runs 1430px tall, because the buying path — name,
+   price, availability, buy — occupies only its first 600px and is followed by
+   eight merchandising modules: planner promo, services, IKEA Family points,
+   buyer protections, payment offers, a replacement notice. Four of them are
+   boxed in their own bordered cards. The buying path is interrupted as well:
+   the planner promo sits between the product note and "How to get it".
+
+   Hierarchy is inverted on top of that. The <h1> product name is 16px while
+   the "Product details" label below the fold is 24px; the price superscripts
+   its cents into a merchandising "79⁹⁹"; and the heaviest control in the
+   purchasing column is "Explore products similar to KALLAX", not the buy
+   button. Because this product is not sold in the harness's location, that is
+   in fact the page's one live action — so it keeps the weight, and the
+   disabled buy button stops pretending to be a control.
+
+   Target hierarchy: one dominant product photograph on the left, and on the
+   right a compact purchasing column — series, name, price, rating, note,
+   availability, buy — held together as a single uninterrupted block, with a
+   hairline below it after which everything is supporting material. Semantic
+   colour (green "Available", crimson "Not sold here") and the blue-and-yellow
+   IKEA wordmark are the only colour left in the interface.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   Skapa — IKEA's design system — publishes its whole palette on :root as bare
+   "R, G, B" triplets consumed through rgb()/rgba(), so retargeting them here
+   neutralises buttons, borders, icons and fills across six separately-built
+   micro-frontends (pipf-, hnf-, pipcom-, plann-, rotera-, listing-) in one
+   pass. Semantic tokens — positive, negative, caution, destructive — are
+   deliberately left at their shipped values.
+   -------------------------------------------------------------------------- */
+:root {
+  --sd-sans: Inter, "Inter Variable", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-body: rgb(0 0 0 / 88%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 54% rather than the 40-50% metadata rung: delivery copy, article numbers
+     and review bylines are all read at 12.5-14px and still have to clear
+     4.5:1 on white. */
+  --sd-ink-3: rgb(0 0 0 / 54%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-rule-strong: rgb(0 0 0 / 18%);
+  --sd-fill: rgb(0 0 0 / 4%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-radius: 8px;
+
+  /* Skapa's neutrals already sit on an alpha-black-equivalent ladder
+     (#F5F5F5 ≈ 4%, #DFDFDF ≈ 12%, #111 ≈ 93%), so this is a nudge onto the
+     skill's exact rungs, not a de-tinting pass. */
+  --colour-neutral-1: 255, 255, 255;
+  --colour-neutral-2: 247, 247, 247;
+  --colour-neutral-3: 230, 230, 230;
+  --colour-neutral-4: 214, 214, 214;
+  --colour-neutral-5: 138, 138, 138;
+  --colour-neutral-6: 92, 92, 92;
+  --colour-neutral-7: 0, 0, 0;
+
+  --colour-text-and-icon-1: 0, 0, 0;
+  --colour-text-and-icon-2: 92, 92, 92;
+  --colour-text-and-icon-3: 118, 118, 118;
+  --colour-text-and-icon-4: 138, 138, 138;
+  --colour-text-and-icon-5: 255, 255, 255;
+
+  --colour-static-black: 0, 0, 0;
+  --colour-static-grey: 230, 230, 230;
+  --colour-static-light-grey: 247, 247, 247;
+  --colour-static-dark-grey: 118, 118, 118;
+
+  /* Every hairline Skapa draws resolves through one of these. elevation-2 is
+     #484848 — a 72%-black rule used between list rows, which reads as an
+     underline rather than a divider. */
+  --colour-elevation-1-border: 230, 230, 230;
+  --colour-elevation-2-border: 230, 230, 230;
+  --colour-elevation-3: 0, 0, 0;
+
+  --colour-interactive-primary-bg-default: 0, 0, 0;
+  --colour-interactive-primary-bg-hover: 38, 38, 38;
+  --colour-interactive-primary-bg-pressed: 0, 0, 0;
+  --colour-interactive-secondary-bg-default: 247, 247, 247;
+  --colour-interactive-secondary-bg-hover: 235, 235, 235;
+  --colour-interactive-secondary-bg-pressed: 224, 224, 224;
+  --colour-interactive-subtle-border-default: 0, 0, 0;
+  --colour-interactive-subtle-border-hover: 0, 0, 0;
+  --colour-interactive-subtle-border-pressed: 0, 0, 0;
+  --colour-interactive-subtle-border-selected: 0, 0, 0;
+
+  /* Disabled shipped as #929292 on #CCCCCC — 2.3:1, so the reason a control
+     is unavailable was the least readable text on the page. */
+  --colour-interactive-disabled-1: 240, 240, 240;
+  --colour-interactive-disabled-2: 122, 122, 122;
+
+  /* Emphasised (#0058A3) is Skapa's blue action fill. This page has one
+     primary action and it is ink; the blue survives only in the wordmark. */
+  --colour-interactive-emphasised-bg-default: 0, 0, 0;
+  --colour-interactive-emphasised-bg-hover: 38, 38, 38;
+  --colour-interactive-emphasised-bg-pressed: 0, 0, 0;
+  --colour-interactive-emphasised-border-selected: 0, 0, 0;
+
+  /* Merchandising hues — family blue, campaign green, promo red and yellow —
+     are decoration, not state. Semantic positive / negative / caution and the
+     destructive fill are untouched: availability is the one thing on this
+     page that colour genuinely carries. */
+  --colour-static-ikea-family: 0, 0, 0;
+  --colour-commercial-message-ikea-family: 0, 0, 0;
+  --colour-commercial-message-bti-red: 0, 0, 0;
+  --colour-commercial-message-bti-yellow: 230, 230, 230;
+  --colour-commercial-message-new: 0, 0, 0;
+  --colour-commercial-message-new-lower-price: 0, 0, 0;
+  --colour-commercial-message-time-restricted-offer: 0, 0, 0;
+  --colour-campaign-sustainability: 0, 0, 0;
+  --colour-semantic-informative: 0, 0, 0;
+
+  /* Skapa reads its family from one token, which reaches components whose
+     class names an override sheet never sees. */
+  --ikea-font: var(--sd-sans);
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas and type family
+   Noto IKEA ships Regular and Bold only — document.fonts lists 400 and 700
+   and nothing between. Every label on the page is therefore 400 or 700, and
+   a 500 written against that family would silently resolve down to 400 and
+   erase the distinction it was meant to create. Inter carries the 400/500/600
+   rungs the hierarchy below depends on. Icons here are inline SVG rather than
+   an icon font, so the family can be set broadly.
+   -------------------------------------------------------------------------- */
+html,
+body {
+  background: #fff !important;
+  color: var(--sd-ink-body) !important;
+  font-family: var(--sd-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+optgroup,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--sd-sans) !important;
+  text-transform: none !important;
+  letter-spacing: normal;
+}
+
+/* --------------------------------------------------------------------------
+   3. Header
+   The utility bar shipped as a full-bleed #111 slab across the viewport — the
+   heaviest object on the page, sitting above a wordmark it competed with.
+   Dropped to the skill's 4% section fill so the page opens on the logo, and
+   the header now draws exactly one rule, where chrome meets content.
+   -------------------------------------------------------------------------- */
+.hnf-utilitybar {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+}
+
+.hnf-utilitybar,
+.hnf-utilitybar a,
+.hnf-utilitybar button,
+.hnf-utilitybar span,
+.hnf-utilitybar .hnf-link--white,
+.hnf-utilitybar .hnf-btn__inner {
+  color: var(--sd-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+}
+
+.hnf-utilitybar svg {
+  color: var(--sd-ink-3) !important;
+}
+
+.hnf-utilitybar .hnf-btn__inner {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.hnf-utilitybar .hnf-btn:hover .hnf-btn__inner {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* The locale control divides "US" from "English" with a white left border,
+   which only became visible once the bar stopped being black. */
+.hnf-utilitybar span span {
+  border-color: var(--sd-rule-strong) !important;
+}
+
+/* Below 900px the same promotional line is rendered again as .hnf-mobile-vp,
+   a second #F5F5F5 strip inside <main>. Two grey bands either side of a white
+   navbar opened the phone on three stripes of chrome before the product. */
+.hnf-mobile-vp {
+  background: transparent !important;
+}
+
+.hnf-vp__copy,
+.hnf-vp .hnf-link,
+.hnf-mobile-vp .hnf-link {
+  font-size: 13px !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+  text-underline-offset: 0.2em;
+}
+
+.hnf-navbar {
+  background: #fff !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+.hnf-header {
+  border-bottom: 1px solid var(--sd-rule) !important;
+  box-shadow: none !important;
+}
+
+/* Brand mark. Blue and yellow exactly as shipped, and explicitly exempt from
+   the greyscale the payment marks get in section 14 — on a page with no other
+   colour it does more identity work than it did in the original. */
+.hnf-navbar__logo img {
+  filter: none !important;
+}
+
+.hnf-menu__entrypoint,
+.hnf-menu__entrypoint.hnf-link {
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-body) !important;
+  text-decoration: none !important;
+}
+
+.hnf-menu__entrypoint:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+  text-underline-offset: 0.24em;
+}
+
+/* Search is a field, not a call to action: one quiet fill in place of a
+   pill-shaped outline wrapped around a bordered submit. */
+.search-box-form,
+.search-box-wrapper,
+.search-box-container form {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: var(--sd-radius) !important;
+  box-shadow: none !important;
+}
+
+.search-box-form input,
+input[type="search"],
+#ikea-search-input {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 15px !important;
+  color: var(--sd-ink-body) !important;
+}
+
+#ikea-search-input::placeholder {
+  color: var(--sd-ink-3) !important;
+}
+
+.hnf-navbar__icons .hnf-btn__inner {
+  background: transparent !important;
+  box-shadow: none !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-body) !important;
+}
+
+.hnf-navbar__icons .hnf-btn:hover .hnf-btn__inner {
+  background: var(--sd-hover) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Buttons — one shape system
+   Skapa renders every button as a 64px pill except the "Explore products
+   similar" block, which is an 8px rectangle: two equivalent full-width CTAs
+   with different radii. Unified on the restrained rectangle for anything
+   carrying a label, leaving icon-only controls circular — a distinct role
+   rather than a second radius — and filters on the pill family the skill
+   reserves for tags, because their role really is distinct.
+
+   The same button component is compiled into each micro-frontend under its
+   own prefix (pipf-, hnf-, plann-, rotera-, listing-, crec-), so these rules
+   match the shared BEM tail rather than enumerating six copies of every
+   variant. Fill, radius and outline live on an inner <span>, not on the
+   button, so both have to be addressed.
+   -------------------------------------------------------------------------- */
+[class*="-btn"],
+[class*="btn__inner"] {
+  border-radius: var(--sd-radius) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+[class*="btn__inner"],
+[class*="btn__label"] {
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+[class*="btn--icon"],
+[class*="btn--icon"] > [class*="btn__inner"],
+.pipf-favourite-button,
+.pipf-favourite-button .pipf-btn__inner {
+  border-radius: 999px !important;
+}
+
+/* Secondary buttons draw their outline as an inset box-shadow, so a border
+   declaration would have left the original line untouched underneath. */
+[class*="btn--secondary"]:not([disabled]) > [class*="btn__inner"],
+[class*="btn--outlined"]:not([disabled]) > [class*="btn__inner"] {
+  background: transparent !important;
+  box-shadow: 0 0 0 1px var(--sd-rule-strong) inset !important;
+  color: var(--sd-ink) !important;
+}
+
+[class*="btn--secondary"]:not([disabled]):hover > [class*="btn__inner"],
+[class*="btn--outlined"]:not([disabled]):hover > [class*="btn__inner"] {
+  background: var(--sd-hover) !important;
+  box-shadow: 0 0 0 1px var(--sd-ink) inset !important;
+}
+
+[class*="btn--primary"]:not([disabled]) > [class*="btn__inner"] {
+  background: var(--sd-ink) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+[class*="btn--plain"] > [class*="btn__inner"],
+[class*="btn--tertiary"] > [class*="btn__inner"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--sd-ink-body) !important;
+}
+
+/* A disabled control keeps a fill so it still reads as a control, and loses
+   the outline so it cannot be mistaken for the live one beside it. */
+button[disabled] > [class*="btn__inner"] {
+  background: var(--sd-fill) !important;
+  color: rgb(0 0 0 / 52%) !important;
+  box-shadow: none !important;
+}
+
+/* Category filters in the accessories browser. Pills, and the selected one
+   keeps an ink fill — the secondary rule above would otherwise have emptied
+   it and left the strip with no visible selection at all. */
+[class*="categories-button"],
+[class*="categories-button"] > [class*="btn__inner"] {
+  border-radius: 999px !important;
+}
+
+[class*="categories-button"].active > [class*="btn__inner"] {
+  background: var(--sd-ink) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+/* Overlay controls sitting on the photograph. Ink at 78% keeps them legible
+   against a white product shot without becoming a second black slab. */
+[class*="btn--image-overlay"] > [class*="btn__inner"],
+[class*="btn--icon-image-overlay"] > [class*="btn__inner"] {
+  background: rgb(0 0 0 / 78%) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.pipf-link,
+.hnf-link,
+.pipcom-link,
+.listing-link,
+.lower-funnel-fragments-link {
+  color: var(--sd-ink-body) !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+.pipf-link:hover,
+.hnf-link:hover,
+.pipcom-link:hover,
+.listing-link:hover,
+.lower-funnel-fragments-link:hover {
+  color: var(--sd-ink) !important;
+  text-decoration-color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Price
+   The price component is compiled three times as well — pipcom- on the
+   product, listing- in the recommendation carousels, pip- in the shoppable
+   image hotspots — and each halves the size of the currency and the cents and
+   lifts them, turning $79.99 into a merchandising "79⁹⁹". One size on one
+   baseline reads as a number rather than as a claim.
+   -------------------------------------------------------------------------- */
+.pipcom-price,
+.pipcom-price__integer,
+.pipcom-price__currency,
+.pipcom-price__decimal,
+.pipcom-price__separator {
+  font-size: 28px !important;
+}
+
+.listing-price,
+.listing-price__integer,
+.listing-price__currency,
+.listing-price__decimal,
+.listing-price__separator {
+  font-size: 17px !important;
+}
+
+.pip-price,
+.pip-price__integer,
+.pip-price__currency,
+.pip-price__decimal,
+.pip-price__separator,
+.pip-price__subscript {
+  font-size: 15px !important;
+}
+
+.pipcom-price,
+.pipcom-price__integer,
+.pipcom-price__currency,
+.pipcom-price__decimal,
+.pipcom-price__separator,
+.listing-price,
+.listing-price__integer,
+.listing-price__currency,
+.listing-price__decimal,
+.listing-price__separator,
+.pip-price,
+.pip-price__integer,
+.pip-price__currency,
+.pip-price__decimal,
+.pip-price__separator,
+.pip-price__subscript {
+  font-weight: 500 !important;
+  line-height: 1.15 !important;
+  vertical-align: baseline !important;
+  top: 0 !important;
+  color: var(--sd-ink) !important;
+  font-feature-settings: "tnum" 1;
+}
+
+/* --------------------------------------------------------------------------
+   6. Breadcrumb
+   -------------------------------------------------------------------------- */
+.hnf-breadcrumb {
+  margin: 12px 0 16px !important;
+}
+
+.hnf-breadcrumb__link,
+.hnf-breadcrumb__list-item,
+.hnf-breadcrumb svg {
+  font-size: 13px !important;
+  color: var(--sd-ink-3) !important;
+  text-decoration: none !important;
+}
+
+.hnf-breadcrumb__link:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. The product grid
+   Skapa lays the page out on a 12-column grid: gallery on 1-7 (774px),
+   purchasing column on 8-12 (506px of content). Retargeting it to a fluid
+   media column plus a fixed rail moves width into the photograph and holds
+   the buying column at 480px, which reads as compact rather than as a second
+   page. The rail is 520px and not narrower because the gallery is square: at
+   1440x900 a wider media column pushes the product past the fold, so the
+   photograph's size is set by the viewport height, not by the column ratio.
+   -------------------------------------------------------------------------- */
+.pipf-page.js-product-pip {
+  grid-template-columns: minmax(0, 1fr) 520px !important;
+  column-gap: 24px !important;
+}
+
+.pipf-page__left-top-container,
+.pipf-page__left-bottom-container {
+  grid-column: 1 / 2 !important;
+}
+
+.pipf-page__right-container {
+  grid-column: 2 / 3 !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Gallery
+   The hero shot is a white shelf photographed on white, so on a white page
+   the media has no edges and reads as a small object floating in the corner
+   rather than as the anchor of the composition. Setting it on the skill's 4%
+   section fill gives it a boundary without a rule and makes the photograph
+   the largest single object on the fold. Skapa multiplies product images
+   against their backdrop, so the shot merges into the panel instead of
+   sitting in a white rectangle inside it.
+
+   The thumbnails shipped on a #EFEFEF fill inside a #DFDFDF box — two
+   boundaries around one control. The fill stays, for the same reason the hero
+   needs one; selection is the only thing that earns a rule.
+   -------------------------------------------------------------------------- */
+.pipf-product-gallery {
+  margin-bottom: 56px !important;
+}
+
+.pipf-product-gallery__media-wrapper {
+  background: var(--sd-fill) !important;
+  border-radius: var(--sd-radius) !important;
+  overflow: hidden;
+}
+
+/* The panel lives on the wrapper alone; the slide and the zoom layer inside
+   it would paint the same rectangle a second and third time. */
+.pipf-product-gallery__media,
+.pipf-zoom-image {
+  background: transparent !important;
+}
+
+.pipf-product-gallery__thumbnail {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+/* Selection is a ring and nothing else. Dimming the other eight shots would
+   de-emphasise the exact thing the control exists to let you compare. */
+.pipf-product-gallery__thumbnail--active {
+  box-shadow: 0 0 0 1px var(--sd-ink) !important;
+}
+
+/* Position dots on the mobile gallery, onto the ink ladder. */
+.pipf-dot-indicator__dot {
+  background: var(--sd-rule-strong) !important;
+}
+
+.pipf-dot-indicator__dot--active,
+.pipf-dot-indicator__dot[class*="active"] {
+  background: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. The purchasing column
+   The buying path is name → price → rating → note → availability → buy, and
+   nothing may sit inside it. The planner promo shipped between the product
+   note and "How to get it"; flex order moves it below the CTA, where it joins
+   services, points, protections and payment offers as supporting material.
+   Order is the only structural move made here: the two-column composition
+   already puts media left and purchasing right, and replacing that would be
+   rearrangement for its own sake.
+   -------------------------------------------------------------------------- */
+.pipf-page__right-container-content > * {
+  order: 3;
+  /* Single-direction spacing only. Skapa leaves five zero-height wrappers
+     between these modules; a flex gap, or a bottom margin meeting a top one,
+     would be paid for them too and open holes that look like mistakes. */
+  margin: 0 !important;
+}
+
+.pipf-page__right-container-content > .pipf-price-package,
+.pipf-page__right-container-content > .pipf-product-info,
+.pipf-page__right-container-content > :has(.lower-funnel-fragments-availability-group),
+.pipf-page__right-container-content > .pipf-add-to-cart-section,
+.pipf-page__right-container-content > .pipf-promote-similar-products-button {
+  order: 1;
+}
+
+.pipf-page__right-container-content > :has(.pipf-mini-planner) {
+  order: 2;
+}
+
+/* Series link, above the name — an escape route to the rest of KALLAX, not a
+   heading. */
+.pipf-price-package__catalog-link {
+  font-size: 13px !important;
+  color: var(--sd-ink-3) !important;
+  margin: 0 0 14px !important;
+}
+
+.pipf-price-package {
+  margin-bottom: 0 !important;
+}
+
+/* The <h1> shipped at 16px/700 — smaller than the accordion labels below the
+   fold and the same size as its own subtitle. Size, not weight, makes it the
+   entry point. */
+.pipcom-pip-price-module h1.pipcom-text,
+.pipf-price-package h1 {
+  font-size: 30px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--sd-ink) !important;
+  margin: 0 0 6px !important;
+}
+
+.pipcom-price-module__name-decorator {
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  display: block !important;
+}
+
+.pipcom-price-module__description,
+.pipcom-price-module__description span {
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+  letter-spacing: normal !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* Size and baseline for the price are set once, with the other two copies of
+   the component, in section 5. */
+.pipcom-price-module__price {
+  margin-top: 18px !important;
+}
+
+/* Rating and Q&A are metadata about the product, not controls competing with
+   the price. */
+.pipf-ratings-and-qna {
+  margin-top: 16px !important;
+  align-items: center !important;
+}
+
+.pipf-rating__label,
+.pipf-questions-and-answers__title,
+.pipf-questions-and-answers__count {
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.pipf-ratings-and-qna__divider {
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  color: var(--sd-rule-strong) !important;
+}
+
+.pipf-questions-and-answers__button .pipf-btn__inner {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* "KALLAX underframe sold separately." is a caveat on the price, so it stays
+   tight to it. */
+.pipf-product-info {
+  margin-top: 14px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.pipf-product-info__text {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Availability
+   Two rows in a bordered, rounded card. The rows are peers and the heading
+   above them already names the group, so the box goes and a single divider
+   between the two rows carries the structure.
+   -------------------------------------------------------------------------- */
+.lower-funnel-fragments-availability-group {
+  margin-top: 32px !important;
+}
+
+.lower-funnel-fragments-section-group__header {
+  align-items: baseline !important;
+  margin-bottom: 4px !important;
+}
+
+.lower-funnel-fragments-section-group__header--left,
+.pipf-section-group__header--left,
+.pipf-services-section__header {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.lower-funnel-fragments-section-group__header--right,
+.lower-funnel-fragments-section-group__header--right a {
+  font-size: 13px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* Zeroing the card's own 17px inset as well as the rows': with only the rows
+   reset, the divider between them stopped short of the heading above and the
+   chevrons to its right, which reads as a near-miss rather than a rule. */
+.lower-funnel-fragments-section-group__content,
+.pipf-section-group__content {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.lower-funnel-fragments-section {
+  border: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.lower-funnel-fragments-section-group__content
+  > .lower-funnel-fragments-section
+  + .lower-funnel-fragments-section {
+  border-top: 1px solid var(--sd-rule) !important;
+}
+
+.lower-funnel-fragments-section__header {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.lower-funnel-fragments-section__icon {
+  color: var(--sd-ink-3) !important;
+}
+
+/* Availability is the one place colour is load-bearing on this page. The dots
+   keep their shipped green and crimson and, just as importantly, their two
+   distinct shapes — filled circle for available, struck-through circle for
+   not sold — so the states survive for a reader who cannot separate the hues.
+   Only the label text moves onto the ink ladder. */
+.lower-funnel-fragments-status__label,
+.lower-funnel-fragments-store-section__button {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Buy
+   The buy button is disabled in this location, which makes "Explore products
+   similar to KALLAX" the page's one live full-width action. It was already
+   the filled black block in the original, so it keeps that role rather than
+   having a new primary invented for it, and it is the only filled action left
+   anywhere on the page.
+   -------------------------------------------------------------------------- */
+.pipf-add-to-cart-section {
+  margin-top: 28px !important;
+}
+
+.pipf-add-to-cart-section .pipf-btn,
+.pipf-add-to-cart-section .pipf-btn__inner,
+.pipf-promote-similar-products-button {
+  min-height: 52px !important;
+  border-radius: var(--sd-radius) !important;
+  font-size: 15px !important;
+}
+
+.pipf-promote-similar-products-button {
+  background: var(--sd-ink) !important;
+  margin-top: 12px !important;
+  padding: 14px 20px !important;
+}
+
+.pipf-promote-similar-products-button__text {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+}
+
+.pipf-promote-similar-products-button__icon {
+  color: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Supporting rail
+   Everything below the CTA is merchandising: planner, services, points,
+   protections, payment offers and a replacement notice. Four of the six
+   shipped as bordered rounded cards, which made a stack of boxes read as
+   equal claims on attention. One hairline separates the rail from the buying
+   path; inside it, spacing does the grouping.
+   -------------------------------------------------------------------------- */
+.pipf-page__right-container-content > :has(.pipf-mini-planner) {
+  margin-top: 40px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid var(--sd-rule) !important;
+}
+
+.plann-mini-fragment-link {
+  border: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.plann-mini-fragment-link__title {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.plann-mini-fragment-link__description {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* .pipf-section-group__content, which "More ways to pay" shares with "How to
+   get it", is already unboxed in section 10. */
+.pipf-services-section,
+.pipf-buyer-protections {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.pipf-page__right-container-content > .pipf-services-section,
+.pipf-page__right-container-content > .pipf-buyer-protections,
+.pipf-page__right-container-content > .pipf-section-group,
+.pipf-page__right-container-content > :has(.listing-rewards-promotion) {
+  margin-top: 28px !important;
+}
+
+.pipf-buyer-protections__item,
+.pipf-more-ways-to-pay__payment-method,
+.pipf-section {
+  border: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.pipf-buyer-protections__item__header,
+.pipf-more-ways-to-pay__payment-header,
+.listing-rewards-promotion__text-heading {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.pipf-buyer-protections__item__body,
+.pipf-more-ways-to-pay__payment-text,
+.pipf-services-section__button,
+.pipf-services-section__assembly-disclosure,
+.listing-rewards-promotion__actions,
+.listing-rewards-promotion__actions a {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* The IKEA Family points badge is a saturated yellow disc — a second brand
+   colour a full page away from the wordmark, carrying no state. */
+.listing-rewards-promotion__badge {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  color: var(--sd-ink) !important;
+}
+
+/* The "article number replaced" notice keeps a left rule to mark it as an
+   aside, but not the drop shadow — the only elevation on the page, and it
+   communicated nothing. */
+.pipf-inline-message {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-left: 2px solid var(--sd-rule-strong) !important;
+  background: transparent !important;
+  padding: 2px 0 2px 16px !important;
+}
+
+.pipf-inline-message__body {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Below the gallery — description, designer, specifications, reviews
+   -------------------------------------------------------------------------- */
+.pipf-product-summary {
+  margin-top: 8px !important;
+}
+
+.pipf-product-summary__description {
+  font-size: 18px !important;
+  line-height: 1.6 !important;
+  color: var(--sd-ink-body) !important;
+  max-width: 34em;
+}
+
+.pipf-designer__label {
+  font-size: 12.5px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+.pipf-designer__name {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.pipf-designer__image-wrapper {
+  border-radius: 4px !important;
+  overflow: hidden;
+}
+
+.pipf-product-identifier__label {
+  font-size: 12.5px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* The article number shipped as a solid black chip. It is a reference string,
+   not a badge, and it was the only filled object in its chapter. */
+.pipf-product-identifier__value {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-body) !important;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Product details / Measurements / Q&A: three disclosure rows whose labels
+   shipped at 24px/700 in 116px-tall boxes, louder than the product name
+   beside them. They are peers, so they render identically, and the row height
+   comes down to what the label needs. */
+.pipf-product-information-section {
+  border-top: 1px solid var(--sd-rule) !important;
+  margin-top: 40px !important;
+}
+
+.pipf-list-view-item {
+  border: 0 !important;
+  border-bottom: 1px solid var(--sd-rule) !important;
+}
+
+.pipf-list-view-item__action {
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.pipf-list-view-item__title,
+.pipf-list-view-item__title span {
+  font-size: 17px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  color: var(--sd-ink) !important;
+}
+
+.pipf-product-information-section__count {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-3) !important;
+}
+
+.pipf-list-view-item__control-icon {
+  color: var(--sd-ink-2) !important;
+}
+
+/* Customer reviews shipped as white cards on a grey panel inside a bordered
+   box — three containers around one list. The panel and the box go; the cards
+   keep a hairline, because they are carousel items whose right-hand edge is
+   what tells you there is more to scroll to. */
+.pipf-highlight-reviews,
+.pipf-highlight-reviews__left-container {
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.pipf-highlight-reviews__heading {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--sd-ink) !important;
+}
+
+.pipf-highlight-reviews__review-item {
+  border: 1px solid var(--sd-rule) !important;
+  border-radius: var(--sd-radius) !important;
+  box-shadow: none !important;
+}
+
+.pipf-highlight-reviews__title,
+.pipf-seo-reviews__review-title {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.pipf-highlight-reviews__text,
+.pipf-seo-reviews__review-text {
+  font-size: 13.5px !important;
+  line-height: 1.55 !important;
+  color: var(--sd-ink-body) !important;
+}
+
+.pipf-highlight-reviews__name,
+.pipf-highlight-reviews__card-total-reviews,
+.pipf-seo-reviews__review-name {
+  font-size: 12.5px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* The 4.7 average and the 8947 count shipped at 36px/700 — larger than the
+   product name and heavier than anything else in the chapter. */
+.pipf-highlight-reviews__header {
+  font-size: 28px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+  font-feature-settings: "tnum" 1;
+}
+
+.pipf-highlight-reviews__description {
+  font-size: 14px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. Chapters below the fold
+   Accessories, reviews, Instagram, related products, category shortcuts,
+   recommendations, the planner and the sustainability note: eight chapters
+   built by five teams, arriving with headings at 18/700, 21/700, 22/600,
+   24/700 and 40/700. One size for a chapter heading, one for a chapter label,
+   and real space above each, so the tail reads as chapters rather than as a
+   stack of unrelated widgets.
+   -------------------------------------------------------------------------- */
+.pipf-recommendation-panel__header,
+.pipf-recommendation-panel h2,
+.pipf-category-shortcuts__heading,
+.pipf-accessories-grid__header,
+.pipf-long-benefits__header,
+.crec-typography-heading-m,
+.rotera-typography-heading-m,
+.plann-content-card__title {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--sd-ink) !important;
+  text-align: left !important;
+  margin: 0 0 20px !important;
+}
+
+/* A chapter subtitle belongs to the heading above it, so it sits tight to it
+   rather than in the 20px the heading reserves for the chapter below. The
+   pull-up is scoped to the teaser's own module class: .crec-text--lighter is
+   the fragment's generic secondary-text class and appears on body copy too. */
+.crec-text--lighter {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+[class*="Teaser-module_subtitle"] {
+  margin-top: -16px !important;
+  padding-top: 0 !important;
+}
+
+/* "Complete the look" is a nine-tile masonry grid in which every tile carries
+   its own bottom border, so the chapter painted ten hairlines across two rows
+   and the eye tracked the grid instead of the products. The gutter already
+   separates the tiles; the chapter keeps only the rule that opens it. The
+   module is lazily mounted and does not render on every load, so this is
+   written defensively rather than confirmed in every capture. */
+.pipf-accessories-grid__item-wrapper,
+.pipf-accessories-grid__item {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.pipf-accessories-grid__item-wrapper--button {
+  border-radius: var(--sd-radius) !important;
+}
+
+/* "Quality" labels the chapter; "Quality and feel" is its heading. Rendering
+   both as headings made the label compete with the thing it introduces. */
+.pipf-long-benefits__badge {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+  color: var(--sd-ink-3) !important;
+  margin: 0 0 12px !important;
+}
+
+.pipf-recommendation-panel,
+.pipf-category-shortcuts,
+.pipf-sustainability,
+.rotera-portal-kreativ-embedded-accessories-root {
+  margin-top: 72px !important;
+}
+
+.plann-content-card__description,
+.plann-content-card p {
+  font-size: 15px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.pipf-long-benefits__text-item {
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  padding-top: 32px !important;
+}
+
+/* Five sibling-category links, spread edge to edge by space-between so the
+   gaps between them changed on every row. */
+.pipf-category-shortcuts__container {
+  justify-content: flex-start !important;
+  gap: 32px 48px !important;
+}
+
+.pipf-category-shortcuts__image-wrapper {
+  background: var(--sd-fill) !important;
+  border-radius: 4px !important;
+}
+
+/* 24px grey was the largest body text on the page, for a list of links. */
+.pipf-category-shortcuts__name {
+  font-size: 16px !important;
+  color: var(--sd-ink-body) !important;
+}
+
+.pipf-category-shortcuts__text,
+.pipf-category-shortcuts__see-all,
+.pipf-category-shortcuts__count {
+  font-size: 14px !important;
+  color: var(--sd-ink-body) !important;
+}
+
+/* Recommendation cards: name and price both shipped at 700 and the price at
+   28px, so a suggestion shouted louder than the product being viewed. The
+   availability lines keep their semantic dots. */
+.listing-price-module__product-name,
+.listing-price-module__name-decorator,
+.listing-commercial-message,
+.listing-badge__label {
+  font-weight: 500 !important;
+}
+
+.listing-price-module__description,
+.listing-status__label,
+.listing-price-module__rating-label-count {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* "Best seller" shipped on #E00751 — the same crimson the availability dots
+   use for "Not sold here". A promotional badge borrowing the page's error
+   colour is exactly what the semantic pass exists to protect. */
+.listing-product-badge {
+  background: var(--sd-ink) !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+}
+
+.listing-loader-skeleton,
+.crec-skeleton,
+[class*="skeleton" i] {
+  background-color: var(--sd-fill) !important;
+}
+
+/* The feedback prompt above the footer was the last centred text on the page,
+   and the only one whose siblings are all left-aligned. Centring was the only
+   thing holding it off the viewport edge, so it needs the content container's
+   own 48px margin once that goes. */
+.hnf-voc-cta {
+  text-align: left !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  padding-inline: 48px !important;
+}
+
+.hnf-voc-cta p {
+  font-size: 14px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   15. Footer
+   Skapa's #F5F5F5 footer band already matches the skill's 4% section fill, so
+   it stays as the page's closing chapter; its type, controls and the wall of
+   colour payment marks are what change.
+   -------------------------------------------------------------------------- */
+.hnf-footer {
+  background: var(--sd-fill) !important;
+  border-top: 0 !important;
+}
+
+.hnf-footer h3,
+.hnf-accordion__title,
+.hnf-footer__featuredLink h3 {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.hnf-footer p,
+.hnf-footer li,
+.hnf-footer a,
+.hnf-accordion__content-item {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.hnf-footer a:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* Thirteen payment marks in full colour, each on its own white tile, were the
+   loudest band on the page and the least read. Monochrome and unboxed, per
+   the skill's treatment of partner logos; the wordmark in the header stays
+   the page's only coloured mark. */
+.hnf-payment-logo {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.hnf-payment-logo__img,
+.hnf-footer__payments img {
+  filter: grayscale(1) !important;
+  opacity: 0.7;
+}
+
+/* Social links shipped as five filled pills. The glyph is the target; the
+   disc behind it promoted the quietest row in the footer. */
+.hnf-icon-pill {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.hnf-footer__socials svg,
+.hnf-svg-icon--social {
+  color: var(--sd-ink-2) !important;
+}
+
+/* Two filled black "Join or log in" blocks and a filled feedback button were
+   the heaviest objects outside the buying column and among the least used
+   controls on the page. Outlined keeps every one of them reachable at the
+   weight a footer signup deserves. */
+.hnf-footer .hnf-btn--primary:not([disabled]) .hnf-btn__inner,
+.hnf-voc-cta .hnf-btn--primary:not([disabled]) .hnf-btn__inner {
+  background: transparent !important;
+  color: var(--sd-ink) !important;
+  box-shadow: 0 0 0 1px var(--sd-rule-strong) inset !important;
+}
+
+.hnf-footer .hnf-btn--primary:hover .hnf-btn__inner,
+.hnf-voc-cta .hnf-btn--primary:hover .hnf-btn__inner {
+  background: var(--sd-hover) !important;
+  box-shadow: 0 0 0 1px var(--sd-ink) inset !important;
+}
+
+.hnf-footer__copyright,
+.hnf-footer__legalLinks {
+  border-top: 1px solid var(--sd-rule) !important;
+}
+
+/* --------------------------------------------------------------------------
+   16. Focus and selection
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+/* --------------------------------------------------------------------------
+   17. Responsive
+   The gallery already stacks first on mobile, followed by the purchasing
+   column and then the details, which is the order the skill asks for — and
+   the flex reorder in section 9 carries over unchanged, so the planner promo
+   drops below the CTA on the phone too.
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .pipf-page.js-product-pip {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .pipf-page__left-top-container,
+  .pipf-page__right-container,
+  .pipf-page__left-bottom-container {
+    grid-column: 1 / -1 !important;
+  }
+
+  .pipf-page__right-container {
+    padding-left: 0 !important;
+  }
+
+  /* The gallery breaks out to full bleed here, so the media panel runs to both
+     screen edges and a radius would only round it against them. */
+  .pipf-product-gallery__media-wrapper {
+    border-radius: 0 !important;
+  }
+
+  /* Four levels of breadcrumb wrap to three lines at 390px and pushed the
+     photograph most of a screen down the page. */
+  .hnf-breadcrumb {
+    margin: 8px 0 12px !important;
+  }
+
+  .hnf-breadcrumb__link,
+  .hnf-breadcrumb__list-item {
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+  }
+
+  .pipcom-pip-price-module h1.pipcom-text,
+  .pipf-price-package h1 {
+    font-size: 26px !important;
+  }
+
+  .pipcom-price,
+  .pipcom-price__integer,
+  .pipcom-price__currency,
+  .pipcom-price__decimal,
+  .pipcom-price__separator {
+    font-size: 26px !important;
+  }
+
+  .pipf-product-summary__description {
+    font-size: 17px !important;
+  }
+
+  /* Stacked, the description no longer follows the gallery — it follows the
+     last line of the purchasing column, and needs the gap that says so. */
+  .pipf-product-summary {
+    margin-top: 44px !important;
+  }
+
+  .hnf-voc-cta {
+    padding-inline: 20px !important;
+  }
+
+  .pipf-recommendation-panel,
+  .pipf-category-shortcuts,
+  .pipf-sustainability,
+  .rotera-portal-kreativ-embedded-accessories-root {
+    margin-top: 56px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   18. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

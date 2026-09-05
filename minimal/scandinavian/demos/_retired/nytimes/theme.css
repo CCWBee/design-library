@@ -1,0 +1,663 @@
+/* ==========================================================================
+   The New York Times — Scandinavian override
+
+   Recon: the front page is ~16,000px of mixed grid — 80 linked stories in
+   cells spanning 5, 7 and 14 of a 20-column layout, 137 images, five ad
+   slots, and 131 grid cells carrying an optional left divider. Every colour
+   in the chrome is already a true neutral (#121212 / #363636 / #5a5a5a /
+   #727272 / #959595 / #c7c7c7 / #dfdfdf / #ebebeb / #f8f8f8, all zero
+   channel spread), so there is almost nothing to decolorize. The work here
+   is typographic and structural.
+
+   Three problems:
+
+   1. Two serif families (nyt-cheltenham for headlines, nyt-imperial for
+      summaries and body) sit against a sans (nyt-franklin) used for every
+      label, kicker, byline and control. That is the mixed serif/sans system
+      the skill escalates on, and it is also why the page reads as eleven
+      text styles rather than four.
+   2. Casing and tracking carry the hierarchy instead of size and space:
+      ~370 elements set text-transform: uppercase with 1–1.4px of tracking
+      at 10–14px, including every section header and every "6 min read".
+   3. Rules are the page's only chaptering device. Section heads sit on a
+      2px solid #121212 bar, the nav is bracketed above and below, and the
+      grid draws a vertical hairline down almost every cell boundary.
+
+   Target: one sans family (the Times's own Franklin — see §2), a four-step
+   headline scale, sentence case throughout the chrome, and chapters marked
+   by a large left-aligned heading with space above it rather than by weight
+   of rule. Vertical column rules stay, because on a page showing three
+   simultaneous columns of unrelated stories they are buying density that
+   whitespace cannot buy back at this height.
+
+   Kept: the wordmark, the LIVE/BREAKING red, market up/down colour, every
+   photograph, every ad slot, and all 80 stories.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   Everything the page paints comes from a `--tpl-*` / `--g-*` family
+   declared on <html> (behind `.tpl-always-light`, not `:root`). Importance
+   beats specificity for custom properties, so an `html { ... !important }`
+   block wins without having to match their selector. Retargeting here
+   reaches the emotion-hashed components, which is the only way in: their
+   class names (`.css-1ig8fj6`) change on every deploy.
+   -------------------------------------------------------------------------- */
+html {
+  --sd-sans: nyt-franklin, Inter, "Inter Variable", -apple-system,
+    BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-1: rgb(0 0 0 / 92%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 52% rather than the 40–50% metadata rung: timestamps, read-times and
+     photo credits sit at 11–12px and still have to clear 4.5:1 on white. */
+  --sd-ink-3: rgb(0 0 0 / 52%);
+  --sd-ink-4: rgb(0 0 0 / 40%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-rule-strong: rgb(0 0 0 / 18%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-active: rgb(0 0 0 / 9%);
+  --sd-fill: rgb(0 0 0 / 4%);
+
+  /* Ink ladder. The Times's greys already map almost exactly onto the
+     skill's alpha ladder (#5a5a5a is 64.6% black), so this is a
+     re-expression rather than a recolour — it keeps every rung the product
+     shipped and puts them all on one scale. */
+  --tpl-color-content-primary-always-light: rgb(0 0 0 / 92%) !important;
+  --tpl-color-content-primary-dim-always-light: var(--sd-ink-2) !important;
+  --color-content-primary: rgb(0 0 0 / 92%) !important;
+  --color-content-quintary: var(--sd-ink-3) !important;
+  --g-color-copy: var(--sd-ink-2) !important;
+  --g-color-caption: var(--sd-ink-3) !important;
+  --g-color-leadin: var(--sd-ink-3) !important;
+
+  /* Strokes. Tertiary is the one the grid reads through
+     `--grid-cell-divider-color`, so it sets every vertical column rule on
+     the page; #c7c7c7 was heavy enough that 131 of them read as a table. */
+  --tpl-color-stroke-primary: var(--sd-rule-strong) !important;
+  --tpl-color-stroke-secondary: var(--sd-rule-strong) !important;
+  --tpl-color-stroke-tertiary: var(--sd-rule) !important;
+  --color-stroke-tertiary: var(--sd-rule) !important;
+  --color-background-tertiary: rgb(0 0 0 / 8%) !important;
+  --tpl-color-background-tertiary: rgb(0 0 0 / 8%) !important;
+
+  /* The Times blue (#567b95 fill, #326891 border) is a marketing accent on
+     the subscribe and log-in buttons, and it sits three centimetres from
+     the wordmark. A filled accent that close to the mark outranks it, so
+     the accent goes to ink and the nameplate is the only identity in the
+     region. #d0021b (LIVE / BREAKING) is untouched — see §9. */
+  --tpl-color-content-accent-always-light: var(--sd-ink-1) !important;
+  --tpl-color-content-accent-dim-always-light: var(--sd-ink-2) !important;
+  --g-color-spot-blue: var(--sd-ink-1) !important;
+
+  /* Section chapter rule: was .125rem solid #121212 under every section
+     head. Fourteen of those down a 16,000px page read as bars, not
+     chapters; the heading itself does that work in §5. */
+  --tpl-theme-story-list-section-divider: 1px solid var(--sd-rule-strong) !important;
+
+  --tpl-theme-story-list-headline-color: rgb(0 0 0 / 92%) !important;
+  --tpl-theme-story-list-summary-color: var(--sd-ink-2) !important;
+  --tpl-theme-story-list-bottom-label-color: var(--sd-ink-3) !important;
+  --tpl-theme-story-list-top-label-ls: 0 !important;
+  --tpl-theme-tile-top-label-ls: 0 !important;
+  --tpl-typography-label-emphasis-ls: 0 !important;
+  --tpl-theme-tile-title-color: rgb(0 0 0 / 92%) !important;
+  --tpl-theme-tile-description-color: var(--sd-ink-2) !important;
+  --tpl-theme-dialog-top-label-color: var(--sd-ink-3) !important;
+
+  /* Alignment tokens the components already expose. Tiles were the one
+     family still centring their own text. */
+  --tpl-theme-tile-horizontal-alignment: start !important;
+  --tpl-theme-story-list-text-alignment: start !important;
+  --tpl-theme-story-list-horizontal-alignment: start !important;
+  --tpl-theme-dialog-horizontal-alignment: start !important;
+  --tpl-theme-dialog-text-alignment: start !important;
+
+  /* Controls: 3px reads as a rounding accident rather than a decision. */
+  --tpl-theme-button-shape: 6px !important;
+  --tpl-theme-toast-shape: 6px !important;
+  --tpl-theme-dialog-corner-radius: 6px !important;
+  --tpl-theme-button-content-color: rgb(0 0 0 / 92%) !important;
+  --tpl-theme-button-background-color: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Type family — the serif decision
+   The skill's typography rules are ordered, and rule 1 ("preserve an
+   existing well-made sans-serif product typeface") resolves before the
+   default-to-Inter rule 3. The Times ships one: nyt-franklin, already
+   carrying every label, kicker, byline, nav item and control on the page,
+   in weights 400/500/600/700/800. So the serif families are replaced by
+   the paper's own sans rather than by an imported one — same instruction,
+   one less identity lost. Inter stays in the stack as a fallback only.
+
+   The wordmark is untouched. It is an inline SVG of drawn blackletter, not
+   type: nothing in a font-family declaration reaches it, and under the
+   brand-mark rule nothing should.
+
+   Font shorthands carry family, weight and size together, so each token is
+   restated whole. Weight drops from 700 to 600 per the heading rule —
+   Franklin ships 600, checked against the existing `--tpl-typography-title-*`
+   tokens which already use it.
+   -------------------------------------------------------------------------- */
+html {
+  --g-body-font-family: var(--sd-sans) !important;
+  --g-chelt-cond: var(--sd-sans) !important;
+  --tpl-font-family-cheltenham-sh: var(--sd-sans) !important;
+  --tpl-font-family-cheltenham-text-cond: var(--sd-sans) !important;
+  --tpl-font-family-franklin-all-caps: var(--sd-sans) !important;
+
+  /* News headlines (nyt-cheltenham 700). The scale is compressed at the top
+     end because a grotesque at 48px occupies more optical space than a
+     Cheltenham at the same measure. */
+  --tpl-typography-headline-news-14: 600 0.875rem/1.2 var(--sd-sans) !important;
+  --tpl-typography-headline-news-16: 600 1rem/1.2 var(--sd-sans) !important;
+  --tpl-typography-headline-news-18: 600 1.125rem/1.18 var(--sd-sans) !important;
+  --tpl-typography-headline-news-20: 600 1.25rem/1.16 var(--sd-sans) !important;
+  --tpl-typography-headline-news-22: 600 1.375rem/1.14 var(--sd-sans) !important;
+  --tpl-typography-headline-news-24: 600 1.5rem/1.12 var(--sd-sans) !important;
+  --tpl-typography-headline-news-28: 600 1.625rem/1.1 var(--sd-sans) !important;
+  --tpl-typography-headline-news-32: 600 1.75rem/1.08 var(--sd-sans) !important;
+  --tpl-typography-headline-news-36: 600 2rem/1.07 var(--sd-sans) !important;
+  --tpl-typography-headline-news-40: 600 2.125rem/1.06 var(--sd-sans) !important;
+  --tpl-typography-headline-news-48: 600 2.5rem/1.05 var(--sd-sans) !important;
+  --tpl-typography-headline-news-56: 600 2.75rem/1.04 var(--sd-sans) !important;
+
+  /* Opinion (nyt-cheltenham-cond) and feature (nyt-cheltenham 300). Opinion
+     was distinguished from news by a condensed serif; it keeps its
+     distinction through italic-free weight parity and the "Opinion" kicker
+     that already labels it, not through a second family. */
+  --tpl-typography-headline-opinion-16: 600 1rem/1.2 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-18: 600 1.125rem/1.18 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-20: 600 1.25rem/1.16 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-22: 600 1.375rem/1.14 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-24: 600 1.5rem/1.12 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-28: 600 1.625rem/1.1 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-36: 600 2rem/1.07 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-48: 600 2.5rem/1.05 var(--sd-sans) !important;
+  --tpl-typography-headline-opinion-56: 600 2.75rem/1.04 var(--sd-sans) !important;
+
+  --tpl-typography-headline-feature-16: 500 1rem/1.2 var(--sd-sans) !important;
+  --tpl-typography-headline-feature-18: 500 1.125rem/1.18 var(--sd-sans) !important;
+  --tpl-typography-headline-feature-20: 500 1.25rem/1.16 var(--sd-sans) !important;
+  --tpl-typography-headline-feature-24: 500 1.5rem/1.12 var(--sd-sans) !important;
+  --tpl-typography-headline-feature-28: 500 1.625rem/1.1 var(--sd-sans) !important;
+  --tpl-typography-headline-feature-36: 500 2rem/1.07 var(--sd-sans) !important;
+  --tpl-typography-headline-feature-48: 500 2.5rem/1.05 var(--sd-sans) !important;
+  --tpl-typography-headline-feature-56: 500 2.75rem/1.04 var(--sd-sans) !important;
+
+  --tpl-typography-headline-16: 600 1rem/1.2 var(--sd-sans) !important;
+  --tpl-typography-headline-18: 600 1.125rem/1.18 var(--sd-sans) !important;
+  --tpl-typography-headline-20: 600 1.25rem/1.16 var(--sd-sans) !important;
+  --tpl-typography-headline-24: 600 1.5rem/1.12 var(--sd-sans) !important;
+
+  /* Body / summary (nyt-imperial). Summaries stay at 14–16px rather than
+     the skill's 16–18px body range: they are deks in a dense card grid, not
+     running prose, and on a 16,000px page two points of leading per summary
+     is roughly a screen and a half of extra scroll. */
+  --tpl-typography-body-14: 400 0.875rem/1.45 var(--sd-sans) !important;
+  --tpl-typography-body-16: 400 0.9375rem/1.47 var(--sd-sans) !important;
+  --tpl-typography-body-18: 400 1.0625rem/1.5 var(--sd-sans) !important;
+  --tpl-typography-body-20: 400 1.125rem/1.52 var(--sd-sans) !important;
+  --tpl-typography-body-regular: 400 1.0625rem/1.52 var(--sd-sans) !important;
+  --tpl-typography-body-compact: 400 0.9375rem/1.47 var(--sd-sans) !important;
+  --tpl-typography-body: 400 1.0625rem/1.52 var(--sd-sans) !important;
+
+  --tpl-theme-tile-title: 500 1.0625rem/1.25 var(--sd-sans) !important;
+  --tpl-theme-tile-description: 400 0.875rem/1.45 var(--sd-sans) !important;
+  --tpl-theme-story-list-headline: 600 1.125rem/1.18 var(--sd-sans) !important;
+  --tpl-theme-story-list-summary: 400 0.9375rem/1.47 var(--sd-sans) !important;
+  --tpl-theme-story-list-byline: 500 0.8125rem/1.35 var(--sd-sans) !important;
+  --tpl-theme-story-list-bottom-label: 400 0.6875rem/1.3 var(--sd-sans) !important;
+
+  --tpl-typography-title-karnak-16: 600 1rem/1.3 var(--sd-sans) !important;
+  --tpl-typography-title-karnak-20: 600 1.25rem/1.25 var(--sd-sans) !important;
+
+  /* The `-ls` tokens are applied as a separate letter-spacing declaration.
+     Cheltenham was tracked positively at every size; a grotesque wants the
+     opposite, and large headings want it most. */
+  --tpl-typography-headline-news-14-ls: 0 !important;
+  --tpl-typography-headline-news-16-ls: -0.005em !important;
+  --tpl-typography-headline-news-18-ls: -0.01em !important;
+  --tpl-typography-headline-news-20-ls: -0.012em !important;
+  --tpl-typography-headline-news-22-ls: -0.014em !important;
+  --tpl-typography-headline-news-24-ls: -0.016em !important;
+  --tpl-typography-headline-news-28-ls: -0.018em !important;
+  --tpl-typography-headline-news-32-ls: -0.02em !important;
+  --tpl-typography-headline-news-36-ls: -0.022em !important;
+  --tpl-typography-headline-news-40-ls: -0.024em !important;
+  --tpl-typography-headline-news-48-ls: -0.026em !important;
+  --tpl-typography-headline-news-56-ls: -0.028em !important;
+  --tpl-typography-headline-18-ls: -0.01em !important;
+  --tpl-typography-headline-opinion-18-ls: -0.01em !important;
+  --tpl-typography-body-16-ls: 0 !important;
+  --tpl-typography-text-14-ls: 0 !important;
+  --tpl-typography-text-16-ls: 0 !important;
+  --tpl-typography-utility-1-ls: 0 !important;
+  --tpl-typography-utility-2-ls: 0 !important;
+  --tpl-theme-story-list-section-header-ls: 0 !important;
+}
+
+/* Component CSS that hard-codes a family rather than reading a token would
+   survive the block above, so the families are also nailed to the elements
+   that carry text. NYT draws every icon as inline SVG — there is no icon
+   font on the page — so a broad sweep here is safe. */
+html,
+body,
+button,
+input,
+select,
+textarea,
+optgroup,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+a,
+li,
+span,
+time,
+figcaption,
+label,
+[data-tpl] {
+  font-family: var(--sd-sans) !important;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace !important;
+}
+
+body {
+  background: #fff !important;
+  color: var(--sd-ink-2) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* --------------------------------------------------------------------------
+   3. Casing and tracking
+   ~370 elements set text-transform: uppercase from emotion-hashed classes
+   that change every deploy, so this is swept by region rather than by
+   selector. Removing a transform can never corrupt a string — the "LIVE"
+   and "BREAKING" flags read LIVE and BREAKING because those capitals are in
+   the markup, and they stay. Tracking goes with it: 1.1px on 10px text was
+   compensation for caps, and it reads as damage on sentence case.
+   -------------------------------------------------------------------------- */
+header *,
+main *,
+nav *,
+footer *,
+[data-testid^="nav-dropdown"] * {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Masthead
+   The nameplate was centred over a left-aligned date and a right-aligned
+   control cluster — three alignments in one 165px band. The wordmark moves
+   flush left onto the same axis as the grid below it, which is where every
+   other thing on the page starts. The mark itself is unchanged.
+   -------------------------------------------------------------------------- */
+[class*="_mastheadWrapper"],
+[class*="_mastheadSection"] {
+  background: #fff !important;
+}
+
+[class*="_logoContainer"] {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  padding: 8px 0 4px !important;
+}
+
+[class*="_logoContainer"] svg {
+  height: 34px !important;
+  width: auto !important;
+}
+
+/* Edition switcher (U.S. / International / Canada / Español / 中文) was
+   11px uppercase at 1.4px tracking. Same links, on the metadata rung. */
+[class*="_editionMenu"] {
+  justify-content: flex-start !important;
+}
+
+[class*="_editionMenuItem"] [class*="_link"],
+[class*="_editionMenuItem"] a {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-3) !important;
+  text-decoration: none !important;
+}
+
+[class*="_editionMenuItem"] a:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* Date and Today's Paper: metadata, not a heading. */
+[data-testid="todays-date"] {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Section nav and the rules around it
+   The nav row was bracketed by a rule above (1px #121212) and a rule below
+   (1px #000). One line dividing chrome from content is structure; two
+   twelve pixels apart is a frame. The lower one survives because the grid
+   starts immediately under it with no space to separate them.
+   -------------------------------------------------------------------------- */
+[class*="_miniNavContainer"] {
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--sd-rule-strong) !important;
+}
+
+[class*="_miniNavContainer"] + hr,
+[class*="_mastheadSection"] + hr {
+  display: none !important;
+}
+
+[class*="_miniNav"] a,
+[class*="_miniNav"] button {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-1) !important;
+  letter-spacing: 0 !important;
+}
+
+/* The floating nav overlaps content as it scrolls, so it keeps a boundary —
+   but a 5px 28% drop shadow is elevation theatre for a 52px bar. */
+[class*="_floatingMiniNavContainer"] {
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--sd-rule-strong) !important;
+  background: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Chapter headings
+   Fourteen chapters (Opinion, Culture and Lifestyle, The Athletic, Games,
+   Wirecutter…) were labelled by 14px uppercase Franklin at 1px tracking
+   sitting on a 2px black bar — the label was quieter than the story
+   headlines beneath it while the bar was louder than anything on the page.
+   Size and space carry the chapter instead: the gap above a heading is
+   roughly four times the gap below it, which is what makes the break
+   legible, and the rule drops to a hairline.
+   -------------------------------------------------------------------------- */
+main h3,
+main [data-tpl="sh"] h3,
+main section > h3 {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--sd-ink) !important;
+  text-align: left !important;
+  margin: 0 0 4px !important;
+}
+
+/* Nav dropdown column headers are a different job at a different scale:
+   they label six links inside an open menu, so they stay small and quiet. */
+[id^="nav-dropdown-"] h3,
+[data-testid^="nav-dropdown"] h3 {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Story cells
+   Headline, summary, kicker and read-time already sit on four distinct
+   rungs; the job is to keep them there in one family and bind each group
+   tighter than the gap between records.
+   -------------------------------------------------------------------------- */
+.story-wrapper [data-tpl="h"] p,
+.story-wrapper .indicate-hover {
+  color: rgb(0 0 0 / 92%) !important;
+  text-wrap: balance;
+}
+
+.summary-class {
+  color: var(--sd-ink-2) !important;
+  letter-spacing: 0 !important;
+  text-wrap: pretty;
+}
+
+/* Read-time and timestamp: the bottom rung, 11px, no tracking. */
+[data-tpl="la"] p,
+[data-tpl="la"] span,
+[data-tpl="la"] time {
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-3) !important;
+  letter-spacing: 0 !important;
+}
+
+/* Kickers ("Times Exclusive", "The Great Read", "Movie Review") are the
+   only label that outranks its own headline if it keeps caps and tracking. */
+[data-tpl="f"] p,
+[data-tpl="f"] span {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* Bylines were 700 at 14px — heavier than some headlines they sat under. */
+[class*="_byline"],
+[class*="byline"] {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+  letter-spacing: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Photography and captions
+   Images keep their colour untouched — this is the one place on the page
+   expression belongs. The credit line was 8.96px #727272, which is below
+   reading size; it goes to 11px on the metadata rung, where it is quieter
+   relative to its neighbours and more legible in absolute terms.
+   No rule between an image and its caption.
+   -------------------------------------------------------------------------- */
+figure,
+picture,
+.media-container {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+figcaption {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+  color: var(--sd-ink-3) !important;
+  text-align: left !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin-top: 6px !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Semantic colour that stays
+   LIVE and BREAKING are #d0021b and remain #d0021b: they encode state, and
+   the word alone does not survive a scan of a page this long. Market
+   up/down keeps its green and red for the same reason — the arrow glyph and
+   the sign are carried alongside the hue, so the encoding is not on colour
+   by itself.
+   -------------------------------------------------------------------------- */
+[data-tpl="f"] span[class*="css-1cn1oj4"],
+[data-tpl="f"] p > span:first-child:not([class*="18dz3rz"]) {
+  letter-spacing: 0.02em !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Controls — search, subscribe, log in
+   The subscribe and log-in buttons were filled #567b95 with a #326891
+   border, sitting beside the wordmark. Neutralised so the nameplate is the
+   only thing carrying identity in that band. Subscribe stays the filled
+   primary because it is the page's one real call to action; log in becomes
+   the outlined secondary it always behaved as.
+   -------------------------------------------------------------------------- */
+[data-testid="subscribe-button"] span,
+[data-testid="subscribe-button"] a,
+a[data-testid="subscribe-link"] span {
+  background: rgb(0 0 0 / 92%) !important;
+  border: 1px solid rgb(0 0 0 / 92%) !important;
+  color: #fff !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+[data-testid="login-button"] span,
+[class*="e1j3jvdr0"] {
+  background: transparent !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  color: rgb(0 0 0 / 92%) !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+[data-testid="search-button"],
+button[aria-controls="search-input"] {
+  border-radius: 6px !important;
+}
+
+[data-testid="search-button"] svg rect,
+[data-testid="search-button"] svg path,
+header button svg rect,
+header button svg path {
+  fill: rgb(0 0 0 / 72%) !important;
+}
+
+input[type="text"],
+input[type="search"],
+#search-input input {
+  border: 0 !important;
+  background: var(--sd-fill) !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  color: rgb(0 0 0 / 92%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Advertising
+   The slots stay exactly where they are and at their shipped size; they are
+   part of this surface. Only the label around them is quieted, and the
+   hairline that tells a reader the band is not editorial stays, because
+   without it a full-bleed creative would read as a story.
+   -------------------------------------------------------------------------- */
+[id^="dfp-ad"],
+[data-testid="StandardAd"] {
+  background: transparent !important;
+}
+
+[id^="dfp-ad"] ~ p,
+[class*="css-bvk7sj"] {
+  font-size: 10px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  color: var(--sd-ink-4) !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Rules
+   `hr` is the page's horizontal separator, drawn at 1px #dfdfdf between
+   stacked stories inside a column. Those stay: the space that would replace
+   them costs roughly a screen per chapter on a page already 16,000px tall,
+   which is the trade the skill asks to be named. They drop to a 10% hairline
+   so they sit below the chapter rules rather than beside them.
+   -------------------------------------------------------------------------- */
+hr {
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  background: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Links
+   Every headline is already a link and the whole page is links; colour
+   cannot carry that. Ink and the existing hover underline do.
+   -------------------------------------------------------------------------- */
+a,
+a:link,
+a:visited {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+a:hover .indicate-hover,
+.indicate-hover:hover {
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 0.14em !important;
+  text-decoration-color: rgb(0 0 0 / 38%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. Footer
+   -------------------------------------------------------------------------- */
+footer,
+footer nav {
+  border-top: 1px solid var(--sd-rule) !important;
+  background: #fff !important;
+}
+
+footer nav {
+  border-top: 0 !important;
+}
+
+footer a,
+footer li {
+  font-size: 12.5px !important;
+  color: var(--sd-ink-3) !important;
+  letter-spacing: 0 !important;
+}
+
+footer a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+}
+
+/* --------------------------------------------------------------------------
+   15. Focus and selection
+   The accent blue carried the focus ring, so a real one goes back in ink.
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+  border-radius: 2px;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+/* --------------------------------------------------------------------------
+   16. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

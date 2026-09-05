@@ -1,0 +1,888 @@
+/* ==========================================================================
+   IMDb — Top 250 chart — Scandinavian override
+
+   Structural problem: a 250-row ranked list where every row spends four
+   stacked lines on three lines of content. The rank arrives as a filled blue
+   signpost on its own line above the title, so each record reads as a tiny
+   article with a heading rather than as row #37 of 250. Below the rank sit a
+   title, a metadata line, and a rating line carrying a gold star, two blue
+   text buttons and a blue info disc. 363px of masthead runs above the first
+   row, and a 424px sidebar of five bordered cards runs beside it. Blue
+   (#0e63be) paints the rank, the filter chip, both progress bars, every
+   button and every link; gold (#f5c518) paints 251 stars and three 4px
+   chapter bars; the header is #121212, the footer and the recently-viewed
+   strip are #000.
+
+   Target hierarchy: the rank and the title on one line, so the list reads as
+   a list; metadata and rating bound to that line by proximity; the alternating
+   row fill kept as the record separator because on 250 rows it is the only
+   grouping device that costs no vertical space at all. Colour survives in
+   three places: the poster thumbnails, the IMDb wordmark, and one gold star on
+   the chart's own aggregate rating in the sidebar.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+
+   IPC writes colour as a fallback pair — `color:#0e63be;
+   color:var(--ipt-on-base-accent2-color)` — so the token wins wherever one
+   exists. `!important` rather than specificity, because IMDb ships a
+   `:root :root` rule its plain `:root` declarations lose to.
+
+   IMDb's light ink ramp is alpha-black with zero channel spread and three
+   rungs, so it is nudged rather than rebuilt. The one real change is the
+   secondary rung: .54 composites to #757575, which is 4.48:1 on white, and on
+   this page that rung carries the year, the runtime, the certificate, the
+   rating value and the vote count on all 250 rows. That is not optional
+   metadata, so it goes to .60 (4.9:1). The .38 hint rung stays for what it
+   actually holds here — dot dividers and disabled controls.
+   -------------------------------------------------------------------------- */
+:root {
+  --sd-dark: #121212;
+  --sd-ink: rgb(0 0 0 / 87%);
+  --sd-ink-2: rgb(0 0 0 / 60%);
+  --sd-ink-3: rgb(0 0 0 / 44%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-pressed: rgb(0 0 0 / 9%);
+  /* The zebra stripe. 250,250,250 is 2% black; 3% is enough to read as a
+     boundary at a glance without banding the page into stripes. */
+  --sd-stripe: rgb(0 0 0 / 3%);
+
+  --sd-ink-alt: rgb(255 255 255 / 100%);
+  --sd-ink-alt-2: rgb(255 255 255 / 56%);
+  --sd-ink-alt-3: rgb(255 255 255 / 36%);
+  --sd-rule-alt: rgb(255 255 255 / 12%);
+  --sd-hover-alt: rgb(255 255 255 / 9%);
+  --sd-pressed-alt: rgb(255 255 255 / 14%);
+
+  /* IMDb ships two primary inks: textPrimary at .87 and a plain `on-base` at
+     solid black, which lands on "250 Titles", the sidebar card names and the
+     Average IMDb rating label. Thirty-three values apart is not a rung, it is
+     two token families disagreeing, and it left the sidebar's small label
+     darker than the chapter heading above it. One value. */
+  --ipt-on-base-color: var(--sd-ink) !important;
+  --ipt-on-base-textPrimary-color: var(--sd-ink) !important;
+  --ipt-on-base-textSecondary-color: var(--sd-ink-2) !important;
+  --ipt-on-base-textHint-color: var(--sd-ink-3) !important;
+  --ipt-on-base-textDisabled-color: var(--sd-ink-3) !important;
+  --ipt-on-base-textIcon-color: var(--sd-ink-2) !important;
+  --ipt-base-border-color: var(--sd-rule) !important;
+  --ipt-base-border-opacity: 0.1 !important;
+  --ipt-base-hover-bg: var(--sd-hover) !important;
+  --ipt-base-hover-opacity: 0.05 !important;
+  --ipt-base-pressed-bg: var(--sd-pressed) !important;
+  --ipt-base-pressed-opacity: 0.09 !important;
+  --ipt-base-shade1-bg: var(--sd-stripe) !important;
+  --ipt-base-shade1-color: var(--sd-stripe) !important;
+
+  /* The dark ladder is for the chrome only — header, footer and the
+     recently-viewed strip. The same alpha buys more contrast on near-black
+     than on white, so IMDb's own .7/.5 would make the chrome louder rather
+     than quieter; .56/.36 reproduce the light hierarchy. Its .32 pressed fill
+     was a third of the way to white against the ~14% a light wash needs. */
+  --ipt-on-baseAlt-textPrimary-color: var(--sd-ink-alt) !important;
+  --ipt-on-baseAlt-textSecondary-color: var(--sd-ink-alt-2) !important;
+  --ipt-on-baseAlt-textHint-color: var(--sd-ink-alt-3) !important;
+  --ipt-on-baseAlt-textDisabled-color: var(--sd-ink-alt-3) !important;
+  --ipt-on-baseAlt-textIcon-color: var(--sd-ink-alt) !important;
+  --ipt-baseAlt-border-color: var(--sd-rule-alt) !important;
+  --ipt-baseAlt-border-opacity: 0.12 !important;
+  --ipt-baseAlt-hover-bg: var(--sd-hover-alt) !important;
+  --ipt-baseAlt-hover-opacity: 0.09 !important;
+  --ipt-baseAlt-pressed-bg: var(--sd-pressed-alt) !important;
+  --ipt-baseAlt-pressed-opacity: 0.14 !important;
+
+  /* Accent 1 is IMDb gold, doing two jobs on this page: the 4px bar beside
+     each of the three sidebar chapter headings (decoration, removed in
+     section 7) and the rating star (section 6). The star reads
+     `--ipt-on-base-accent1-color`, so retargeting that neutralises all 251 at
+     once and the one that stays is re-goldened by name. */
+  --ipt-accent1-color: #e6e6e6 !important;
+  --ipt-accent1-bg: #e6e6e6 !important;
+  --ipt-on-accent1-color: var(--sd-ink) !important;
+  --ipt-on-base-accent1-color: var(--sd-ink-2) !important;
+  --ipt-on-baseAlt-accent1-color: var(--sd-ink-alt-2) !important;
+
+  /* Accent 2 is the link/action blue. Ink for text and icons; the two places
+     it paints a surface — the filter chip and the progress fills — are given
+     their own values in section 4, because black is the wrong weight for a
+     filter trigger and for a 12px data bar. */
+  --ipt-accent2-color: #000 !important;
+  --ipt-accent2-bg: #000 !important;
+  --ipt-on-accent2-color: #fff !important;
+  --ipt-on-base-accent2-color: var(--sd-ink) !important;
+  --ipt-on-baseAlt-accent2-color: var(--sd-ink-alt) !important;
+  --ipt-altAccent2-color: #fff !important;
+  --ipt-altAccent2-bg: #fff !important;
+  --ipt-on-altAccent2-color: var(--sd-dark) !important;
+
+  /* IMDb's focus ring is a 1px dashed hairline. One pixel of dashes has no
+     field to register against on either canvas here, so both go solid and
+     double in weight; the colours stay exactly what they were. */
+  --ipt-focus-outline-on-base: 2px solid #000 !important;
+  --ipt-focus-outline-on-baseAlt: 2px solid #fff !important;
+  --ipt-focus-outline-on-baseAlt-default: 2px solid #fff !important;
+
+  /* One radius. IMDb ran four: 4px corners, 12px media, 24px buttons, 16px
+     chips. Filter chips keep their pill because tags are a distinct family. */
+  --ipt-cornerRadius: 8px !important;
+  --ipt-mediaRadius: 8px !important;
+  --ipt-buttonRadius: 8px !important;
+  --radius-corner: 8px !important;
+  --radius-media: 8px !important;
+  --radius-button: 8px !important;
+}
+
+/* The header, the footer and the recently-viewed strip are styled-components
+   that re-emit a resolved theme object as literal values on themselves, so a
+   :root override reaches none of them. Restated here. */
+.imdb-header,
+.imdb-footer,
+.footer__sign-in,
+.drawer__panel,
+.ipc-page-background--baseAlt,
+.ipc-page-section--baseAlt {
+  --ipt-on-baseAlt-textPrimary-color: var(--sd-ink-alt) !important;
+  --ipt-on-baseAlt-textSecondary-color: var(--sd-ink-alt-2) !important;
+  --ipt-on-baseAlt-textHint-color: var(--sd-ink-alt-3) !important;
+  --ipt-on-baseAlt-textDisabled-color: var(--sd-ink-alt-3) !important;
+  --ipt-on-baseAlt-textIcon-color: var(--sd-ink-alt) !important;
+  --ipt-baseAlt-border-color: var(--sd-rule-alt) !important;
+  --ipt-baseAlt-hover-bg: var(--sd-hover-alt) !important;
+  --ipt-baseAlt-pressed-bg: var(--sd-pressed-alt) !important;
+  --ipt-on-baseAlt-accent1-color: var(--sd-ink-alt) !important;
+  --ipt-on-baseAlt-accent2-color: var(--sd-ink-alt) !important;
+
+  --ipt-accent1-color: #fff !important;
+  --ipt-accent1-bg: #fff !important;
+  --ipt-on-accent1-color: var(--sd-dark) !important;
+  --ipt-accent2-color: #fff !important;
+  --ipt-accent2-bg: #fff !important;
+  --ipt-on-accent2-color: var(--sd-dark) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas
+
+   Three darks become one. #121212 is the header's own value — zero channel
+   spread, already inside the skill's near-black band — so unifying to it
+   flattens the header/footer step without importing a fourth near-black.
+   -------------------------------------------------------------------------- */
+html,
+body {
+  background: #fff !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+.imdb-header,
+.imdb-footer,
+.footer__sign-in,
+.ipc-page-background--baseAlt,
+.ipc-page-section--baseAlt,
+.recently-viewed {
+  background-color: var(--sd-dark) !important;
+}
+
+.drawer__panel,
+.drawer__panelHeader {
+  background-color: #1c1c1c !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Typography
+
+   Roboto stays: a well-made grotesque shipping 400/500/600 as live webfonts,
+   which is the whole ladder this page needs, so SKILL.md rule 1 applies and
+   importing Inter would spend brand voice for nothing.
+
+   What changes is the setting. IPC tracks body at 0.5px and every 14px label
+   at 0.25px — at 14px that is +0.018em on text that is already dense.
+   -------------------------------------------------------------------------- */
+body,
+button,
+input,
+select,
+textarea,
+.ipc-title__text,
+.ipc-btn__text,
+.ipc-chip__text,
+.ipc-inline-list__item,
+.ipc-rating-star,
+.ipc-list-card,
+[data-testid="chart-layout-parent"],
+[data-testid="chart-layout-total-items"] {
+  letter-spacing: normal !important;
+}
+
+/* Page title. 36px/400 left the largest element on the page at body weight,
+   which is the one place a second weight is worth spending. */
+h1.ipc-title__text {
+  font-size: 32px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. The masthead
+
+   363px of chrome sat above the first row: title, subtitle, a full-width
+   progress bar, a count, three view toggles, a filter chip and a sort
+   control, each on its own band with 24-40px between them. On a 250-row list
+   that is 40% of the opening screen spent before the first film. The stack is
+   closed up so the first screen shows films.
+   -------------------------------------------------------------------------- */
+[data-testid="chart-layout-sidebar-title-container"] {
+  padding-top: 10px !important;
+}
+
+/* The kicker above the title was 12px/600 tracked at 2px — 0.167em, which is
+   shouting at the smallest type on the page. IMDb already exempts its own
+   brand name from the uppercase transform with a `.normal-case` span, so
+   clearing the transform leaves "IMDb Charts" correctly cased. */
+.type-overline {
+  font-weight: 500 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.ipc-title__description {
+  padding-top: 4px !important;
+  font-size: 15px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* The chart's own progress bar was a 12px slab 808px wide reporting a value
+   that is zero for a signed-out reader. It stays — it is the only feedback
+   the watched controls have — at the weight of a data bar rather than a band.
+   The gap above it comes down with it: 24px between a subtitle and its own
+   chapter's first control is a section transition, not a group gap. */
+[data-testid="chart-layout-main-column"] > div:first-of-type {
+  margin-top: 14px !important;
+}
+
+.ipc-progress {
+  height: 14px !important;
+}
+
+.ipc-progress__svg {
+  height: 6px !important;
+}
+
+.ipc-progress__bar,
+.ipc-progress__fill {
+  height: 6px !important;
+}
+
+/* Count, view toggles, filter and sort arrived as four stacked bands in
+   126px. The filter and the sort are one toolbar row — one left-aligned, one
+   right-aligned, neither wide enough to meet the other — so the sort is
+   lifted onto the filter's line. That plus the 48px icon buttons coming down
+   to 36px is 80px of chrome returned to the list, which on the first screen
+   is most of a film. */
+div:has(> [data-testid="sort-container"]) {
+  margin-top: -42px !important;
+  margin-bottom: 10px !important;
+}
+
+.chart-layout-view-options .ipc-icon-button {
+  width: 36px !important;
+  height: 36px !important;
+  padding: 6px !important;
+}
+
+[data-testid="chart-layout-view-options"],
+.chart-layout-view-options {
+  height: 36px !important;
+}
+
+div:has(> [data-testid="chart-layout-view-options"]) {
+  margin-top: 10px !important;
+  align-items: center !important;
+}
+
+/* "0 OF 250 WATCHED" is capitals in the markup, not in CSS, so clearing the
+   transform would leave the shout. One sentence, no proper noun and no
+   acronym, so IMDb's own lowercase + ::first-letter pair recovers sentence
+   case safely. The 2px tracking goes with it. */
+[data-testid="watched-progress-text-wrapper"] {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--sd-ink-2) !important;
+  margin-top: 6px !important;
+}
+
+[data-testid="watched-progress-text-wrapper"] span {
+  text-transform: lowercase !important;
+}
+
+[data-testid="watched-progress-text-wrapper"] span::first-letter {
+  text-transform: uppercase !important;
+}
+
+/* Both bars read the accent-2 fill token, which is now black, and a 313x12
+   black slab was the heaviest thing in the sidebar — darker than the figure
+   it restates and than the heading above it. The bar is chrome rather than
+   media, so it goes neutral even though the datum beside it keeps its gold
+   star; a gauge repeating a number already on screen is the quieter of the
+   pair. */
+.ipc-progress__fill {
+  fill: rgb(0 0 0 / 44%) !important;
+}
+
+.ipc-progress__bar {
+  fill: rgb(0 0 0 / 8%) !important;
+}
+
+/* The filter trigger shipped as a filled blue pill — the only filled control
+   in the toolbar and the loudest element in the opening screen, on an index
+   page that has no primary action to promote. It keeps a fill so that any
+   filled/unfilled state distinction survives, but a quiet one. */
+.ipc-chip--filled.ipc-chip[data-testid="filter-menu-button"],
+button.ipc-chip--filled {
+  background: rgb(0 0 0 / 6%) !important;
+  border-color: transparent !important;
+  color: var(--sd-ink) !important;
+}
+
+/* The hover needs at least the resting rule's specificity or source order
+   decides it, and the resting rule is the more specific of the two. */
+.ipc-chip--filled.ipc-chip[data-testid="filter-menu-button"]:hover,
+button.ipc-chip--filled.ipc-chip:hover {
+  background: rgb(0 0 0 / 11%) !important;
+}
+
+/* The three view toggles are one control group whose selected member was
+   marked by a blue glyph inside a blue ring. Taking the hue out left a 10%
+   hairline as the only difference between selected and not, which is not
+   enough for a state — so the selected one gets a resting fill and full ink
+   against secondary ink and no fill. Two signals, neither of them hue.
+   Written on the ids because IMDb writes the ring on them too, and a class
+   selector loses that fight. */
+#list-view-option-detailed,
+#list-view-option-grid,
+#list-view-option-compact {
+  color: var(--sd-ink-2) !important;
+  border-color: transparent !important;
+}
+
+#list-view-option-detailed.ipc-icon-button--border,
+#list-view-option-grid.ipc-icon-button--border,
+#list-view-option-compact.ipc-icon-button--border {
+  color: var(--sd-ink) !important;
+  background: rgb(0 0 0 / 8%) !important;
+  border-color: transparent !important;
+}
+
+/* Hover lifts the ink but never the fill, so hovering an unselected toggle
+   cannot be mistaken for selecting it. */
+#list-view-option-detailed:hover,
+#list-view-option-grid:hover,
+#list-view-option-compact:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. The row
+
+   Structural change. `.cli-children` was a flex column: rank, title,
+   metadata, rating. Putting the rank on its own line above the title makes
+   every record read as a headed block rather than as an entry in a ranked
+   list, and it is the reason the text column ran to 110px against a 107px
+   poster. A two-column grid puts the ordinal where a numbered list puts it,
+   beside the thing it numbers, and the freed 22px becomes breathing room
+   inside a column that had one pixel of it.
+
+   Scoped to `.li-compact` so the detailed and grid views, which stack
+   different children, are untouched.
+   -------------------------------------------------------------------------- */
+.li-compact .cli-children {
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: baseline;
+  align-content: center;
+  row-gap: 2px;
+}
+
+.li-compact .cli-children > [data-testid="title-list-item-ranking"] {
+  grid-area: 1 / 1;
+}
+
+.li-compact .cli-children > :not([data-testid="title-list-item-ranking"]) {
+  grid-column: 2;
+}
+
+/* The rank was a filled blue signpost with a skewed ::after tail — 250 of
+   them, the most repeated painted shape on the page, drawn for a number that
+   a numbered list expresses with a numeral. Tabular figures right-aligned in
+   a fixed column give every title the same left edge and every rank the same
+   right one, which is what the badge was failing to do. */
+[data-testid="title-list-item-ranking"].ipc-signpost {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  border-radius: 0 !important;
+  /* The signpost clips and ellipsises its own text, which it never needed to
+     do at badge width and does the moment the column is sized to the digits:
+     "#10" came back as "#…". */
+  overflow: visible !important;
+  white-space: nowrap !important;
+  color: var(--sd-ink-2) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Filling and right-aligning the gutter only makes sense inside the compact
+   grid. The detailed and grid views lay the same signpost out differently,
+   and a stretched flex-end there parks the rank in the far corner of the row,
+   away from the title it numbers. */
+.li-compact [data-testid="title-list-item-ranking"].ipc-signpost {
+  width: 100% !important;
+  justify-content: flex-end !important;
+}
+
+[data-testid="title-list-item-ranking"].ipc-signpost::after,
+[data-testid="title-list-item-ranking"].ipc-signpost::before {
+  display: none !important;
+}
+
+/* The ordinal is the one thing a ranked list is for, so it does not go to the
+   metadata rung: 44% is 3.4:1 on white and this is real reading, not a glyph.
+   It sits one step below the title instead — same rung as the year and the
+   runtime, which is where a number that is entirely predictable belongs. */
+[data-testid="title-list-item-ranking"] .ipc-signpost__text {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 19px !important;
+  color: var(--sd-ink-2) !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}
+
+.cli-title .ipc-title__text,
+.cli-title h4.ipc-title__text {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  color: var(--sd-ink) !important;
+}
+
+.cli-title-metadata {
+  margin-top: 3px !important;
+}
+
+.cli-title-metadata .ipc-inline-list__item {
+  font-size: 13px !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* Row padding. IMDb spends it in two places — 2px on the <li> and 4px on its
+   inner container — which is the "set spacing in one place per axis" trap;
+   collapsed onto the <li> so one value controls row pitch. */
+li.ipc-metadata-list-summary-item {
+  padding: 5px 8px !important;
+}
+
+li.ipc-metadata-list-summary-item .ipc-metadata-list-summary-item__c {
+  padding: 0 !important;
+}
+
+/* Row pitch is set by the poster, not by the text: the three text lines come
+   to about 72px inside a 107px poster, so every row was carrying 35px of
+   height that nothing occupied. Taking the thumbnail to 64px wide (95px tall)
+   spends 11% of its width — a fifth of its area — to buy 17% more films per
+   screen, which on a ranked index is the right side of that trade. It stops
+   here rather than at the ~50px that would match the text exactly, because
+   below about 60px a poster stops being recognisable and starts being a
+   swatch, and these thumbnails are the only colour left on the page. */
+.cli-poster-container,
+.li-compact .cli-poster-container {
+  width: 64px !important;
+  flex: 0 0 64px !important;
+  margin-right: 14px !important;
+}
+
+/* Rate and Mark as watched shipped at the 36px default button height, which
+   made the two least-used controls in the row its tallest elements. */
+.cli-ratings-container .ipc-rate-button,
+.li-compact [data-testid^="inline-watched-button"] {
+  height: 28px !important;
+  min-height: 28px !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. The rating, and the gold
+
+   The gold star is IMDb's brand mark, not an accent it happens to use. It is
+   the same yellow as the wordmark, it is what the product is recognised by,
+   and it means "IMDb rating" in a way no amount of weight substitutes for. So
+   it stays gold on all 250 rows, and the volume rule does not reach it: that
+   rule governs merchandising fills and state colours diluted by repetition,
+   and repetition is precisely how a signature mark does its work.
+
+   An earlier pass neutralised the rows and kept one gold star in the sidebar,
+   reasoning from alignment — 250 marks at the same x stack into a dotted rule
+   down the page. That observation is true and worth keeping as a general
+   caution, but it is an argument about accents, and it should not have been
+   applied to the one element carrying the brand.
+
+   What the row does keep from that pass is the typographic separation: the
+   score at primary ink and weight 500 against the vote count a rung below, so
+   the two numbers are told apart by hierarchy rather than relying on the star
+   to do it. The star is identity; the weight is the reading order.
+   -------------------------------------------------------------------------- */
+/* The rate / user stars are controls rather than the rating datum — an empty
+   outline you click. Those go to ink so the row has one gold mark, the score's,
+   and the interactive ones sit on the same ladder as the buttons beside them. */
+.ipc-rating-star--base.ipc-rating-star--rate,
+.ipc-rating-star--base.ipc-rating-star--rate .ipc-icon,
+.ipc-rating-star--base.ipc-rating-star--currentUser .ipc-icon,
+.ipc-rating-star--base.ipc-rating-star--otherUser .ipc-icon {
+  color: var(--sd-ink-2) !important;
+  fill: currentColor !important;
+}
+
+/* The IMDb rating star keeps the brand gold, on every row. The glyph is painted
+   by a rule on the icon itself as well as by the accent-1 token the wrapper
+   reads, and the token was retargeted upstream, so the colour has to be
+   restated here by name. */
+.ipc-rating-star--base.ipc-rating-star--imdb .ipc-icon {
+  color: #f5c518 !important;
+  fill: currentColor !important;
+}
+
+.cli-ratings-container .ipc-rating-star--rating {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.cli-ratings-container .ipc-rating-star--voteCount {
+  font-size: 13px !important;
+  color: var(--sd-ink-2) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The score group is content-width, so "(35K)" and "(1.2M)" move Rate and
+   Mark as watched by up to 12px — a ragged edge repeated 250 times down the
+   only part of the row that is the same in every row. A floor wide enough for
+   the longest vote count puts both controls in a column. */
+.cli-ratings-container .ipc-rating-star--imdb {
+  min-width: 80px !important;
+}
+
+/* The sidebar's own average carries the same gold as the rows. It keeps the
+   typographic promotion from the earlier pass — the label drops and the number
+   takes the size — because the chart's aggregate should read as a figure rather
+   than as another list item, regardless of what colour the rows are. */
+[data-testid="chart-layout-sidebar-insights-imdb"]
+  .ipc-rating-star--imdb
+  .ipc-icon {
+  color: #f5c518 !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+[data-testid="chart-layout-sidebar-insights-imdb"] .type-headline6 {
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* Label and value were pushed to opposite ends of a 376px rail by
+   `justify-between`, which reads as two unrelated things rather than as one
+   figure with its name. */
+[data-testid="chart-layout-sidebar-insights-imdb"] .justify-between {
+  justify-content: flex-start !important;
+  align-items: baseline !important;
+  gap: 10px !important;
+}
+
+[data-testid="chart-layout-sidebar-insights-imdb"] .ipc-rating-star--rating {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: var(--sd-ink) !important;
+  letter-spacing: -0.01em !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rate and Mark as watched were blue text buttons at the same size as the
+   score they sit beside; a per-row control used by a signed-in minority
+   should not be a peer of the row's primary datum. Both drop a rung. */
+.cli-ratings-container .ipc-rate-button,
+.cli-ratings-container .ipc-rating-star--rate,
+[data-testid^="inline-watched-button"],
+[data-testid^="inline-watched-button"] .ipc-btn__text {
+  color: var(--sd-ink-2) !important;
+  font-size: 13px !important;
+}
+
+[data-testid^="inline-watched-button"]:hover,
+[data-testid^="inline-watched-button"]:hover .ipc-btn__text,
+.cli-ratings-container .ipc-rate-button:hover,
+.cli-ratings-container .ipc-rate-button:hover .ipc-rating-star--rate,
+.cli-ratings-container .ipc-rate-button:hover .ipc-icon {
+  color: var(--sd-ink) !important;
+}
+
+/* The info disc is the least-used control in the row and was its largest
+   target, at 48px against a 19px title. It stays the quietest thing in the
+   row but not on the 44% glyph rung: over the tinted stripe that lands at
+   3.3:1, and a control has to clear 3:1 with room to spare. */
+.li-info-icon {
+  color: rgb(0 0 0 / 50%) !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 6px !important;
+}
+
+.li-info-icon:hover {
+  color: var(--sd-ink) !important;
+}
+
+.li-info-icon .ipc-icon {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Sidebar
+
+   Three chapter headings each carried a 4px gold bar and reserved a 12px
+   indent for it. The bar is decoration at the one place on the page where
+   space is cheap — the sidebar is 31,000px of rail beside a 250-row list — so
+   it goes and the indent goes with it, or every heading stays shunted right
+   of the content it belongs to.
+   -------------------------------------------------------------------------- */
+.ipc-title--subsection-title .ipc-title__text::before,
+.ipc-title--section-title .ipc-title__text::before {
+  display: none !important;
+}
+
+.ipc-title--subsection-title .ipc-title__text,
+.ipc-title--section-title .ipc-title__text {
+  padding-left: 0 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* "More to explore" and "Popular charts" arrived at the same size and weight
+   one above the other, which reads as two chapters where there is one. The
+   inner one is the group label for the cards beneath it, so it drops to a
+   rung the section heading does not use. Scoped to the sidebar list because
+   `.ipc-title--title` is also the class on all 250 row titles. */
+[data-testid^="SidebarList"] .ipc-title--title .ipc-title__text {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* Five chart cards, each drawn three times: a 1px border, a 12px radius and a
+   `0 0 1px rgba(0,0,0,.12)` shadow ring that survives zeroing the border. One
+   hairline between peers replaces four edges around each. Named as a trade —
+   space alone would need roughly 24px per card against the 8px they have, and
+   the rail is already the tallest thing on the page. */
+.ipc-list-card,
+.ipc-list-card--base,
+.ipc-list-card--border-line {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  margin-bottom: 0 !important;
+}
+
+.ipc-list-card--border-line {
+  border-bottom: 1px solid var(--sd-rule) !important;
+}
+
+/* The last card divides a list from empty space rather than from its next
+   peer. */
+.ipc-list-card--border-line:last-child {
+  border-bottom: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Media
+
+   Posters are the film, and once the chrome is neutral they are the only
+   colour on the page, so they keep every pixel of it. What changes is the
+   frame: a 12px radius on a 72px-wide thumbnail is a visibly rounded card,
+   and the same 8px the rest of the page now runs on reads as a photograph.
+   -------------------------------------------------------------------------- */
+.ipc-media--media-radius,
+.ipc-poster--media-radius,
+.ipc-media__img,
+.ipc-image {
+  border-radius: 8px !important;
+}
+
+/* The poster card's three-layer material shadow, on a white page where the
+   poster's own edge already bounds it. */
+.ipc-poster-card,
+.ipc-poster {
+  box-shadow: none !important;
+}
+
+/* Back to top floats over the list, so elevation here does communicate
+   behaviour — but with three stacked material shadows, on a page whose only
+   other line is a 10% hairline. One quiet edge and one barely visible shadow
+   say the same thing. */
+.ipc-scroll-to-top-button {
+  background: #fff !important;
+  color: var(--sd-ink) !important;
+  border: 1px solid var(--sd-rule) !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 10%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Links and buttons
+
+   Every link on this page sits in a list, a row, a nav or a card, where
+   position already says "link"; there is no running prose to underline. Hue
+   comes off and the underline arrives on hover instead of at rest.
+   -------------------------------------------------------------------------- */
+a,
+a:link,
+a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ipc-link--base:not(.ipc-link--inherit-color),
+.ipc-title-link-wrapper {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+a:hover .ipc-title__text,
+.ipc-title-link-wrapper:hover .ipc-title__text {
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 0.18em !important;
+}
+
+.ipc-btn,
+.ipc-btn--button-radius {
+  border-radius: var(--ipt-buttonRadius) !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+}
+
+/* Round targets are a separate family from labelled buttons, not an
+   inconsistency with them. */
+.ipc-icon-button,
+.ipc-avatar {
+  border-radius: 50% !important;
+}
+
+/* Filter and sort chips keep their pill: tags and filters are the one family
+   the skill exempts from the shared button radius. */
+.ipc-chip {
+  border-radius: 999px !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. All-caps chrome
+
+   Written as a bare `*` and undone afterwards rather than as
+   `*:not(.sponsored_label)`, because :not() carries the specificity of its
+   argument and the exclusion form would outrank every later rule here.
+   -------------------------------------------------------------------------- */
+* {
+  text-transform: none !important;
+}
+
+.sponsored_label,
+.sponsored_label * {
+  text-transform: lowercase !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Narrow viewports
+
+   The row keeps the same two-column grid, but at 390px the fixed columns are
+   a much larger share of the width: a 38px rank gutter and a 48px info column
+   are a quarter of the phone. Both come in, and the title gets the width back
+   — otherwise "The Lord of the Rings: The Fellowship of the Ring" clamps to
+   "…the Fellowship of the".
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* 32px is "#250" at 13px tabular with two pixels to spare — the column has
+     to be sized to the widest rank on the page, not to the first one. */
+  .li-compact .cli-children {
+    grid-template-columns: 32px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  [data-testid="title-list-item-ranking"] .ipc-signpost__text {
+    font-size: 13px !important;
+  }
+
+  .cli-poster-container,
+  .li-compact .cli-poster-container {
+    margin-right: 10px !important;
+  }
+
+  .cli-post-element {
+    width: 36px !important;
+    min-width: 36px !important;
+  }
+
+  li.ipc-metadata-list-summary-item {
+    padding: 5px 4px !important;
+  }
+
+  h1.ipc-title__text {
+    font-size: 28px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. Focus, selection, motion
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+label:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #000 !important;
+  outline-offset: 2px !important;
+}
+
+.imdb-header a:focus-visible,
+.imdb-header button:focus-visible,
+.imdb-header input:focus-visible,
+.imdb-header label:focus-visible,
+.imdb-footer a:focus-visible {
+  outline: 2px solid #fff !important;
+}
+
+::selection {
+  background: rgb(0 0 0 / 14%);
+}
+
+.imdb-header ::selection,
+.imdb-footer ::selection {
+  background: rgb(255 255 255 / 20%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

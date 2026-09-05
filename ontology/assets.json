@@ -747,6 +747,27 @@
      }
     },
     {
+     "type": "confirmation-tick",
+     "cells": {
+      "minimal": {
+       "status": "synth"
+      },
+      "glass": {
+       "status": "example",
+       "files": [
+        "../effects/extracts/components/tick-confirm.html"
+       ],
+       "note": "the one success confirmation: a glass disc, a mint tick that draws in, a label, a haptic where the platform has one; from cruise-passport src/ui/Confirm.tsx"
+      },
+      "tactile": {
+       "status": "n/a"
+      },
+      "shader": {
+       "status": "n/a"
+      }
+     }
+    },
+    {
      "type": "badge",
      "cells": {
       "minimal": {

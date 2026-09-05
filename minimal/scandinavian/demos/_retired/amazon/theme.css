@@ -1,0 +1,908 @@
+/* ==========================================================================
+   Amazon.com gateway — Scandinavian override
+
+   Structural problem: the page has no quiet. A navy masthead stacks a second
+   navy bar under it, a full-bleed carousel of campaign artwork runs edge to
+   edge, a dozen identically-weighted white cards sit in a 4-up grid at an 8px
+   gutter with a boundary drawn around each, and red discount chips, a yellow
+   pill CTA and an orange search button all bid for the same attention. Every
+   region is at maximum volume, so nothing is emphasised by anything.
+
+   Target hierarchy: one masthead band instead of two, and one page inset that
+   the carousel, the grid and the rail all start from. Every pixel of colour
+   that remains is inside a photograph or a piece of campaign artwork; all of
+   the chrome that used to compete with them — the navy, the yellow, the
+   orange, the red, the twelve card outlines — is gone. Card boxes give way to
+   gutters. The discount chip keeps its shape and its number and loses its
+   hue.
+
+   Nothing is removed. Every nav item, flyout, arrow, card link, the search
+   scope select, account, orders, cart and the sponsored placements are all
+   still here and still reachable — they are just no longer all shouting.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   Amazon's gateway exposes no custom properties worth retargeting: colour is
+   hard-coded in component CSS, in inline style attributes on the deal badges,
+   and in a generated <style> block for the carousel. There is no token layer
+   to bend, so these are ours and every rule below reads them.
+
+   Class names under the gwm/npack card system are content-hashed and change
+   per build (`_multi-category-card_image_round-corners__22iOW` and
+   `_npack-asin-card_image_round-corners__2y_fS` are the same component), so
+   selectors match the BEM tail rather than the whole name.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Amazon Ember, not Inter. The gateway sets its chrome in plain Arial and
+     loads Ember only for the campaign headlines in the carousel — but it
+     loads the whole family: Ember at 200/400/500/700, plus Modern Text and
+     Modern Display optical cuts at 400/500/700. A well-made product typeface
+     the page already owns and uses secondarily satisfies the "preserve the
+     product typeface" rule; importing the default web sans is the fallback
+     for when it does not, and it would have cost Amazon's typographic voice
+     for nothing. Modern Text is the cut meant for interface sizes; Display
+     stays where Amazon put it, on the campaign artwork.
+
+     No 600 anywhere below as a result. Ember ships 500 and 700 and nothing
+     between, and CSS resolves an unavailable 600 upward to 700 — restating
+     600 on headings would silently reinstate the heavy weight this pass is
+     removing. Inter is kept in the stack purely as a fallback for a build
+     that stops serving Ember. */
+  --sd-sans: "Amazon Ember Modern Text", "Amazon Ember", Inter,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --sd-ink: #0f0f0f;
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  --sd-ink-3: rgb(0 0 0 / 46%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-rule-strong: rgb(0 0 0 / 18%);
+  --sd-fill: rgb(0 0 0 / 5%);
+
+  /* Masthead and footer are dark surfaces, so they run their own ladder.
+     The alpha values are not the light ones: 64% white on near-black buys
+     more contrast than 64% black on white, so reusing them would make the
+     chrome louder rather than quieter. */
+  --sd-dark: #131313;
+  --sd-dark-deep: #0c0c0c;
+  --sd-on-dark: rgb(255 255 255 / 92%);
+  --sd-on-dark-2: rgb(255 255 255 / 62%);
+  --sd-on-dark-3: rgb(255 255 255 / 46%);
+  --sd-dark-rule: rgb(255 255 255 / 11%);
+  --sd-dark-fill: rgb(255 255 255 / 8%);
+  --sd-dark-hover: rgb(255 255 255 / 14%);
+}
+
+/* --------------------------------------------------------------------------
+   2. Type family
+   Body and form controls, plus the handful of AUI size classes that restate
+   `font-family: Arial` themselves and so do not inherit. Not a universal
+   selector: Amazon draws its icons from a sprite sheet rather than an icon
+   font, but reaching into every descendant is still how a family swap breaks
+   glyph rendering — and it would also reach the campaign headlines, which
+   belong to the artwork they sit on.
+   -------------------------------------------------------------------------- */
+body,
+button,
+input,
+select,
+textarea,
+optgroup,
+.a-size-base,
+.a-size-mini,
+.nav-a,
+.nav-text,
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-family: var(--sd-sans) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  color: var(--sd-ink) !important;
+  background: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Masthead
+   Two stacked navy bars — #131921 over #232F3E — is two visual weights of
+   chrome before any content, and the lighter of the two carries the less
+   important row. One neutral band replaces both: the nav row is now
+   distinguished by its contents rather than by a second fill. #232F3E is 27
+   points of channel spread, which reads as navy beside neutral ink.
+   -------------------------------------------------------------------------- */
+#navbar-main,
+#navbar,
+#nav-belt,
+#nav-main,
+#nav-search,
+.nav-sprite-v1 {
+  background-color: var(--sd-dark) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* The Amazon wordmark and its smile stay exactly as shipped, and are now the
+   only colour in the masthead — more identity than they had sitting between
+   an orange search button and a yellow cart badge. Nothing below touches
+   them: the mark is a sprite, so the anchor's own colour reaches only the
+   ".us" suffix beside it, which was inheriting Amazon's #2162A1 link blue. */
+#nav-logo-sprites,
+.nav-logo-locale {
+  color: var(--sd-on-dark-2) !important;
+}
+
+/* Nav ink ladder. Line 1 of each tool ("Hello, sign in", "Delivering to") is
+   the label for line 2, so the pair is one rung apart, not one weight apart —
+   700 on a 14px control label was doing hierarchy work that size and opacity
+   now do instead. */
+.nav-a,
+#nav-tools .nav-a,
+#nav-xshop .nav-a,
+.nav-a:link,
+.nav-a:visited,
+#nav-cart .nav-line-2,
+.nav-text {
+  color: var(--sd-on-dark) !important;
+  text-decoration: none !important;
+}
+
+.nav-line-1,
+#nav-link-accountList-nav-line-1,
+#glow-ingress-line1 {
+  color: var(--sd-on-dark-2) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.nav-line-2,
+#glow-ingress-line2 {
+  color: var(--sd-on-dark) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+}
+
+#nav-xshop .nav-a {
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
+/* Amazon marks hover with a 1px white outline that boxes the control. A fill
+   is the quieter affordance and needs no box: nothing on this bar carried a
+   boundary at rest, so nothing earns one on hover. */
+.nav-a:hover,
+#nav-tools .nav-a:hover,
+#nav-xshop .nav-a:hover,
+#nav-hamburger-menu:hover {
+  background: var(--sd-dark-fill) !important;
+  border-color: transparent !important;
+  border-radius: 6px !important;
+  color: #fff !important;
+}
+
+.nav-a-2,
+.nav-hasPanel > .nav-a,
+#nav-tools .nav-a-2 {
+  border-color: transparent !important;
+}
+
+/* The dropdown carets are CSS triangles built from `border: 4px solid
+   #a7acb2` — a cool grey that is 11 points off neutral, and invisible to any
+   sweep that only looks at background and text colour. Only the top edge is
+   painted: the triangle is made by three transparent sides, so setting
+   `border-color` fills the box back in and every caret becomes a grey square. */
+.nav-arrow,
+.nav-arrow-inner,
+#nav-tools .nav-arrow {
+  border-top-color: rgb(255 255 255 / 55%) !important;
+}
+
+/* The locale flag is a third-party mark used as evidence of which store you
+   are in, not the identity of the page. Its shape carries the recognition. */
+.icp-nav-flag,
+.icp-flag-3,
+#icp-touch-link-country .icp-nav-flag {
+  filter: grayscale(1) contrast(0.9);
+}
+
+/* --------------------------------------------------------------------------
+   4. Search
+   Scope select, field and submit are one control drawn three ways: a grey
+   chip, a white box and an orange button, each with its own radius. They now
+   share one radius and one boundary, and the submit carries the weight
+   because search is the most-used control on the page.
+   -------------------------------------------------------------------------- */
+#nav-search-bar-form,
+.nav-searchbar {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  background: #fff !important;
+}
+
+/* The submit is 45px inside a 55px cell. Unfilled, that gap used to show the
+   dark bar through a transparent form; with the form painted white it became
+   a white notch on the end of the control. Fill the cell, not the button. */
+#nav-search-bar-form .nav-right {
+  background: var(--sd-ink) !important;
+}
+
+/* Amazon draws the search control's focus ring on the form, in its own
+   orange. That is a semantic state and it stays; it only needed restating
+   because the resting box-shadow reset above took it with it. */
+#nav-search-bar-form:focus-within,
+.nav-searchbar:focus-within {
+  box-shadow: rgb(255 153 0) 0 0 0 2px, rgb(255 153 0 / 50%) 0 0 0 5px !important;
+}
+
+.nav-search-scope,
+.nav-search-scope.nav-sprite {
+  background-color: rgb(0 0 0 / 6%) !important;
+  border: 0 !important;
+  border-right: 1px solid var(--sd-rule) !important;
+  border-radius: 0 !important;
+  color: var(--sd-ink) !important;
+}
+
+#nav-search-label-id,
+.nav-search-label {
+  color: var(--sd-ink-2) !important;
+  font-size: 13px !important;
+}
+
+.nav-search-field,
+.nav-search-field input,
+#twotabsearchtextbox {
+  background: #fff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--sd-ink) !important;
+  font-size: 15px !important;
+}
+
+#twotabsearchtextbox::placeholder {
+  color: var(--sd-ink-3) !important;
+}
+
+/* #FEBD69 is Amazon's merchandising orange, not a state. Search is the most
+   used control on the page, so the submit keeps the weight and takes ink.
+
+   The magnifier is a dark sprite glyph on the <span>, and the <input> that
+   receives the click is that span's child, painted over it. Filling the input
+   covers the glyph and the button goes blank; inverting the span inverts its
+   child too, so the transparent input has to be stated explicitly. Only then
+   does invert flip the dark glyph to white and leave the fill behind it — the
+   fill lives on the wrapper, outside the filter group — black. */
+.nav-search-submit {
+  background-color: var(--sd-ink) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+#nav-search-submit-button,
+#nav-search-submit-button-agent {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+#nav-search-submit-text,
+#nav-search-submit-text-agent {
+  filter: invert(1) !important;
+}
+
+.nav-search-submit:hover {
+  background-color: #000 !important;
+}
+
+/* Flyout panels: one hairline and one restrained radius on the panel root.
+   `.nav-flyout-content` is not the root — it is also on the columns inside
+   the account menu, so including it drew a second box around "Your Account"
+   inside the box it already sat in. Count boundaries per control. */
+#nav-flyout-searchAjax,
+.nav-flyout {
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 8%) !important;
+  background: #fff !important;
+}
+
+/* #FFD814 with a blue label, inside a white panel: the account flyout's own
+   sign-in. Same treatment as every other primary action on the page. */
+a.nav-action-signin-button,
+.nav-action-signin-button {
+  background: var(--sd-ink) !important;
+  background-image: none !important;
+  border-color: var(--sd-ink) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+a.nav-action-signin-button .nav-action-inner,
+.nav-action-signin-button .nav-action-inner {
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Cart
+   The count is information; the orange it was set in is not. On a masthead
+   that is now the only dark surface on the page, white at full ink already
+   makes a single digit the loudest thing in that corner.
+   -------------------------------------------------------------------------- */
+#nav-cart-count,
+.nav-cart-count {
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Hero carousel
+   The artwork stays in full colour. It is photography and campaign
+   composition, it is the one expressive chapter on the page, and with the
+   catalogue below it monochrome it now reads as a deliberate interruption
+   rather than as the first of six loud things.
+
+   What goes is the chrome around it: a 15% drop shadow under every tile, and
+   a 12px radius brought down to the 8px the buttons use, so the tiles read as
+   one band of media with a restrained corner rather than as a row of
+   elevated cards.
+   -------------------------------------------------------------------------- */
+.gwm-window-tile,
+.gwm-window-tile > .a-list-item,
+.gwm-window-tile .a-cardui {
+  box-shadow: none !important;
+}
+
+.gwm-window-tile {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* A generated <style> block in the body paints a rotating nine-colour
+   sequence behind any tile without artwork — #33D473, #084A7E, #A6072C and
+   six more, assigned by nth-child. Different hue per tile reads as an
+   encoding that does not exist, so it flattens to one surface rather than
+   desaturating to nine greys. It carries !important from a four-class
+   selector in the body, which is why this one needs the element qualifiers.
+   Tiles whose background is real artwork are matched on background-image and
+   left alone. */
+html body .gwm-window-tile [class*="theming-card-background"][class*="enableColorSequence"] {
+  background-color: var(--sd-fill) !important;
+}
+
+html body .gwm-window-tile [class*="theming-card-background"][class*="enableColorSequence"] [class*="theming-card-header"] {
+  color: var(--sd-ink) !important;
+}
+
+/* One page inset for all three content chapters. Amazon runs the carousel at
+   16px, the recommendations rail at 20px and the card grid at 16px, so three
+   chapters start on three different left edges; 24px is one step out from the
+   scale the site already uses and puts them on one. The masthead keeps its
+   own 11px bar padding — its wordmark lands optically at 17px, which is close
+   enough that moving the bar's flex children was not worth the risk of
+   dislodging the absolutely-positioned search field. */
+#gwm-window,
+#gwm-window.gwm-window-wrapper {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* The carousel is a chapter and the grid below it is another; 12px between
+   them read as one continuous wall. */
+#gwm-Deck-cf {
+  margin-bottom: 48px !important;
+}
+
+/* The deck paints a full-bleed #F0F2F2 field with a 1440px-spread box-shadow
+   rather than a background, which is invisible while the deck is flush
+   against its neighbours and turns into a stray grey strip the moment any
+   space opens below it. */
+#gwm-Deck {
+  box-shadow: none !important;
+}
+
+/* Carousel arrows keep their affordance and lose the tinted outline. */
+.gwm-navigation-left-button,
+.gwm-navigation-right-button {
+  background-color: #fff !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  box-shadow: none !important;
+}
+
+/* #FFD814 with a 100px radius and a blue label: the one call to action inside
+   the carousel. It sits on top of campaign artwork whose colour changes every
+   slide, so it inverts — white fill, ink label — where every other primary
+   action on the page is ink on white. The fill differs because the surface
+   does; the radius, weight and padding match, so the two read as one
+   component in two contexts rather than as two components.
+
+   The ID qualifiers are load-bearing. `#gwm-Deck .a-button-primary
+   .a-button-text` further down this file is one ID against two classes and
+   beats any plain-class rule here no matter how many classes it stacks, which
+   is how this button ended up white-on-white. */
+#gwm-Deck-cf .gwm-window-tile .a-button-primary,
+#gwm-Deck-cf .gwm-window-tile .a-button-primary .a-button-inner,
+#gwm-Deck-cf [class*="primeButton__"] {
+  background: #fff !important;
+  border-color: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+#gwm-Deck-cf .gwm-window-tile .a-button-primary .a-button-text,
+#gwm-Deck-cf [class*="primeButton__"] .a-button-text {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Card grid
+   A dozen cards of identical weight in a 4-up grid at an 8px column gutter,
+   each drawing its own 1px #D5D9D9 box at an 8px radius. The box exists
+   because the gutter is too small to group anything; widen the gutter and it
+   is redundant. Column count is unchanged, so the same cards and the same
+   product count survive — they are separated by space instead of by outline.
+   -------------------------------------------------------------------------- */
+/* Amazon's own columns are fixed at 346px and sum exactly to the container,
+   so widening the gutter by even a pixel overflows the row — the count has to
+   become fluid at the same time. `auto-fill` rather than a fixed four:
+   this template has `min-width: 1000px`, so its narrow layout is a 1000px
+   page in a small window rather than a real mobile composition, and a
+   viewport media query would fire against a width the layout never has.
+   Sized against the container it lands on Amazon's own counts: four columns
+   at 1440, three at 1000. */
+#gwm-Deck-btf {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 56px 24px !important;
+  margin: 0 24px !important;
+  padding-top: 0 !important;
+}
+
+/* Scoped to the grid. The carousel tiles above are `.a-cardui` too, and an
+   unscoped white fill here painted straight over their campaign artwork. */
+#gwm-Deck-btf .gwm-widget,
+#gwm-Deck-btf [class*="card-container__"],
+#gwm-Deck-btf .a-cardui {
+  background: #fff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Padding only, never height: the asin tiles inside are `height: 100%` flex
+   children, so relaxing the card's height collapses every product image on
+   the deals card to zero. */
+#gwm-Deck-btf .a-cardui,
+#gwm-Deck-btf [class*="_mosaic-card__"] {
+  padding: 0 !important;
+}
+
+/* Card heading: one style for every chapter title on the page. 18px/700 was
+   the heaviest text on the page and there are twelve of them. */
+#gwm-Deck-btf .a-cardui-header h3,
+#gwm-Deck-btf .a-cardui-header h3 span,
+#rhf h2 {
+  font-size: 17px !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.012em !important;
+  color: var(--sd-ink) !important;
+  text-align: left !important;
+}
+
+#gwm-Deck-btf .a-cardui-header {
+  margin-bottom: 14px !important;
+  padding: 0 !important;
+}
+
+#gwm-Deck-btf .a-cardui-header a {
+  align-items: baseline !important;
+}
+
+/* The chevron says "this heading goes somewhere", which the heading alone
+   does not. It stays, on the metadata rung. */
+[class*="header-icon__"] path {
+  fill: rgb(0 0 0 / 46%) !important;
+}
+
+/* Category tile labels sit directly under their own image and are the caption
+   for it, so they keep primary ink and gain the gap that binds them. */
+#gwm-Deck-btf .a-size-base,
+#gwm-Deck-btf .a-color-base,
+[class*="mosaicCategoryCardBody__"] .a-size-base {
+  color: var(--sd-ink) !important;
+  font-size: 13.5px !important;
+  line-height: 1.35 !important;
+}
+
+[class*="mosaicCategoryImage__"],
+[class*="round-corners__"] {
+  border-radius: 6px !important;
+}
+
+/* The card's own "see more" footer link. */
+#gwm-Deck-btf .a-cardui-footer a,
+#gwm-Deck-btf [class*="gwm-link-footer__"] {
+  color: var(--sd-ink) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+  text-underline-offset: 0.18em !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Discount badges
+   `#CC0C39` filled chip plus `#CC0C39` on white, both set in an inline style
+   attribute on every deal tile — which is why these rules carry !important
+   and the selectors do not.
+
+   A promotional flash encodes no state: the saving is in the number, and the
+   number is unchanged. What is removed is the hue; what is kept is the chip,
+   so the discount is still the only filled object anywhere in the grid and
+   still the first thing the eye lands on inside a tile. The trade is that an
+   ink chip at this weight would itself become the page's dominant mark if
+   Amazon ever served a grid where most tiles carried one — at the five to
+   fifteen per page it actually serves, the chip is the accent it claims to
+   be.
+   -------------------------------------------------------------------------- */
+[class*="badgeLabel__"] {
+  background-color: var(--sd-ink) !important;
+  color: #fff !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+[class*="badgeLabel__"] span {
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+[class*="badgeMessage__"],
+[class*="badgeMessage__"] span {
+  background-color: transparent !important;
+  color: var(--sd-ink-2) !important;
+  font-weight: 400 !important;
+}
+
+/* The rest of Amazon's deal palette. None of these rendered in any capture —
+   the gateway rotates its card types and today's set carries only the badge
+   above — so this block is written from the shared component CSS rather than
+   verified on screen, and is deliberately small.
+
+   The struck-through comparison price keeps its own rung: it is the quieter
+   half of a pair, and flattening it onto the live price destroys the only
+   thing that says which number you pay. */
+.a-color-price,
+.a-price,
+.a-price .a-price-whole,
+[class*="dealBadge"] span,
+.a-badge-label-inner,
+.a-badge-text {
+  color: var(--sd-ink) !important;
+}
+
+.a-text-price,
+.a-text-strike,
+.a-price[data-a-strike="true"] {
+  color: var(--sd-ink-2) !important;
+}
+
+/* Commerce systems habitually superscript the currency symbol and the cents
+   at half size; one size on one baseline is the correction. */
+.a-price .a-price-symbol,
+.a-price .a-price-fraction {
+  font-size: 1em !important;
+  top: 0 !important;
+  vertical-align: baseline !important;
+}
+
+/* Sponsored and advertising disclosures stay exactly where they are, at no
+   less contrast than they shipped with. Amazon sets these in #555, which is
+   7.4:1 on white — the 46% metadata rung would be 3.5:1, so quieting them to
+   match the rest of the metadata would make a required disclosure less
+   legible than the site ships it. */
+[class*="sponsoredLabel"],
+.puis-sponsored-label-text,
+.s-sponsored-label-text,
+.a-color-secondary[class*="sponsored"] {
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Recommendations rail
+   Signed out, this chapter is a centred sign-in prompt marooned in 1440px of
+   white. Left-aligning it puts the heading, the explanation and the action on
+   the same edge as every other chapter on the page.
+   -------------------------------------------------------------------------- */
+#rhf,
+#rhf-container,
+.rhf-frame,
+.rhf-border {
+  background: #fff !important;
+  border: 0 !important;
+}
+
+.rhf-border,
+#rhf-container .rhf-border {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* One source of spacing per axis: #rhf and #rhf-container both carry a top
+   margin, so a value set on the pair stacks and opens twice the gap asked
+   for. The measured gap matters more than the range here — grid rows stretch
+   to their tallest card, so the last row already ends in 100-150px of unused
+   height and a full 96-144px transition on top of that is a void, not a
+   chapter break. */
+#rhf {
+  margin-top: 40px !important;
+}
+
+#rhf-container {
+  margin-top: 0 !important;
+}
+
+#rhf-container,
+#rhf-container div,
+#rhf-container p,
+#rhf-container h2,
+#rhf .a-spacing-base,
+#rhf [class*="rvi-container"] {
+  text-align: left !important;
+}
+
+#rhf a,
+#rhf-container a {
+  color: var(--sd-ink) !important;
+}
+
+#rhf .a-button,
+#rhf .a-button-primary {
+  margin-left: 0 !important;
+  max-width: 260px !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Links in content
+   #2162A1 and #004B91 across the body and footer. Ink plus an underline says
+   "link" without adding a hue to a page that is meant to have one.
+   -------------------------------------------------------------------------- */
+#gwm-Deck a,
+#gwm-Deck a:link,
+#gwm-Deck a:visited,
+#rhf a:link,
+#rhf a:visited,
+.a-link-normal,
+.a-link-normal:visited {
+  color: var(--sd-ink) !important;
+}
+
+#gwm-Deck a:hover .a-truncate-cut,
+#gwm-Deck a:hover h3 {
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+  text-underline-offset: 0.16em !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Footer
+   Two navy fills, #232F3E over #131A22, and links in #004B91 — blue text on
+   navy, the lowest-contrast text on the page. Same neutral band as the
+   masthead so the page is bookended by one surface, with the dense
+   directory block one rung deeper to keep the footer's own chapters.
+   -------------------------------------------------------------------------- */
+#navFooter,
+#navFooter.navLeftFooter,
+.navFooterVerticalColumn,
+.navFooterLine {
+  background-color: var(--sd-dark) !important;
+  border-color: var(--sd-dark-rule) !important;
+}
+
+#navFooter {
+  margin-top: 64px !important;
+}
+
+.navFooterDescLine,
+.navFooterCopyright,
+#navFooter .navFooterDescLine {
+  background-color: var(--sd-dark-deep) !important;
+}
+
+#navFooter a,
+#navFooter a:link,
+#navFooter a:visited,
+.navFooterDescText,
+.navFooterDescText a {
+  color: var(--sd-on-dark-2) !important;
+  text-decoration: none !important;
+}
+
+#navFooter a:hover {
+  color: #fff !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgb(255 255 255 / 40%) !important;
+  text-underline-offset: 0.16em !important;
+}
+
+#navFooter .navFooterColHead,
+.navFooterColHead,
+.navFooterDescItem_heading {
+  color: var(--sd-on-dark) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.navFooterDescText {
+  font-size: 11.5px !important;
+  line-height: 1.45 !important;
+  color: var(--sd-on-dark-3) !important;
+}
+
+.navFooterBackToTop,
+#navBackToTop .navFooterBackToTop {
+  background-color: var(--sd-dark-fill) !important;
+  color: var(--sd-on-dark) !important;
+  font-size: 13px !important;
+}
+
+.navFooterBackToTop:hover {
+  background-color: var(--sd-dark-hover) !important;
+}
+
+.nav-footer-line,
+#navFooter .nav-footer-line {
+  border-color: var(--sd-dark-rule) !important;
+}
+
+/* Locale and currency pickers in the footer are controls, so they keep a
+   boundary; #848688 becomes the dark surface's own rule value. */
+#navFooter .icp-button,
+#navFooter [class*="icp-"] a[class*="button"],
+.icp-color-base {
+  border-color: var(--sd-dark-rule) !important;
+  border-radius: 8px !important;
+  color: var(--sd-on-dark) !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Buttons outside the carousel
+   Amazon's #FFD814 primary and #F7CA00 call-to-action are merchandising
+   fills. On a light surface the primary becomes ink; nothing here is
+   destructive or stateful, so nothing loses meaning.
+   -------------------------------------------------------------------------- */
+.a-button-primary,
+.a-button-primary .a-button-inner {
+  background: var(--sd-ink) !important;
+  background-image: none !important;
+  border-color: var(--sd-ink) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+/* The label is an <a> inside the button, so `#rhf a` — one ID against two
+   classes — repainted it ink on ink and the button went blank. !important on
+   both sides does not break that tie; the ID qualifiers do. */
+.a-button-primary .a-button-text,
+.a-button-primary .a-button-input,
+#rhf .a-button-primary .a-button-text,
+#gwm-Deck .a-button-primary .a-button-text,
+#navFooter .a-button-primary .a-button-text {
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+.a-button {
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Focus and selection
+   The masthead already has a real focus treatment — a 2px #FF9900 ring plus a
+   50% halo, drawn as a box-shadow — and orange is its state colour, so it
+   stays untouched. Adding an outline there painted a second ring around the
+   first. Everything below the masthead is either the browser default 5px blue
+   or, on the recommendations button, nothing at all, and those get a ring.
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+
+#navbar a:focus-visible,
+#navbar button:focus-visible,
+#navbar input:focus-visible,
+#navbar select:focus-visible,
+#navbar [tabindex]:focus-visible {
+  outline: 0 !important;
+}
+
+/* The footer has no ring of its own, and 2px is the floor on a dark surface —
+   a hairline there has no light field to register against. */
+#navFooter a:focus-visible,
+#navFooter button:focus-visible,
+#navFooter [tabindex]:focus-visible {
+  outline: 2px solid #fff !important;
+  outline-offset: 2px !important;
+}
+
+#twotabsearchtextbox:focus,
+.nav-search-field input:focus {
+  outline: 0 !important;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+/* The keyboard-shortcut menu is parked off-canvas and only appears for
+   keyboard users, which is exactly why it is easy to leave at a 50%-black
+   14px drop shadow. It is a panel like any other. */
+#shortcut-menu.nav-assistant {
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 8%) !important;
+}
+
+.shortcut-help-container,
+.nav-assistant .shortcut-key {
+  background: var(--sd-fill) !important;
+  color: var(--sd-ink) !important;
+}
+
+#shortcut-menu a,
+#shortcut-menu .nav-assistant-link,
+#shortcut-menu button {
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. Narrow viewports
+   The grid, the carousel and the rail are all sized against their container
+   rather than the viewport, so they need no breakpoint to reflow — the grid
+   already drops from four columns to three on its own. What does change is
+   the rhythm: this template has `min-width: 1000px`, so a 390px window shows
+   a 1000px page scrolled in both directions, and vertical chapter gaps buy
+   less there than they cost.
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  #gwm-Deck-btf {
+    gap: 40px 20px !important;
+  }
+
+  #gwm-Deck-cf {
+    margin-bottom: 32px !important;
+  }
+
+  /* On #rhf only. Its container carries a top margin too, and setting both
+     stacks them. */
+  #rhf {
+    margin-top: 28px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

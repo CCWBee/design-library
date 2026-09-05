@@ -57,3 +57,11 @@ Every component's code is on the homepage; the URL is the homepage plus the comp
 | `code-block.tsx` | Code Block | https://www.beautifului.dev/#code-block | react | — |
 | `fine-tune-card.tsx` | Fine-tune Card | https://www.beautifului.dev/#fine-tune-card | react | GlideMenu |
 | `selection-actions.tsx` | Selection Actions | https://www.beautifului.dev/#selection-actions | react, iconoir-react | Button, Shimmer, StreamText |
+
+## Primitives (added 5 September 2026)
+
+The six UI primitives the components import, plus the foundation stylesheet, were harvested verbatim
+from the public shadcn registry (`https://www.beautifului.dev/r/<name>.json`) into `./primitives/`:
+`foundation.css`, `Button.tsx`, `GlideMenu.tsx`, `EntityChip.tsx`, `ValuePill.tsx`, `Shimmer.tsx`,
+`StreamText.tsx`. With these the 27-item registry is captured in full. Same MIT licence as the
+components; see `./LICENSE`.

@@ -1,0 +1,1027 @@
+/* ==========================================================================
+   Mastodon — /explore — Scandinavian override
+
+   Structural problem: the feed is a bordered box (1px rule around the column
+   header, down both sides of the tab bar) containing twenty records each
+   closed with its own 1px rule. Twenty-two horizontal lines in one column
+   turns the page into a grid, and the eye starts counting rows instead of
+   reading posts. On top of that, every neutral in the product is blue-tinted
+   (#181820 ink, #535374 secondary, #d7d6e1 borders) and the brand indigo
+   #5638cc is sprayed across links, tabs, focus rings, nav, sparklines and
+   two buttons, so nothing reads as more important than anything else.
+
+   Target hierarchy: one rule dividing chrome from content — under the
+   Posts / Hashtags / News tab bar — and nothing else. Records are separated
+   by distance instead: ~48px between posts against ~12px inside one, so
+   proximity does the grouping. Ink goes to an alpha-black ladder. Indigo
+   survives in exactly two places: the Mastodon wordmark, and the semantic
+   highlight colours that tell you a post is favourited or bookmarked.
+
+   The chrome / content line, which this surface exists to test:
+   the interface is ours to quiet; what people posted is not. Avatars,
+   attached media, custom emoji in display names and the text of posts are
+   left completely untouched — no filter, no crop, no recolour. Section 7
+   is a deliberate hands-off block, and everything else is written to avoid
+   reaching into it.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   Mastodon 4.7 drives almost all colour through custom properties on :root,
+   so retargeting the palette here neutralises buttons, borders, icons, nav
+   and focus rings in one pass instead of chasing a few hundred selectors.
+
+   Two token families are deliberately left alone:
+   - error / warning / success, which carry meaning
+   - --color-text-favourite-highlight and --color-text-bookmark-highlight,
+     which are the *only* thing distinguishing an engaged control from an
+     idle one once the indigo hover states are gone
+   -------------------------------------------------------------------------- */
+:root {
+  --sd-sans: Inter, "Inter Variable", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-body: rgb(0 0 0 / 90%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 55%, not the 40-50% metadata rung: handles and timestamps sit at 14px
+     and still have to clear 4.5:1 on white. */
+  --sd-ink-3: rgb(0 0 0 / 55%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-active: rgb(0 0 0 / 9%);
+  --sd-fill: rgb(0 0 0 / 4%);
+  /* Mastodon's shipped --color-text-brand, kept under its own name because
+     the boosted state still needs it after the token itself goes neutral. */
+  --sd-boost: #5638cc;
+
+  /* The grey ramp is the source of the blue cast — every step of it is a
+     desaturated indigo. Replaced with alpha black so the neutrals actually
+     read as neutral next to the one colour we keep. */
+  --color-grey-50: rgb(0 0 0 / 3%) !important;
+  --color-grey-100: rgb(0 0 0 / 5%) !important;
+  --color-grey-200: rgb(0 0 0 / 10%) !important;
+  --color-grey-300: rgb(0 0 0 / 24%) !important;
+  --color-grey-400: rgb(0 0 0 / 38%) !important;
+  --color-grey-500: rgb(0 0 0 / 55%) !important;
+  --color-grey-600: rgb(0 0 0 / 64%) !important;
+  --color-grey-700: rgb(0 0 0 / 74%) !important;
+  --color-grey-800: rgb(0 0 0 / 82%) !important;
+  --color-grey-900: rgb(0 0 0 / 90%) !important;
+  --color-grey-950: #000 !important;
+
+  /* Ink ladder */
+  --color-text-primary: rgb(0 0 0 / 90%) !important;
+  --color-text-secondary: rgb(0 0 0 / 64%) !important;
+  --color-text-tertiary: rgb(0 0 0 / 55%) !important;
+  --color-text-disabled: rgb(0 0 0 / 32%) !important;
+  --color-text-inverted: #fff !important;
+
+  /* Surfaces */
+  --color-bg-primary: #fff !important;
+  --color-bg-secondary: rgb(0 0 0 / 3%) !important;
+  --color-bg-tertiary: rgb(0 0 0 / 5%) !important;
+  --color-bg-overlay: #fff !important;
+  --color-bg-inverted: #000 !important;
+  --color-bg-highlight: rgb(0 0 0 / 5%) !important;
+  --color-bg-overlay-highlight: rgb(0 0 0 / 5%) !important;
+  --color-bg-blend: rgb(0 0 0 / 4%) !important;
+  --color-bg-disabled: rgb(0 0 0 / 10%) !important;
+  --color-text-on-disabled: rgb(0 0 0 / 32%) !important;
+
+  /* Borders. #d7d6e1 is a tinted default that survives a neutralising pass
+     because the border itself looks intentional; it is not. */
+  --color-border-primary: rgb(0 0 0 / 10%) !important;
+  --color-border-strong: rgb(0 0 0 / 24%) !important;
+
+  /* Brand indigo out of interface chrome. The wordmark keeps it (section 9);
+     favourite / bookmark highlights keep their own hues. A filled indigo
+     "Create account" sitting directly under a full-colour indigo wordmark
+     made the button compete with the mark, so the primary action goes to
+     black ink and the mark is left as the page's single colour moment. */
+  --color-bg-brand-base: #000 !important;
+  --color-bg-brand-base-hover: rgb(0 0 0 / 80%) !important;
+  --color-bg-brand-soft: rgb(0 0 0 / 6%) !important;
+  --color-bg-brand-softest: rgb(0 0 0 / 3%) !important;
+  --color-border-brand: #000 !important;
+  --color-border-brand-soft: rgb(0 0 0 / 12%) !important;
+  --color-text-brand: rgb(0 0 0 / 90%) !important;
+  --color-text-brand-soft: rgb(0 0 0 / 64%) !important;
+  --color-text-brand-on-inverted: rgb(255 255 255 / 80%) !important;
+  --color-text-on-brand-base: #fff !important;
+  --color-text-status-links: rgb(0 0 0 / 90%) !important;
+
+  --color-indigo-50: rgb(0 0 0 / 3%) !important;
+  --color-indigo-100: rgb(0 0 0 / 5%) !important;
+  --color-indigo-200: rgb(0 0 0 / 10%) !important;
+  --color-indigo-300: rgb(0 0 0 / 24%) !important;
+  --color-indigo-400: rgb(0 0 0 / 38%) !important;
+  --color-indigo-500: rgb(0 0 0 / 55%) !important;
+  --color-indigo-600: rgb(0 0 0 / 74%) !important;
+  --color-indigo-700: #000 !important;
+  --color-indigo-800: #000 !important;
+  --color-indigo-900: #000 !important;
+  --color-indigo-950: #000 !important;
+
+  /* Trending sparklines are data visualisation, so they go neutral too. */
+  --color-graph-primary-stroke: rgb(0 0 0 / 70%) !important;
+  --color-graph-primary-fill: rgb(0 0 0 / 6%) !important;
+  --color-graph-disabled-stroke: rgb(0 0 0 / 24%) !important;
+  --color-graph-disabled-fill: rgb(0 0 0 / 8%) !important;
+
+  /* Focus ring follows the ink, not the brand. */
+  --outline-focus-default: 2px solid #000 !important;
+
+  /* Was 0 20px 25px -5px rgb(0 0 0 / 30%) plus a second layer — a premium
+     drop shadow on a menu. Elevation still needs to read, so one barely
+     visible neutral shadow plus a hairline does the job. */
+  --dropdown-shadow: 0 6px 16px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 8%) !important;
+  --color-shadow-primary: rgb(0 0 0 / 12%) !important;
+  --shadow-strength-primary: 12% !important;
+
+  /* Radii: the product mixes 4px (buttons, inputs, nav) with 16/20/28px
+     (panels). Collapsed onto one restrained 8/12 pair. */
+  --radius-xs: 8px !important;
+  --radius-sm: 8px !important;
+  --radius-md: 12px !important;
+  --radius-lg: 12px !important;
+  --radius-xl: 12px !important;
+
+  /* Syne is a display face used for headings; the skill allows one family. */
+  --font-heading: var(--sd-sans) !important;
+  --font-body: var(--sd-sans) !important;
+
+  --lh-normal: 1.55 !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Type family
+   Set on body and form controls only so Mastodon's inline SVG icons and any
+   fallback glyph fonts keep resolving.
+   -------------------------------------------------------------------------- */
+body,
+button,
+input,
+select,
+textarea,
+optgroup,
+.button,
+.column-header__title,
+.status__content,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--sd-sans) !important;
+}
+
+body {
+  background: #fff !important;
+  color: var(--sd-ink-body) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   3. Column chrome
+   The header used to be a rounded, fully bordered card sitting on top of a
+   bordered tab strip: three edges drawn around content that is already
+   separated from the panes beside it by 16px of gutter. All of it goes; the
+   tab bar keeps one bottom hairline, which is the single rule on the page
+   and marks where chrome ends and other people's posts begin.
+   -------------------------------------------------------------------------- */
+.column-header,
+.column-header__wrapper,
+.column-header__wrapper.active,
+.column-header__button,
+.column-header__collapsible,
+.column-header__collapsible-inner,
+.column-back-button {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #fff !important;
+}
+
+/* "Trending" is the page title, but at 16px/400 it was lighter than the post
+   text below it and lost the argument. It sits inside a nowrap,
+   overflow-hidden button, so the line box also has to be tall enough to hold
+   descenders or the word loses the tail of its g. */
+.column-header__title,
+.column-header__button,
+.column-header .column-header__title {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--sd-ink) !important;
+  padding: 10px 4px 10px 20px !important;
+  gap: 8px !important;
+}
+
+/* The trend arrow beside the title restates the word next to it. The matching
+   arrow in the navigation rail stays, because there the icons are a repeating
+   column that gives the nav a scannable left edge rather than one ornament
+   next to one heading. display: none rather than visibility, so the flex gap
+   goes with it instead of leaving an 8px hole before the title. */
+.column-header__title > .icon,
+.column-header__icon {
+  display: none !important;
+}
+
+.column-header__buttons,
+.column-header__back-button {
+  color: var(--sd-ink-2) !important;
+}
+
+/* Tabs: peers, so all three render identically and only the active one
+   changes rung. The indigo underline becomes ink; the strip keeps the one
+   hairline that divides chrome from feed. */
+.account__section-headline {
+  border: 0 !important;
+  border-bottom: 1px solid var(--sd-rule) !important;
+  background: #fff !important;
+  border-radius: 0 !important;
+  padding: 0 8px !important;
+  gap: 2px !important;
+}
+
+/* The tabs were three equal 199px thirds with centred labels — a segmented
+   control's geometry on what is really a set of links. They shrink to their
+   labels and start at the left edge, so they line up with the page title and
+   the posts. width: max-content is load-bearing: the site sets an explicit
+   width on these anchors, so flex-basis: auto alone stretches each one to the
+   full column. */
+.account__section-headline a,
+.account__section-headline button {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-3) !important;
+  padding: 14px 12px !important;
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  text-align: left !important;
+  text-transform: none !important;
+}
+
+.account__section-headline a.active,
+.account__section-headline button.active {
+  color: var(--sd-ink) !important;
+}
+
+/* The marker the site already paints, retargeted rather than replaced with a
+   second pseudo-element: a 40px indigo bar centred under a 199px tab becomes
+   a 2px ink bar the exact width of the label it belongs to. The centring came
+   from left: 50% plus a translate, so both have to be undone. */
+.account__section-headline a.active::before,
+.account__section-headline button.active::before {
+  background: var(--sd-ink) !important;
+  border-radius: 0 !important;
+  height: 2px !important;
+  width: auto !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: -1px !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+.tabs-bar__wrapper {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: #fff !important;
+}
+
+/* The rest of the box. .scrollable carries border-left / border-right /
+   border-bottom plus a 4px bottom radius, which is what made the column read
+   as a card. These are vertical rules 14,000px long, so lines.js never sees
+   them — it only reports horizontal ones. The 16px gutter between the three
+   panes already separates the feed from the rails. */
+.scrollable,
+.explore__links,
+.explore__search-results,
+.columns-area__panels__main,
+.column > .scrollable {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. The feed — grouping by proximity
+   Every post used to end in a 1px rule. Removed: the eye groups on relative
+   distance, and a post already ends in a wide, obvious block of content.
+   The trade the skill asks to be named: ~48px between records instead of a
+   1px line costs roughly 32px per post, about 640px over a twenty-post
+   screen. On a feed whose records are 200-600px tall that is a rounding
+   error, and it buys twenty-one fewer lines.
+   -------------------------------------------------------------------------- */
+.status,
+.status__wrapper,
+.status__wrapper--filtered,
+.status--in-thread,
+.detailed-status,
+.detailed-status__action-bar,
+.scrollable > div > article,
+.item-list article {
+  border-bottom: 0 !important;
+  border-top: 0 !important;
+  box-shadow: none !important;
+}
+
+.status {
+  padding: 24px 20px !important;
+  background: #fff !important;
+}
+
+/* Author row: avatar, display name, handle, visibility and time. These are
+   one record's metadata, so they stay bound tight to the post body. */
+.status__info {
+  padding-bottom: 10px !important;
+  gap: 12px !important;
+  font-size: 15px !important;
+}
+
+.status__display-name {
+  gap: 12px !important;
+}
+
+.display-name__html {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--sd-ink) !important;
+  line-height: 1.3 !important;
+}
+
+.display-name__account {
+  font-size: 14px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* Timestamp and visibility icon are the least-used things in the row, so
+   they sit on the metadata rung rather than matching the handle. */
+.status__relative-time,
+.status__relative-time time,
+.status__visibility-icon {
+  color: var(--sd-ink-3) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+/* Body text was 15px; posts are real reading, so 16px. The cap lands at
+   544px, about 68 characters at this size, and it stops only the longest
+   lines. Media is deliberately not capped with it: the column is fixed at
+   600px, so a narrower measure would have nowhere to move the photos to and
+   would just open dead gap — the exact cost the skill says to name. The
+   remaining 16px between the text edge and the media edge is smaller than
+   the natural rag of the text above it. */
+.status__content,
+.status__content__text,
+.status__content p {
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+  color: var(--sd-ink-body) !important;
+}
+
+.status__content {
+  max-width: 34em !important;
+  padding-top: 0 !important;
+}
+
+/* Links inside a post are chrome painted onto someone's words, not colour
+   they chose, so they go to ink — but an underline replaces the hue so the
+   affordance survives. */
+.status__content a,
+.status__content__text a,
+.status__content .mention,
+.status__content .unhandled-link {
+  color: var(--sd-ink-body) !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgb(0 0 0 / 30%) !important;
+  text-underline-offset: 2px !important;
+}
+
+.status__content a:hover {
+  text-decoration-color: var(--sd-ink) !important;
+}
+
+/* Content warnings stay obvious — this is a state, not decoration. */
+.content-warning,
+.status__content__spoiler-link {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  color: var(--sd-ink-body) !important;
+}
+
+/* Hashtag chips under a post were pale indigo pills. Quiet fill, no rule,
+   and they keep the pill family the skill reserves for tags and filters. */
+.hashtag-bar {
+  margin-top: 12px !important;
+  gap: 6px !important;
+}
+
+.hashtag-bar a,
+.hashtag-bar button {
+  background: var(--sd-fill) !important;
+  color: var(--sd-ink-2) !important;
+  border: 0 !important;
+  font-size: 13px !important;
+  padding: 4px 10px !important;
+}
+
+.hashtag-bar a:hover {
+  background: var(--sd-active) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Boost / reply prepends belong to the record beneath them. */
+.status__prepend {
+  color: var(--sd-ink-3) !important;
+  font-size: 14px !important;
+  padding: 0 0 8px !important;
+  margin: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Engagement controls
+   Reply, boost, favourite, bookmark and the overflow menu are peers, so all
+   five render at one size on one rung. Counts move onto the metadata rung so
+   the row reads as one quiet strip rather than five weights. Nothing is
+   removed and nothing is merged: each control keeps its own icon, its own
+   hit area and its own label.
+   -------------------------------------------------------------------------- */
+.status__action-bar,
+.detailed-status__action-bar {
+  margin-top: 14px !important;
+  gap: 8px !important;
+  border: 0 !important;
+  align-items: center !important;
+}
+
+/* .icon-button paints from --default-icon-color / --hover-icon-color rather
+   than from color, and every state the site defines — active, disabled, the
+   media-overlay variant — overrides those properties, not color. Driving the
+   custom properties instead of the colour means the states below still win,
+   including the ones that are only reachable when logged in. */
+.status__action-bar__button,
+.status__action-bar .icon-button,
+.detailed-status__action-bar .icon-button {
+  --default-icon-color: var(--sd-ink-3);
+  --hover-icon-color: var(--sd-ink);
+  --hover-bg-color: var(--sd-hover);
+  --focus-outline-color: var(--sd-ink);
+  border-radius: 8px !important;
+  padding: 6px 10px 6px 8px !important;
+  min-height: 32px !important;
+  gap: 6px !important;
+}
+
+.icon-button__counter,
+.status__action-bar .animated-number {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: inherit !important;
+  width: auto !important;
+}
+
+/* Engaged states keep their hue. This is the one place in the feed where
+   colour does work no opacity step can do: it is the difference between
+   "I boosted this" and "I could boost this". Boost is the shipped indigo,
+   favourite the amber and bookmark the red Mastodon already assigned, all
+   three unreachable in a logged-out screenshot and all three preserved. */
+.status__action-bar .icon-button.active,
+.detailed-status__action-bar .icon-button.active {
+  --default-icon-color: var(--sd-boost);
+  --hover-icon-color: var(--sd-boost);
+}
+
+.status__action-bar .icon-button.star-icon.active,
+.detailed-status__action-bar .icon-button.star-icon.active {
+  --default-icon-color: var(--color-text-favourite-highlight);
+  --hover-icon-color: var(--color-text-favourite-highlight);
+}
+
+.status__action-bar .icon-button.bookmark-icon.active,
+.detailed-status__action-bar .icon-button.bookmark-icon.active {
+  --default-icon-color: var(--color-text-bookmark-highlight);
+  --hover-icon-color: var(--color-text-bookmark-highlight);
+}
+
+/* Logged out, bookmark ships disabled, and the site's own rule already pulls
+   it to --color-text-disabled — 32% against the 55% idle rung, which the
+   token pass above keeps distinguishable. What is restated here is the hover
+   fill: the site's hover background does not exclude .disabled, so without
+   this an unavailable control lights up under the cursor. */
+.status__action-bar .icon-button.disabled,
+.detailed-status__action-bar .icon-button.disabled {
+  --default-icon-color: var(--color-text-disabled);
+  --hover-icon-color: var(--color-text-disabled);
+  --hover-bg-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   6. The other two chapters — Hashtags and News
+   Both tabs are the same repeated-record problem as the feed, and both were
+   drawing it with rules: ten .trends__item bottom borders on Hashtags, twenty
+   .story bottom borders on News, inside the same column box. Here the trade
+   the skill asks about goes the same way as the feed but for a different
+   reason: these rows already sit 32px apart from their own 16px padding, so
+   the rule was decorating a gap that was doing the work anyway. Removing it
+   costs no density at all.
+   -------------------------------------------------------------------------- */
+.trends__item,
+.story,
+.story.expanded,
+.account__section-headline + div .trends__item {
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 18px 20px !important;
+}
+
+/* Hashtag, then how many people used it — one record, so the name and its
+   count sit tight together and only the rung changes between them. */
+.trends__item__name {
+  font-size: 13px !important;
+  color: var(--sd-ink-3) !important;
+  line-height: 1.5 !important;
+}
+
+.trends__item__name a {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+  text-decoration: none !important;
+}
+
+.trends__item__name a:hover {
+  text-decoration: underline !important;
+}
+
+.trends__item__name strong {
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.trends__item:hover,
+.story:hover {
+  background: var(--sd-fill) !important;
+}
+
+.story {
+  gap: 20px !important;
+}
+
+.story__details__publisher,
+.story__details__shared {
+  font-size: 13px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+.story__details__shared strong {
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* The headline is the one thing being scanned in this chapter, so it keeps
+   its size; only the tinted ink changes. */
+.story__details__title {
+  font-size: 19px !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--sd-ink) !important;
+  text-decoration: none !important;
+}
+
+.story__details__title:hover {
+  text-decoration: underline !important;
+}
+
+/* "207 posts" is a link into the conversation, not a badge, so it keeps the
+   tag pill family rather than becoming a third button shape. */
+.story__details__shared__pill {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  color: var(--sd-ink-2) !important;
+  padding: 3px 10px !important;
+  font-size: 13px !important;
+}
+
+.story__details__shared__pill:hover {
+  background: var(--sd-active) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* The thumbnail anchor inherited the browser's default link blue, which was
+   invisible only because an image covered it; alt text exposed it. */
+.story__thumbnail {
+  color: inherit !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Icons
+   One family, one stroke, one optical size, all on the ink ladder.
+   -------------------------------------------------------------------------- */
+.icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.status__action-bar .icon,
+.column-link .icon {
+  width: 19px !important;
+  height: 19px !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. User content — hands off
+   Avatars, attached media and custom emoji are the work of the people who
+   posted them, not surfaces for this palette. Nothing here recolours,
+   desaturates or crops; the rules exist only to guarantee that a broad
+   selector elsewhere in this file cannot reach in and do it by accident.
+   -------------------------------------------------------------------------- */
+.account__avatar,
+.account__avatar img,
+.status__avatar,
+.status__avatar img,
+.account__header__image img,
+.media-gallery__item-thumbnail img,
+.media-gallery__preview,
+.media-gallery__gifv video,
+.video-player video,
+.status__content .emojione,
+.display-name__html .emojione,
+img.emojione,
+.server-banner__hero,
+.account__header__banner {
+  filter: none !important;
+  -webkit-filter: none !important;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+}
+
+/* Avatar corners already sat at the skill's restrained range; left as is. */
+.account__avatar {
+  background: var(--sd-fill) !important;
+}
+
+/* The media frame is interface, so it matches the page radius. The pixels
+   inside it are not touched. */
+.media-gallery,
+.media-gallery__item,
+.media-gallery__preview,
+.video-player,
+.status-card {
+  border-radius: 8px !important;
+}
+
+.media-gallery {
+  margin-top: 12px !important;
+}
+
+/* Overlay chrome on top of media keeps its dark scrim: it has to survive an
+   arbitrary photograph underneath, and white ink on 65% black is the one
+   place a non-neutral background is doing real work. */
+.media-gallery__actions__pill,
+.media-gallery__alt__label,
+.media-gallery__gifv__label,
+.media-gallery__item__badges > * {
+  border-radius: 999px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* Link preview cards are chrome the interface builds around a URL. */
+.status-card {
+  border: 1px solid var(--sd-rule) !important;
+  box-shadow: none !important;
+}
+
+.status-card__title {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+.status-card__description,
+.status-card__host {
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Side panels
+   Search, the server banner and the footer were three separately styled
+   regions. They share the ink ladder now, and the search field drops its
+   border: a filled control and a bordered control draw the same boundary
+   twice, so the quiet fill keeps it and the rule goes.
+   -------------------------------------------------------------------------- */
+/* No background is set on .columns-area__panels__pane here on purpose. At
+   mobile widths the closed navigation drawer is a full-viewport fixed pane
+   with pointer-events: none, so painting it white hides the entire feed
+   while every element still reports itself visible and hit-testable. The
+   panes already inherit #fff from --color-bg-primary. */
+
+.search__input {
+  background: var(--sd-fill) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  font-size: 15px !important;
+  color: var(--sd-ink-body) !important;
+  padding: 12px 16px 12px 40px !important;
+}
+
+.search__input::placeholder {
+  color: var(--sd-ink-3) !important;
+}
+
+.search__input:focus {
+  background: var(--sd-hover) !important;
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: -2px !important;
+}
+
+.search__icon .icon {
+  color: var(--sd-ink-3) !important;
+}
+
+.search__popout,
+.dropdown-menu,
+.dropdown-menu__container {
+  border: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: var(--dropdown-shadow) !important;
+}
+
+.search__popout h4,
+.search__popout__menu__message {
+  color: var(--sd-ink-3) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* Nav rows are peers, so they render identically and only the selected one
+   changes. */
+.column-link {
+  color: var(--sd-ink-2) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  gap: 12px !important;
+}
+
+.column-link:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* The selected row is where you are, so it keeps two signals — ink and a
+   quiet fill — and no third. 4% rather than the 9% pressed rung because this
+   row spans the full 285px rail and at 9% one nav link outweighed the page
+   title; no weight bump, because ink and fill already say it. */
+.column-link.active,
+.column-link--transparent.active {
+  color: var(--sd-ink) !important;
+  background: var(--sd-fill) !important;
+}
+
+.column-link__icon {
+  color: inherit !important;
+}
+
+/* Server banner. Its hero illustration is the instance's own artwork and is
+   left in full colour; only the text around it moves onto the ladder. */
+.server-banner {
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.server-banner__introduction,
+.server-banner__description {
+  color: var(--sd-ink-2) !important;
+  font-size: 14px !important;
+}
+
+.server-banner__hero,
+.server-banner__hero img {
+  border-radius: 8px !important;
+}
+
+/* "ADMINISTERED BY:" / "SERVER STATS:" were CSS-uppercased chrome labels. */
+.server-banner__meta__column h4,
+.server-banner h4,
+[class*="link_footer"] h4,
+[class*="link_footer__heading"] {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-3) !important;
+}
+
+.server-banner__number {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--sd-ink) !important;
+}
+
+.server-banner__number-label {
+  color: var(--sd-ink-3) !important;
+}
+
+/* The footer is allowed to be dense, but it keeps the same ladder. */
+[class*="link_footer"],
+[class*="link_footer"] a,
+[class*="link_footer__list"] a {
+  color: var(--sd-ink-3) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+
+[class*="link_footer"] a:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Brand mark
+   The wordmark keeps its shipped indigo and gradient. On a page that is now
+   otherwise black on white it is the only colour above the fold, which is
+   more identity than it carried when it sat among indigo buttons and links.
+   -------------------------------------------------------------------------- */
+.logo,
+.logo--wordmark,
+.logo-resources,
+.navigation-panel__logo .logo,
+.navigation-panel__logo svg,
+#logo-symbol-icon,
+#logo-symbol-wordmark {
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+}
+
+/* The wordmark is wrapped in a .column-link that already carries 12px of
+   horizontal padding, so a wrapper inset stacked on top of it and pushed the
+   mark 12px right of the nav icon and the buttons below. Padding goes on one
+   element per axis; the wrapper keeps only the vertical part. */
+.navigation-panel__logo {
+  padding: 4px 0 20px !important;
+}
+
+/* A hairline under the nav links separated them from the sign-in copy. The
+   two groups are far enough apart now to read as separate on distance alone
+   (40px between them against 20px inside the banner), and the selected nav
+   row already carries its own fill as a visible edge. */
+.navigation-panel hr,
+.navigation-panel__menu hr {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Buttons
+   The two sign-in buttons were the same size but two different colour
+   systems. They stay two ranks — filled primary, outlined secondary — on one
+   shared geometry, so the pair reads as one control group.
+   -------------------------------------------------------------------------- */
+.button,
+.button.button--block,
+button.button {
+  border-radius: 8px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  padding: 10px 18px !important;
+  min-height: 40px !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  background: var(--sd-ink) !important;
+  border: 1px solid var(--sd-ink) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.button:hover,
+.button:focus-visible {
+  background: rgb(0 0 0 / 80%) !important;
+  border-color: rgb(0 0 0 / 80%) !important;
+}
+
+.button.button-secondary {
+  background: transparent !important;
+  border: 1px solid rgb(0 0 0 / 24%) !important;
+  color: var(--sd-ink) !important;
+}
+
+.button.button-secondary:hover {
+  background: var(--sd-hover) !important;
+  border-color: var(--sd-ink) !important;
+}
+
+.sign-in-banner {
+  padding: 40px 12px 16px !important;
+}
+
+.sign-in-banner p {
+  color: var(--sd-ink-2) !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+}
+
+/* The lead line is a <strong>, so it landed on Inter's 700. 600 keeps the
+   distinction from the paragraph under it without the extra weight. */
+.sign-in-banner p strong,
+.sign-in-banner p:first-child {
+  color: var(--sd-ink) !important;
+  font-weight: 600 !important;
+}
+
+.load-more {
+  color: var(--sd-ink-2) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  border: 0 !important;
+  padding: 20px !important;
+}
+
+.load-more:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Focus
+   Keyboard focus has to stay louder than hover, so it keeps a real 2px ring
+   — just an ink one instead of an indigo one.
+   -------------------------------------------------------------------------- */
+:focus-visible,
+a:focus-visible,
+button:focus-visible,
+.focusable:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   14. Mobile
+   Same order and hierarchy, tighter margins, larger touch targets. The
+   between-record gap shrinks but stays several times the largest gap inside
+   a record, so proximity still does the grouping without a rule.
+   -------------------------------------------------------------------------- */
+@media (max-width: 890px) {
+  .status {
+    padding: 20px 16px !important;
+  }
+
+  .status__content {
+    max-width: none !important;
+  }
+
+  .column-header__title {
+    font-size: 18px !important;
+    padding-left: 16px !important;
+  }
+
+  .account__section-headline {
+    padding: 0 8px !important;
+  }
+
+  /* 8px on the strip plus 8px on the tab lands the label on the same 16px
+     margin as the title and the posts; 10px put it 2px out. */
+  .account__section-headline a,
+  .account__section-headline button {
+    padding: 14px 8px !important;
+  }
+
+  .account__section-headline a.active::before,
+  .account__section-headline button.active::before {
+    left: 8px !important;
+    right: 8px !important;
+  }
+
+  .status__action-bar__button,
+  .status__action-bar .icon-button {
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+  }
+}

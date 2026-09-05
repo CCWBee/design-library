@@ -1,0 +1,145 @@
+<!--
+  Particle Network
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License.
+  Stripped: Tailwind/Iconify/GSAP CDN scripts, Google Fonts, remote Supabase background photo,
+  scroll-triggered text reveal, stat panels and pause/settings buttons; kept the plain-canvas
+  perspective particle-streak animation as a self-contained requestAnimationFrame loop.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Particle Network</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<script>
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let width, height;
+  let particles = [];
+  const particleCount = 200;
+  const speedMultiplier = 1.1;
+
+  let originX, originY;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.max(1, Math.floor(width * dpr));
+    canvas.height = Math.max(1, Math.floor(height * dpr));
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    originX = width / 2;
+    originY = height * 0.5;
+  }
+
+  class Particle {
+    constructor() {
+      this.reset();
+      this.z = Math.random() * 1000;
+    }
+
+    reset() {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 600;
+
+      this.x = Math.cos(angle) * radius;
+      this.y = (Math.sin(angle) * radius) - 150;
+
+      this.z = 1000;
+      this.speed = (Math.random() * 2 + 1) * speedMultiplier;
+
+      // Restrained blue and white hues for a calm technical atmosphere
+      const hue = Math.random() > 0.5 ? '200, 220, 255' : '106, 157, 237';
+      this.color = `rgb(${hue})`;
+      this.length = Math.random() * 2 + 0.5;
+    }
+
+    update() {
+      this.z -= this.speed;
+      if (this.z <= 0) {
+        this.reset();
+      }
+    }
+
+    draw() {
+      const fov = 300;
+
+      const scale = fov / this.z;
+      const px = originX + this.x * scale;
+      const py = originY + this.y * scale;
+
+      const prevZ = this.z + this.speed * this.length;
+      const prevScale = fov / prevZ;
+      const prevPx = originX + this.x * prevScale;
+      const prevPy = originY + this.y * prevScale;
+
+      let opacity = 1 - (this.z / 1000);
+      if (this.z < 100) opacity = this.z / 100;
+      if (opacity < 0) opacity = 0;
+
+      ctx.beginPath();
+      ctx.moveTo(prevPx, prevPy);
+      ctx.lineTo(px, py);
+
+      ctx.strokeStyle = this.color.replace('rgb', 'rgba').replace(')', `, ${opacity * 0.9})`);
+      // Hairline strokes stay crisp under retina DPR scaling
+      ctx.lineWidth = Math.max(0.25, (1 - (this.z / 1000)) * 0.4);
+      ctx.lineCap = 'butt';
+      ctx.lineJoin = 'miter';
+
+      ctx.stroke();
+    }
+  }
+
+  function init() {
+    resize();
+    window.addEventListener('resize', resize);
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+    animate();
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    // Faster fade keeps streaks sharp instead of smeared
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillRect(0, 0, width, height);
+
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+  }
+
+  init();
+</script>
+</body>
+</html>

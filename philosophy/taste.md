@@ -94,6 +94,64 @@ These are house law, stated positively. They hold across every page, site, and a
 - Verify the true look with a real render (headless Chrome or the browser), not by reasoning about
   the CSS. WebGL especially can look fine in code and render black; confirm it.
 
+## Instrument, not composition
+
+Charles's brief (September 2026, from a study of a vibe-coded dashboard against a human-designed
+one), applied to any product UI that is used repeatedly rather than glanced at once:
+
+- **Design for the second-hundredth use.** Edited density, stable positions for recurring
+  information, compact controls, persistent context, predictable colour semantics, little decorative
+  movement. The test is not "does the screenshot look welcoming" but "after a month, can someone
+  read the whole state in five seconds".
+- **The interface is an instrument, not a poster.** Position follows importance; related signals sit
+  together; exceptions outrank decorative headings; components differ in size by their value; the
+  screen answers a connected sequence of questions (what is happening, is it better or worse, where,
+  why, what can I do).
+- **Thesis before components.** Three or four qualities, and anything that contradicts one goes.
+  From the qualities, most decisions follow (radii, borders versus shadows, neutral versus warm
+  surfaces, compact versus oversized type, one strong action).
+- **Every visible distinction pays rent.** If removing a treatment would not remove information,
+  hierarchy or affordance, remove it. A shadow on every panel, a pill around ordinary text, a coloured
+  rail that means nothing elsewhere: none of these pay.
+- **Hierarchy by quietening.** Metadata recedes through colour and weight; panel titles locate, they
+  do not compete; maximum contrast is reserved for current state, exceptional conditions and the next
+  consequential action.
+- **One geometry.** One inset, one gap, one padding, one control height, one radius, one border
+  weight, a 4/8/12/16/24 scale, and alignments that recur across the screen. Spacing indicates
+  conceptual distance: tight within a group, moderate between groups, large between parts.
+- **Cards sparingly.** A card exists because its boundary matters (a discrete module, an
+  independently interactive region, its own states). "Card soup" separates more and ranks less.
+- **Density is designed.** No redundant titles, repeated legends, oversized controls, wrapped
+  identifiers or empty chart areas; still adequate row height, legible secondary text, strong
+  alignment, sufficient targets.
+- **Typography as infrastructure.** One family, two weights, three ink levels, tabular numerals, a
+  restrained scale; monospace only for code or aligned values. One repeatable hierarchy: label,
+  value, secondary.
+- **Charts answer a question.** Decide the comparison, the primary series, the scale, the selected
+  state, what colour means and what stays visible without interaction. Library defaults produce a
+  valid chart, not a finished one.
+- **Whole screen before polished components.** Define every module, rank them, fit the hierarchy
+  into the target viewport, set the grid, rough every panel, validate the whole, then polish.
+- **Design states, not components.** Default, hover, focus, selected, loading, empty, error,
+  disabled, stale; one semantic colour language across all of them.
+- **Coherence over novelty.** Dense content agrees with compact type, which agrees with tight
+  spacing, small radii, fine borders, neutral surfaces, meaningful data colour. Good taste is mostly
+  the removal of contradictions.
+
+Priority order: information architecture, viewport geometry, hierarchy, state behaviour, component
+design, typography and colour, decoration. Generated interfaces start at the wrong end.
+
+## Working inside an existing product
+
+Restyling is not greenfield. Before changing anything that renders: read the project's design
+constitution if it has one (`docs/DESIGN.md`), the audit of what went wrong before, the registry of
+primitives, and the neighbouring surface that already does the same job. Grep for the behaviour and
+the classes before writing new ones. A feature sits in a screen's rank order and reinforces what is
+there; it reuses the colours that already carry state, does not repeat a number already shown, and
+takes its neighbours' form. Diverge only for a written reason; mint a primitive only by registering it
+and sweeping its siblings in the same change. The worked example is
+`E:\claude-projects\cruise-passport` (its `docs/DESIGN.md`, `docs/DESIGN-AUDIT.md` and `tools/qa/`).
+
 ## The AI-design tells to avoid
 
 Beyond the heading rules above, the common giveaways of machine-made design: three-across "feature

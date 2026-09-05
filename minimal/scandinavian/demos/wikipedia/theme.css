@@ -1,0 +1,1237 @@
+/* ==========================================================================
+   Wikipedia (Vector 2022) — Scandinavian override
+
+   Structural problem: the article is a single 912px column of 16px text
+   (~110 characters per line) with figures floating in both directions at
+   three different widths, and no spacing difference between a subsection
+   and a chapter. Everything is one undifferentiated slab.
+
+   Target hierarchy: a fixed reading measure (~66 characters) on the left,
+   a constant-width figure rail on the right, and chapters separated by
+   whitespace and a hairline. Reference apparatus — citations, [edit],
+   TOC, captions, categories, appearance and language controls — is
+   quieted onto an opacity ladder, never removed.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   Vector 2022 drives nearly all of its colour through Codex custom
+   properties on :root. Retargeting them here neutralises buttons, radios,
+   borders, icons and focus rings in one pass instead of chasing selectors.
+   Semantic tokens (error / warning / success / destructive) are left alone.
+   -------------------------------------------------------------------------- */
+html,
+body,
+.mw-page-container,
+.mw-body,
+.vector-header-container,
+.mw-footer-container,
+.vector-dropdown-content,
+.vector-sticky-header {
+  --sd-sans: Inter, "Inter Variable", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-body: rgb(0 0 0 / 90%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 55% rather than the 40-50% metadata rung: at 12-13px this text still has
+     to clear 4.5:1 on white, and captions/citations are real reading. */
+  --sd-ink-3: rgb(0 0 0 / 55%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-rule-strong: rgb(0 0 0 / 18%);
+  --sd-hover: rgb(0 0 0 / 5%);
+  --sd-active: rgb(0 0 0 / 9%);
+  /* Quiet surface fill, used where a control needs a boundary without a rule. */
+  --sd-fill: rgb(0 0 0 / 4%);
+
+  --sd-measure: 33em;
+  --sd-rail: 320px;
+
+  /* Ink */
+  --color-base: rgb(0 0 0 / 90%) !important;
+  --color-base--hover: #000 !important;
+  --color-base--subtle: rgb(0 0 0 / 64%) !important;
+  --color-subtle: rgb(0 0 0 / 64%) !important;
+  --color-emphasized: #000 !important;
+  --color-neutral: rgb(0 0 0 / 78%) !important;
+  --color-notice: rgb(0 0 0 / 64%) !important;
+  --color-inverted: #fff !important;
+  --color-disabled: rgb(0 0 0 / 34%) !important;
+  --color-disabled-emphasized: rgb(0 0 0 / 34%) !important;
+
+  /* Links + progressive intent, de-hued */
+  --color-progressive: #000 !important;
+  --color-progressive--hover: rgb(0 0 0 / 70%) !important;
+  --color-progressive--active: #000 !important;
+  --color-icon-progressive: rgb(0 0 0 / 64%) !important;
+  --color-visited: rgb(0 0 0 / 62%) !important;
+  --color-visited--hover: rgb(0 0 0 / 78%) !important;
+  --color-visited--active: #000 !important;
+
+  /* Borders */
+  --border-color-base: rgb(0 0 0 / 18%) !important;
+  --border-color-subtle: rgb(0 0 0 / 12%) !important;
+  --border-color-muted: rgb(0 0 0 / 8%) !important;
+  --border-color-emphasized: #000 !important;
+  --border-color-interactive--hover: #000 !important;
+  --border-color-interactive--active: #000 !important;
+  --border-color-progressive: #000 !important;
+  --border-color-progressive--hover: rgb(0 0 0 / 70%) !important;
+  --border-color-progressive--active: #000 !important;
+  --border-color-progressive--focus: #000 !important;
+  --border-color-disabled: rgb(0 0 0 / 12%) !important;
+  --border-color-inverted: #fff !important;
+
+  /* Surfaces */
+  --background-color-base: #fff !important;
+  --background-color-neutral: rgb(0 0 0 / 8%) !important;
+  --background-color-neutral-subtle: rgb(0 0 0 / 3%) !important;
+  --background-color-interactive: rgb(0 0 0 / 8%) !important;
+  --background-color-interactive--hover: rgb(0 0 0 / 12%) !important;
+  --background-color-interactive--active: rgb(0 0 0 / 18%) !important;
+  --background-color-interactive-subtle: rgb(0 0 0 / 3%) !important;
+  --background-color-interactive-subtle--hover: rgb(0 0 0 / 5%) !important;
+  --background-color-interactive-subtle--active: rgb(0 0 0 / 9%) !important;
+  --background-color-progressive: #000 !important;
+  --background-color-progressive--hover: rgb(0 0 0 / 80%) !important;
+  --background-color-progressive--active: #000 !important;
+  --background-color-progressive--focus: #000 !important;
+  --background-color-progressive-subtle: rgb(0 0 0 / 5%) !important;
+  --background-color-progressive-subtle--hover: rgb(0 0 0 / 8%) !important;
+  --background-color-progressive-subtle--active: rgb(0 0 0 / 12%) !important;
+  --background-color-notice-subtle: rgb(0 0 0 / 5%) !important;
+  --background-color-disabled: rgb(0 0 0 / 8%) !important;
+  --background-color-disabled-subtle: rgb(0 0 0 / 4%) !important;
+  --background-color-target-text: rgb(0 0 0 / 8%) !important;
+  --background-color-backdrop-light: rgb(0 0 0 / 44%) !important;
+
+  /* Elevation + focus */
+  --box-shadow-color-base: rgb(0 0 0 / 18%) !important;
+  --box-shadow-color-alpha-base: rgb(0 0 0 / 6%) !important;
+  --box-shadow-color-progressive--focus: #000 !important;
+  --box-shadow-color-progressive-selected: #000 !important;
+  --box-shadow-color-progressive-selected--hover: rgb(0 0 0 / 70%) !important;
+  --box-shadow-color-progressive-selected--active: #000 !important;
+
+  /* Kill any serif stack the skin exposes as a variable */
+  --font-family-serif: var(--sd-sans) !important;
+  --fonts-serif: var(--sd-sans) !important;
+  --font-serif: var(--sd-sans) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Canvas + type family
+   One sans across the whole surface; monospace and math are exempt so
+   code samples and formulae keep their meaning.
+   -------------------------------------------------------------------------- */
+html,
+body.skin-vector,
+body.skin-vector-2022 {
+  background: #fff !important;
+  color: var(--sd-ink-body) !important;
+  font-family: var(--sd-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mw-page-container,
+.mw-page-container-inner,
+.mw-content-container,
+.vector-header-container,
+.vector-header,
+.vector-sticky-header,
+.vector-column-start,
+.vector-column-end,
+.mw-footer-container,
+#content,
+.mw-body,
+.vector-body,
+#bodyContent,
+.mw-parser-output {
+  background: #fff !important;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+optgroup,
+.mw-body-content,
+.mw-parser-output,
+.cdx-text-input__input,
+.cdx-button,
+.cdx-label,
+.vector-toc,
+.vector-menu,
+#firstHeading,
+.mw-heading,
+.mw-heading h1,
+.mw-heading h2,
+.mw-heading h3,
+.mw-heading h4,
+.mw-heading h5,
+.mw-heading h6,
+.mw-body h1,
+.mw-body h2,
+.mw-body-content h1,
+.mw-body-content h2,
+.mw-body-content h3,
+.mw-parser-output h1,
+.mw-parser-output h2,
+.mw-parser-output h3,
+.mw-parser-output h4,
+.vector-page-titlebar h1,
+.infobox,
+.wikitable,
+.cs1,
+.citation {
+  font-family: var(--sd-sans) !important;
+  text-transform: none !important;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+code,
+pre,
+kbd,
+samp,
+tt,
+.mw-code,
+.mw-parser-output .monospaced,
+.mwe-math-element,
+math {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Masthead — article title, subtitle, tabs
+   -------------------------------------------------------------------------- */
+.vector-page-titlebar {
+  align-items: baseline !important;
+  margin: 8px 0 4px !important;
+  border-bottom: 0 !important;
+}
+
+/* Vector draws this divider as an absolutely-positioned ::after bar, not a
+   border, so zeroing border-bottom above did nothing. Same story one row down:
+   the toolbar's line is a box-shadow. Neither survives. */
+.vector-page-titlebar::after {
+  display: none !important;
+}
+
+#firstHeading,
+#firstHeading .mw-page-title-main,
+.vector-page-titlebar h1 {
+  font-family: var(--sd-sans) !important;
+  font-size: clamp(30px, 3.1vw, 42px) !important;
+  font-weight: 600 !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--sd-ink) !important;
+  border-bottom: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  flex-grow: 1 !important;
+  text-wrap: balance;
+}
+
+#siteSub,
+#contentSub,
+#contentSub2 {
+  display: block !important;
+  font-size: 13.5px !important;
+  line-height: 1.5 !important;
+  color: var(--sd-ink-3) !important;
+  font-style: normal !important;
+  margin: 0 0 20px !important;
+}
+
+/* #contentSub and #contentSub2 are zero-height on an ordinary article, but a
+   bottom margin applies to an empty block just the same. Two of them stacked
+   under the subtitle's own margin is where the dead space came from. */
+#contentSub,
+#contentSub2 {
+  margin: 0 !important;
+}
+
+/* MediaWiki leaves empty <p> and placeholder nodes in the flow. With article
+   margins applied they collect into gaps that look like layout mistakes — the
+   80px hole between the subtitle and the first hatnote was two of these. */
+.mw-parser-output .mw-empty-elt,
+.mw-parser-output p:empty {
+  display: none !important;
+}
+
+.mw-parser-output > :first-child {
+  margin-top: 0 !important;
+}
+
+/* Article / Talk and Read / Edit / View history.
+   The selected tab carries its own underline, which is the only rule this row
+   needs; a second full-width one directly beneath it reads as a stray divider. */
+.vector-page-toolbar-container {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  padding-bottom: 6px !important;
+  margin-bottom: 12px !important;
+}
+
+.vector-page-toolbar .vector-menu-content-list > li > a,
+.vector-page-toolbar .vector-dropdown-label {
+  color: var(--sd-ink-2) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  text-decoration: none !important;
+}
+
+.vector-page-toolbar .selected > a,
+.vector-page-toolbar .selected > a:visited {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+/* Vector already marks the selected tab with an ::after bar, so the inset
+   shadow I added sat exactly on top of it — two rules painting one underline. */
+.vector-page-toolbar .vector-tab-noicon.selected {
+  border-color: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. The reading system
+   Measure is set on the text blocks rather than the container, so tables,
+   reference columns and the figure rail can still use the full column.
+   -------------------------------------------------------------------------- */
+.mw-body-content,
+.mw-parser-output,
+#bodyContent {
+  font-size: 17px !important;
+  line-height: 1.65 !important;
+  color: var(--sd-ink-body) !important;
+}
+
+.mw-parser-output p,
+.mw-parser-output section > ul,
+.mw-parser-output section > ol,
+.mw-parser-output section > dl,
+.mw-parser-output > ul,
+.mw-parser-output > ol,
+.mw-parser-output blockquote,
+.mw-parser-output .hatnote {
+  max-width: var(--sd-measure);
+}
+
+.mw-parser-output p {
+  margin: 0 0 1.05em !important;
+  text-wrap: pretty;
+}
+
+/* The lead paragraph is the article's entry point; size gives it that role
+   without another weight, colour or rule. */
+.mw-parser-output > section:first-child p:first-of-type {
+  font-size: 19px !important;
+  line-height: 1.58 !important;
+  color: var(--sd-ink) !important;
+  margin-bottom: 1.2em !important;
+}
+
+.mw-parser-output section > ul,
+.mw-parser-output section > ol {
+  margin: 0 0 1.05em 1.5em !important;
+  padding: 0 !important;
+}
+
+.mw-parser-output section > ul > li,
+.mw-parser-output section > ol > li {
+  margin-bottom: 0.4em !important;
+}
+
+/* Reference apparatus keeps the full column */
+.mw-references-wrap,
+.mw-references-wrap p,
+.mw-references-wrap ol,
+.references,
+.references li,
+.reflist,
+.reflist ol,
+#catlinks ul,
+.wikitable,
+.infobox {
+  max-width: none !important;
+}
+
+/* Chapter rhythm: Parsoid wraps each h2 chapter in its own <section>.
+   `flow-root` contains each chapter's figure, which means a tall image already
+   pushes the next heading down on its own. Stacking the full 96-144px editorial
+   transition on top of that produced a void on the left, so the rule and its
+   spacing stay tighter than the skill's default for a figure-heavy page. */
+.mw-parser-output > section + section {
+  display: flow-root;
+  /* 68px between chapters against 20px from a heading to its own first
+     paragraph — the gap above a heading is more than three times the one below
+     it, which is what makes the chapter break legible without a rule. */
+  margin-top: 40px !important;
+  padding-top: 28px !important;
+  border-top: 0 !important;
+}
+
+.mw-parser-output > section:first-child {
+  display: flow-root;
+}
+
+.mw-heading2,
+.mw-parser-output h2 {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.mw-heading2 {
+  align-items: baseline !important;
+  margin: 0 0 20px !important;
+}
+
+.mw-parser-output > section + section > .mw-heading2 {
+  margin-top: 0 !important;
+}
+
+.mw-heading2 h2,
+.mw-parser-output h2 {
+  font-size: 25px !important;
+  font-weight: 600 !important;
+  line-height: 1.24 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--sd-ink) !important;
+}
+
+.mw-heading3 {
+  align-items: baseline !important;
+  margin: 44px 0 12px !important;
+}
+
+.mw-heading3 h3,
+.mw-parser-output h3 {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.005em !important;
+  color: var(--sd-ink) !important;
+}
+
+.mw-heading4 {
+  margin: 32px 0 8px !important;
+}
+
+.mw-heading4 h4,
+.mw-parser-output h4 {
+  font-size: 15.5px !important;
+  font-weight: 600 !important;
+  color: var(--sd-ink) !important;
+  text-transform: none !important;
+}
+
+/* Hatnotes read as asides, not as italic body text */
+.mw-parser-output .hatnote {
+  font-style: normal !important;
+  font-size: 14.5px !important;
+  line-height: 1.5 !important;
+  color: var(--sd-ink-2) !important;
+  border-left: 2px solid var(--sd-rule) !important;
+  padding: 2px 0 2px 16px !important;
+  margin: 0 0 24px !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Links
+   Body prose links carry a quiet underline instead of hue. Visited drops
+   to secondary ink; missing-page (red) links become tertiary ink with a
+   dotted underline so the three states stay distinguishable in monochrome.
+   -------------------------------------------------------------------------- */
+a,
+a:link,
+a:visited,
+a:hover,
+a:focus,
+a:active,
+.mw-parser-output a,
+.mw-parser-output a.external,
+.mw-parser-output a.extiw,
+.mw-parser-output a.mw-redirect,
+.mw-parser-output a.mw-selflink-fragment,
+#content a,
+#footer a,
+.vector-toc a,
+.mw-portlet a,
+.interlanguage-link-target,
+.wbc-editpage,
+.mw-jump-link {
+  color: var(--sd-ink-body) !important;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.mw-parser-output p a,
+.mw-parser-output li a,
+.mw-parser-output dd a,
+.mw-parser-output figcaption a,
+.mw-parser-output .hatnote a,
+.mw-parser-output .reference-text a {
+  color: inherit !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgb(0 0 0 / 28%) !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 0.16em !important;
+}
+
+.mw-parser-output p a:hover,
+.mw-parser-output li a:hover,
+.mw-parser-output dd a:hover,
+.mw-parser-output figcaption a:hover,
+.mw-parser-output .reference-text a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration-color: var(--sd-ink) !important;
+}
+
+/* Visited: quieter ink, quieter rule.
+   Literal colours, not var(), and specificity above the `color: inherit`
+   rule above — an unresolved custom property would silently fall back to
+   inherit and collapse these three states into one. */
+.mw-parser-output p a:visited,
+.mw-parser-output li a:visited,
+.mw-parser-output dd a:visited,
+.mw-parser-output figcaption a:visited,
+.mw-parser-output .reference-text a:visited {
+  color: rgb(0 0 0 / 62%) !important;
+  text-decoration-color: rgb(0 0 0 / 18%) !important;
+}
+
+/* Missing page ("red" link): tertiary ink + dotted rule */
+a.new,
+a.new:visited,
+.mw-parser-output a.new,
+.mw-parser-output a.new:visited,
+.mw-parser-output p a.new,
+.mw-parser-output p a.new:visited,
+.mw-parser-output li a.new,
+.mw-parser-output li a.new:visited,
+.mw-parser-output dd a.new,
+.mw-parser-output figcaption a.new,
+.mw-parser-output .reference-text a.new,
+#content a.new {
+  color: rgb(0 0 0 / 55%) !important;
+  text-decoration: underline !important;
+  text-decoration-style: dotted !important;
+  text-decoration-color: rgb(0 0 0 / 45%) !important;
+  text-underline-offset: 0.2em !important;
+}
+
+/* Image links must not pick up an underline */
+.mw-parser-output a.mw-file-description,
+.mw-parser-output a.image,
+.mw-logo,
+.mw-logo:hover {
+  text-decoration: none !important;
+  border: 0 !important;
+}
+
+/* Neutralise the blue external-link glyph MediaWiki paints as a background */
+.mw-parser-output a.external,
+.mw-parser-output a.extiw,
+.mw-parser-output .external {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><g fill="%23000" fill-opacity=".42"><path d="M6 1h5v5L8.86 3.85 4.7 8 4 7.3l4.15-4.16L6 1z"/><path d="M2 3h2v1H2v6h6V8h1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></g></svg>') !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Figure rail
+   Seven thumbnails float in two directions at three widths. Normalising
+   them into one right-hand rail of constant width is what turns the page
+   from a text slab into an editorial two-column composition.
+   -------------------------------------------------------------------------- */
+.mw-parser-output figure,
+.mw-parser-output figure.mw-default-size,
+.mw-parser-output figure.mw-halign-left,
+.mw-parser-output figure.mw-halign-right,
+.mw-parser-output .thumb {
+  float: right !important;
+  clear: right !important;
+  width: var(--sd-rail) !important;
+  max-width: 42% !important;
+  margin: 6px 0 32px 40px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.mw-parser-output figure > a,
+.mw-parser-output figure .mw-file-description {
+  display: block !important;
+  background: transparent !important;
+}
+
+.mw-parser-output figure img,
+.mw-parser-output figure .mw-file-element,
+.mw-parser-output .thumbinner img {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  border: 0 !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+}
+
+.mw-parser-output figcaption,
+.mw-parser-output .thumbcaption {
+  caption-side: bottom;
+  background: transparent !important;
+  /* A caption is already tied to its image by proximity and by being the only
+     small grey text in the column. A rule between them separates the two things
+     that most need to read as one. */
+  border: 0 !important;
+  padding: 0 !important;
+  margin-top: 10px !important;
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+  color: var(--sd-ink-2) !important;
+  text-align: left !important;
+}
+
+/* The enlarge / magnify affordance stays, quietly */
+.mw-parser-output .mw-file-magnify,
+.mw-parser-output .magnify,
+.mw-parser-output figcaption .mw-file-magnify {
+  opacity: 0.44;
+  filter: grayscale(1);
+}
+
+/* --------------------------------------------------------------------------
+   7. Citations, [edit] links, reference list
+   Quieted onto the metadata rung of the opacity ladder. All still present.
+   -------------------------------------------------------------------------- */
+/* A relative size compounds inside captions and reference text, where the
+   base is already small; the floor keeps every marker legible. */
+sup.reference,
+.mw-ref,
+.reference {
+  font-size: max(10.5px, 0.68em) !important;
+  line-height: 0 !important;
+}
+
+sup.reference a,
+.mw-ref a,
+.reference a,
+.mw-reflink-text,
+.reference .cite-bracket {
+  font-size: 1em !important;
+  color: rgb(0 0 0 / 55%) !important;
+  text-decoration: none !important;
+  font-variant-numeric: tabular-nums;
+}
+
+sup.reference a:hover,
+.mw-ref a:hover {
+  color: var(--sd-ink) !important;
+}
+
+.cite-bracket,
+.mw-editsection-bracket {
+  color: var(--sd-ink-3) !important;
+}
+
+.mw-editsection {
+  font-size: 12.5px !important;
+  font-weight: 400 !important;
+  margin-left: 14px !important;
+  white-space: nowrap;
+}
+
+.mw-editsection,
+.mw-editsection a,
+.mw-editsection-bracket {
+  color: var(--sd-ink-3) !important;
+  text-decoration: none !important;
+}
+
+.mw-editsection a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+}
+
+.mw-references-wrap {
+  column-width: 25em !important;
+  column-gap: 56px !important;
+  column-rule: 1px solid var(--sd-rule);
+  margin-top: 8px !important;
+}
+
+.references,
+.references li,
+.mw-reference-text,
+.reference-text {
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.references li {
+  margin-bottom: 0.7em !important;
+  break-inside: avoid;
+}
+
+.references li:target,
+.citation:target {
+  background: var(--background-color-target-text) !important;
+}
+
+.mw-cite-backlink,
+.mw-cite-backlink a,
+.mw-linkback-text,
+.reference-accessdate {
+  color: var(--sd-ink-3) !important;
+}
+
+.citation,
+.cs1 {
+  color: inherit !important;
+}
+
+.cs1-maint,
+.cs1-format,
+.cs1-hidden-error,
+.cs1-visible-error {
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Tables + infobox (defensive — not present on this article)
+   -------------------------------------------------------------------------- */
+.infobox,
+.wikitable,
+table.wikitable {
+  background: #fff !important;
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule-strong) !important;
+  border-collapse: collapse !important;
+  font-size: 14px !important;
+  color: var(--sd-ink-body) !important;
+}
+
+.infobox th,
+.infobox td,
+.wikitable th,
+.wikitable td {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--sd-rule) !important;
+  padding: 10px 14px 10px 0 !important;
+  text-align: left !important;
+  vertical-align: top !important;
+}
+
+.infobox th,
+.wikitable th {
+  font-weight: 500 !important;
+  color: var(--sd-ink) !important;
+}
+
+.infobox-title,
+.infobox-above,
+.infobox caption,
+.wikitable caption {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  padding: 0 0 12px !important;
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Site chrome — header, search, dropdowns, buttons
+   -------------------------------------------------------------------------- */
+/* No rule under the header. The masthead already separates itself by the space
+   below it, and a full-bleed line here competes with the tab row just beneath. */
+.vector-header-container {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+/* The sticky header does need one — it overlaps content as you scroll, so the
+   line is the only thing holding it off the text passing underneath. */
+.vector-sticky-header {
+  border-bottom: 1px solid var(--sd-rule) !important;
+  box-shadow: none !important;
+}
+
+.vector-header {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+/* Brand mark survives; chrome stays neutral */
+.mw-logo,
+.mw-logo img,
+#footer-icons img,
+.footer-icons img {
+  filter: grayscale(1);
+}
+
+#footer-icons img,
+.footer-icons img {
+  opacity: 0.5;
+}
+
+/* Search is a field, not a call to action, and it needs one boundary rather than
+   three. Codex nests a bordered input inside a bordered form and adds a bordered
+   submit, so the outer rules go and a single quiet fill marks the whole control.
+   The field still reads as a field; it just stops drawing itself three times. */
+.cdx-search-input,
+#searchform.cdx-search-input {
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: var(--sd-fill) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.cdx-text-input__input,
+.cdx-search-input .cdx-text-input__input {
+  font-size: 14px !important;
+  height: 34px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--sd-ink-body) !important;
+  background: transparent !important;
+}
+
+.cdx-text-input__input::placeholder {
+  color: var(--sd-ink-3) !important;
+}
+
+.cdx-search-input__end-button.cdx-button {
+  background: transparent !important;
+  color: var(--sd-ink-2) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  height: 34px !important;
+}
+
+.cdx-search-input__end-button.cdx-button:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Every other button is quiet and shares one radius. Codex's default outline is
+   #72777d, a blue-grey that reads as coloured next to neutral text, so bordered
+   buttons are pulled onto the ink ladder. */
+.cdx-radio__icon,
+.cdx-checkbox__icon,
+.cdx-button {
+  border-color: var(--sd-rule-strong) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.cdx-button--weight-quiet,
+.cdx-button--weight-quiet.cdx-button--action-progressive {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--sd-ink-2) !important;
+}
+
+.cdx-button--weight-quiet:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+.cdx-button--weight-quiet:active {
+  background: var(--sd-active) !important;
+}
+
+/* Language switcher: the original is a quiet text control, so it stays one.
+   A box here would outrank the tabs beside it for no reason. */
+#p-lang-btn .cdx-button,
+.mw-portlet-lang .cdx-button,
+#p-lang-btn-sticky-header .cdx-button {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--sd-ink-2) !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  font-size: 13.5px !important;
+}
+
+#p-lang-btn .cdx-button:hover,
+.mw-portlet-lang .cdx-button:hover {
+  background: var(--sd-hover) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* Dropdown panels: hairline, restrained radius, barely-there elevation */
+.vector-dropdown-content,
+.vector-menu-dropdown .vector-menu-content,
+.vector-main-menu,
+.cdx-menu,
+.cdx-typeahead-search .cdx-menu {
+  background: #fff !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%) !important;
+}
+
+/* Rail group labels chapter on space and on being the only 12px grey text in
+   the column. Underlining each one turned a short list of links into a stack of
+   boxed panels. */
+.vector-menu-heading,
+.vector-pinnable-header-label,
+.cdx-menu-item__content__group,
+.vector-menu-content .vector-menu-heading {
+  border: 0 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  color: var(--sd-ink-3) !important;
+}
+
+.vector-pinnable-header {
+  border: 0 !important;
+  padding-bottom: 4px !important;
+  margin-bottom: 10px !important;
+}
+
+.vector-pinnable-header-toggle-button {
+  color: var(--sd-ink-3) !important;
+  font-weight: 400 !important;
+  font-size: 12.5px !important;
+}
+
+.vector-pinnable-header-toggle-button:hover {
+  color: var(--sd-ink) !important;
+}
+
+.mw-portlet .mw-list-item a,
+.vector-menu-content-list .mw-list-item a {
+  color: var(--sd-ink-2) !important;
+  font-size: 13.5px !important;
+  text-decoration: none !important;
+}
+
+.mw-portlet .mw-list-item a:hover,
+.vector-menu-content-list .mw-list-item a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sd-rule-strong) !important;
+}
+
+/* Appearance panel: keep every control, quiet the chrome */
+.vector-column-end .vector-menu,
+#vector-appearance,
+.vector-appearance-landmark {
+  font-size: 13.5px !important;
+}
+
+.cdx-label__label__text,
+.cdx-radio__label .cdx-label__label__text {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-body) !important;
+}
+
+.cdx-radio__icon::before {
+  border-color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Rails — contents (left) and appearance (right)
+   A single full-height hairline gives the page its column architecture,
+   replacing the grey page background Vector uses to separate them.
+   -------------------------------------------------------------------------- */
+/* Whitespace separates the rails from the article. A rule here would be a
+   third vertical line competing with the measure itself. */
+.vector-column-start {
+  border-right: 0 !important;
+  padding-right: 28px !important;
+}
+
+.vector-toc,
+#vector-toc,
+.vector-sticky-pinned-container {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.vector-toc-link,
+.vector-toc-text {
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+  color: var(--sd-ink-2) !important;
+  text-decoration: none !important;
+}
+
+.vector-toc-list-item {
+  margin: 0 !important;
+}
+
+/* Row spacing lives on .vector-toc-text, which Vector already pads 6px. Adding
+   a second 6px here stacked to 12px above the label while the expand toggle —
+   absolutely positioned against the list item — stayed where it was, which is
+   what threw the chevrons out of alignment. One padding source, not two. */
+.vector-toc-link {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Centre the toggle on the label's first line: 6px text padding, plus half of
+   the 19.6px line box, less half the toggle's own 22px height. */
+.vector-toc-toggle {
+  top: 5px !important;
+}
+
+.vector-toc-link:hover {
+  color: var(--sd-ink) !important;
+  background: var(--sd-hover) !important;
+}
+
+/* Active state is ink and weight. An inset bar collides with the label, because
+   the link has no left padding to hold it. */
+.vector-toc-list-item-active > .vector-toc-link,
+.vector-toc-level-1-active > .vector-toc-link {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.vector-toc-list-item-active > .vector-toc-link .vector-toc-text,
+.vector-toc-level-1-active > .vector-toc-link .vector-toc-text {
+  color: var(--sd-ink) !important;
+  font-weight: 500 !important;
+}
+
+.vector-toc-numb {
+  color: var(--sd-ink-3) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Depth reads from indent and ink, not from a fifth text size. */
+.vector-toc-level-2 .vector-toc-link {
+  font-size: 13.5px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+.vector-toc-level-2 .vector-toc-link:hover {
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Categories + footer
+   -------------------------------------------------------------------------- */
+#catlinks,
+.catlinks {
+  background: transparent !important;
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  border-radius: 0 !important;
+  padding: 24px 0 0 !important;
+  margin: 80px 0 0 !important;
+  font-size: 13px !important;
+}
+
+#catlinks a,
+.catlinks a {
+  color: var(--sd-ink-2) !important;
+  text-decoration: none !important;
+}
+
+#catlinks a:hover,
+.catlinks a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+}
+
+/* One rule only — the container draws it, the nested footer must not. */
+.mw-footer-container {
+  background: #fff !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  padding-top: 36px !important;
+  margin-top: 56px !important;
+}
+
+.mw-footer,
+#footer {
+  background: #fff !important;
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+#footer li,
+#footer-info li,
+#footer-places li,
+.mw-footer li {
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+  color: var(--sd-ink-3) !important;
+}
+
+#footer a,
+.mw-footer a {
+  color: var(--sd-ink-2) !important;
+  text-decoration: none !important;
+}
+
+#footer a:hover,
+.mw-footer a:hover {
+  color: var(--sd-ink) !important;
+  text-decoration: underline !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Focus, selection, state
+   The blue focus ring is gone, so put a real one back in ink.
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+.cdx-button:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px;
+}
+
+.cdx-text-input__input:focus {
+  border-color: var(--sd-ink) !important;
+  outline: 1px solid var(--sd-ink) !important;
+  outline-offset: -2px;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+hr,
+.mw-parser-output hr {
+  border: 0 !important;
+  border-top: 1px solid var(--sd-rule) !important;
+  margin: 40px 0 !important;
+}
+
+/* The CentralNotice fundraising interstitial is served non-deterministically
+   and covers the whole fold with its own colour system, which makes a
+   before/after capture uncomparable. Suppressed for the same reason
+   demos/shared.css suppresses consent chrome — it is not article surface.
+   Editorial site notices are left visible, just neutralised. */
+#centralNotice,
+#frbanner,
+[id^="frb-"],
+[class^="frb-"],
+.frb,
+#WMDE-Banner-Container,
+.cn-fundraising {
+  display: none !important;
+}
+
+#siteNotice,
+.mw-dismissable-notice,
+.vector-sitenotice-container {
+  background: transparent !important;
+  color: var(--sd-ink-2) !important;
+  font-size: 13px !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 1119px) {
+  .vector-column-start {
+    border-right: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Wikipedia's floating contents button sits over the article and relies on
+     an opaque fill to stay legible. Quiet buttons above are transparent, so
+     restore the fill explicitly rather than let prose run under the icon. */
+  #vector-page-titlebar-toc .cdx-button,
+  #vector-page-titlebar-toc .vector-dropdown-label {
+    background: #fff !important;
+    border: 1px solid var(--sd-rule) !important;
+    border-radius: 8px !important;
+    color: var(--sd-ink) !important;
+  }
+}
+
+@media (max-width: 819px) {
+  .mw-parser-output figure,
+  .mw-parser-output figure.mw-default-size,
+  .mw-parser-output figure.mw-halign-left,
+  .mw-parser-output figure.mw-halign-right,
+  .mw-parser-output .thumb {
+    float: none !important;
+    clear: both !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 24px 0 28px !important;
+  }
+
+  .mw-parser-output figcaption {
+    display: block !important;
+  }
+
+  .mw-body-content,
+  .mw-parser-output,
+  #bodyContent {
+    font-size: 16.5px !important;
+    line-height: 1.62 !important;
+  }
+
+  .mw-parser-output > section + section {
+    margin-top: 56px !important;
+    padding-top: 32px !important;
+  }
+
+  #firstHeading,
+  .vector-page-titlebar h1 {
+    max-width: none;
+  }
+
+  #siteSub,
+  #contentSub {
+    margin-bottom: 28px !important;
+  }
+
+  .mw-references-wrap {
+    column-width: auto !important;
+    column-count: 1 !important;
+    column-rule: none;
+  }
+
+  #catlinks,
+  .catlinks {
+    margin-top: 56px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   14. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

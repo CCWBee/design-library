@@ -1,0 +1,320 @@
+/* ==========================================================================
+   Linear (linear.app) — Scandinavian override
+
+   Recon verdict: this page starts closer to the system than anything else in
+   the set. Near-black canvas, one sans (Inter Variable), every chapter hard
+   left on one axis, one white primary action, a pill family used
+   consistently, and expressive colour already contained inside the product
+   mockups. There is no structural problem to repair, so the diff is small on
+   purpose and each change is argued where it sits.
+
+   What is actually wrong is the neutral ladder. Every rung is an opaque
+   blue-grey rather than alpha white over the canvas:
+
+     #d0d6e0  secondary ink   16 points of channel spread
+     #8a8f98  tertiary ink    14
+     #62666d  quaternary ink  11
+     #23252a  border           7
+
+   Beside white primary ink those read cool rather than quiet, which is the
+   tinted-dark-grey case the dark inversion rule names. This sheet rebuilds
+   both ladders in alpha white, holds them at the edge of the product media,
+   and then corrects six things the ladder pass exposed.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. The ink and border ladders
+
+   Linear drives the whole site — marketing chrome and product mockups alike —
+   through these tokens, so retargeting seven of them neutralises text, icon
+   fills, dividers and control outlines in one pass rather than by chasing
+   hashed class names.
+
+   The alphas are chosen by measuring contrast against this canvas, not by
+   copying the light-mode ladder, because the ladder does not invert
+   symmetrically: 44% black on white is 3.2:1, while 44% white on #08090a is
+   4.3:1. Rungs here: 100% is 19.8:1, 68% is 9.2:1, 52% is 6.4:1, 44% is
+   4.3:1. Everything that carries real reading stays above 4.5:1.
+
+   Not touched: --color-bg-*. The canvas (#08090a) and the raised surfaces
+   (#1c1c1f / #232326 / #28282c) carry 2-4 points of spread, which is below
+   the threshold where a cast is visible at that luminance, and every mockup
+   panel is composed against them. Repainting them would be churn with real
+   risk to the media. Same for --color-border-translucent (#ffffff0d) and
+   --header-border (#ffffff14): Linear already states those as alpha white.
+
+   Also not touched: --color-fg-*, the parallel set of ink tokens carrying the
+   same four values. Sweeping the rendered page for near-greys with visible
+   channel spread returns no hit outside the media containers below, so
+   overriding --color-fg-* would be a rule that paints nothing.
+   -------------------------------------------------------------------------- */
+:root,
+body {
+  /* 97% -> 100%. Headings, changelog titles, footer column labels, the white
+     half of the lead statement, the ink on the two filled CTAs. */
+  --color-text-primary: #fff !important;
+
+  /* ~84% -> 68%. Chapter decks, feature titles, the emphasised numeral in the
+     social-proof line. The drop is the point: a 24px sentence set beside a
+     48px heading was carrying almost the heading's weight. */
+  --color-text-secondary: rgb(255 255 255 / 68%) !important;
+
+  /* ~54% -> 52%. Top navigation, feature summaries, footer links, the
+     trailing half of the lead statement. Held level rather than raised to the
+     skill's 60-70% band: at 64% this rung would be 8.2:1 and the top nav
+     would come out brighter than Linear shipped it, which is chrome getting
+     louder in the name of ladder tidiness. */
+  --color-text-tertiary: rgb(255 255 255 / 52%) !important;
+
+  /* ~38% -> 44%. Chapter numerals, changelog dates, the hover-revealed "+".
+     The one rung this pass makes more legible rather than less — Linear's
+     #62666d was 3.5:1, under AA for the 12px type it carries. */
+  --color-text-quaternary: rgb(255 255 255 / 44%) !important;
+
+  /* The footer rule, the customer-card outline, the benefit column dividers,
+     mockup panel edges. #23252a is ~11% white with a blue cast, but 8% rather
+     than a like-for-like 11%: the header rule and the six chapter keylines
+     are literal rgb(255 255 255 / 8%) in Linear's own CSS, and matching them
+     puts every divider on the page on one value instead of two that differ by
+     just enough to look accidental. */
+  --color-border-primary: rgb(255 255 255 / 8%) !important;
+  --color-border-secondary: rgb(255 255 255 / 18%) !important;
+  --color-border-tertiary: rgb(255 255 255 / 24%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Product media keeps the colours it shipped with
+
+   The hero and all five chapter illustrations are live DOM rebuilds of the
+   Linear app, not images, and they read the same custom properties the
+   marketing page does. Section 1 would therefore have reached inside them and
+   dimmed the app's own body text by ~40 levels — a screenshot of a product
+   repainted to match its caption. Redeclaring the originals here is what
+   holds the neutralising pass at the edge of the media.
+
+   This is also what protects the expressive colour the page is allowed to
+   have: label dots, syntax highlighting, avatars, status colours, chart
+   series and the mock's own hairlines are all inside these two containers,
+   where nothing in this sheet reaches them.
+   -------------------------------------------------------------------------- */
+main .b-30Va_illustration,
+main [class*="B0yXq_root"] {
+  --color-text-primary: #f7f8f8 !important;
+  --color-text-secondary: #d0d6e0 !important;
+  --color-text-tertiary: #8a8f98 !important;
+  --color-text-quaternary: #62666d !important;
+  --color-border-primary: #23252a !important;
+  --color-border-secondary: #34343a !important;
+  --color-border-tertiary: #3e3e44 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. The accent that only shows up if you open something
+
+   Nothing on the page as captured is periwinkle, so --color-link-* looked
+   safe to leave alone. Opening the header menus proves otherwise: the Product
+   menu ends in a footer bar whose "Changelog" link is #828fff — a second
+   accent, unrelated to the one primary action, two clicks from the fold and
+   invisible to a screenshot harness. It is the only place these tokens paint
+   on this page.
+
+   Primary ink rather than the supporting rung, so it stays the brightest
+   thing in that bar and still reads as the target; hover drops it, which is
+   the same feedback every other link here gives, inverted because this one
+   starts at the top of the ladder.
+   -------------------------------------------------------------------------- */
+:root,
+body {
+  --color-link-primary: #fff !important;
+  --color-link-hover: rgb(255 255 255 / 72%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. The hero row
+
+   The row under the h1 holds two things at opposite ends: the only sentence
+   on the page that says what the product is, and a link to a feature
+   announcement. It shipped with the announcement's "New" flag as the
+   brightest element in the row (#d0d6e0, weight 510), the announcement label
+   two rungs below it, and the sentence itself down there too at 15px — a
+   size under the body floor, and the least-used affordance in the region
+   rendered heavier than its most-read line.
+
+   Reordered by what each is worth: sentence on the supporting rung at 16px,
+   announcement label left exactly where it was at 6.4:1, flag down to
+   metadata. Nothing is removed and the link keeps its whole hit area.
+   -------------------------------------------------------------------------- */
+.QI8oKG_descriptionContainer > p {
+  font-size: 16px !important;
+  line-height: 24px !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.QI8oKG_newFeatureLink div > span:first-child {
+  color: var(--color-text-quaternary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Figure labels
+
+   FIG 0.2 / 0.3 / 0.4 number the three benefit illustrations and pair with
+   the 1.0-5.0 numerals on the chapters below, so they belong to a numbering
+   system rather than to ornament. They were drawn at opacity: 0.4 on top of
+   an already-quiet grey, which resolves to 1.9:1 — invisible unless you go
+   looking for it. On the metadata rung the numbering reads as one system.
+
+   The capitals stay: "FIG 0.2" is literal text in the markup, not a CSS
+   transform, so there is no styled casing here to correct.
+   -------------------------------------------------------------------------- */
+.GJ9TEa_figure {
+  opacity: 1 !important;
+  color: var(--color-text-quaternary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Changelog dates
+
+   The only forced uppercase in the page's own chrome: the markup already says
+   "Jul 30, 2026" and CSS shouted it. Removing the transform is enough — the
+   mono face and the metadata rung were already separating the date from the
+   entry above it.
+   -------------------------------------------------------------------------- */
+.fjOtda_changelog span {
+  text-transform: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. The customer quotes
+
+   The loudest band on the page and the only place expressive colour escapes
+   the product media: two 480px cards filled with their customers' brand
+   palettes — a lavender-blue gradient and an acid yellow, plus a third in
+   blue on the mobile carousel. That is not media and it is not the single
+   permitted accent; it is Linear's chrome wearing someone else's colours,
+   and three unrelated hues is not "one expressive interruption" either.
+
+   Kept as an interruption, made monochrome: the cards become the one light
+   surface on a dark page, which is the dark-canvas equivalent of alternating
+   a very light section fill, and reads as a change of paper stock rather
+   than as colour being removed. Inverting them to a dark surface was the
+   other option and it was worse — Linear draws the OpenAI and Ramp marks in
+   var(--color-bg-primary), so a dark card would have forced me to repaint
+   two customer logos. On white they need no rule at all and survive exactly
+   as they shipped, alongside the quote, the attribution and the link.
+
+   The oversized watermark behind the primary quote is white, so it would
+   have vanished on a white card and left 880x480 of nothing behind six lines
+   of type. It moves to the ink side of the same ladder at 5%, which keeps
+   the card from reading empty without becoming a second visual weight.
+
+   Scoped to .Dc5tqa_primaryLogo and nothing else. The mobile cards carry a
+   .Dc5tqa_logo of the same 64px size as the desktop attribution mark, not a
+   watermark, and an earlier version of this rule faded all three customer
+   logos on mobile to 5% before the mobile pass caught it.
+   -------------------------------------------------------------------------- */
+.Dc5tqa_customerCard,
+.Dc5tqa_mobileCard {
+  background-color: #fff !important;
+  background-image: none !important;
+}
+
+.Dc5tqa_primaryLogo svg {
+  fill: rgb(0 0 0 / 5%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. The closing chapter
+
+   Every band on this page sits on one left edge — masthead, five chapters,
+   changelog, customers, footer — and then the closing promise and its two
+   CTAs jump to the centre at exactly the moment the page asks for a click.
+   Left-aligning it bookends the h1 that opened the page and puts "Get
+   started" on the same axis as every other action above it.
+
+   Only the alignment moves: both buttons keep their pill, height, padding,
+   order and labels, and the hidden signed-in variants keep theirs. The
+   padding reproduces the inset Linear applies through .Fzcv4W_inset
+   elsewhere — 8px below 1200px, 32px above.
+   -------------------------------------------------------------------------- */
+.dYXc1G_homepagePrefooter {
+  align-items: flex-start !important;
+  padding-left: 8px !important;
+}
+
+/* Linear pulls its inset headings back by -0.03em so the glyph's side
+   bearing, not its box, meets the content edge — a pixel at 38px, two at
+   64px. Centred, this heading never needed that; left-aligned it does, or it
+   sits a pixel right of every other heading at every breakpoint. */
+.dYXc1G_heading {
+  text-align: left !important;
+  margin-left: -0.03em !important;
+}
+
+@media (min-width: 1200px) {
+  .dYXc1G_homepagePrefooter {
+    padding-left: 32px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. Ambient decoration
+
+   A radial white glow is parked behind several of the product mockups and an
+   SVG noise texture is tiled behind others. Each mockup already separates
+   from the canvas with its own surface and hairline frame, so the glow
+   duplicates work the frame is doing and the grain is texture for its own
+   sake. Both go; the frames stay exactly as they are, which is why the
+   mockups do not start floating.
+   -------------------------------------------------------------------------- */
+.MwJdiW_glow,
+.MwJdiW_fixedGlowBgLeft,
+.MwJdiW_fixedGlowBgRight,
+.SPbJba_grain {
+  background-image: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Focus and selection
+
+   The focus ring keeps its indigo. Colour that carries state is not chrome,
+   and a keyboard user tracking a ring across a monochrome page is the case
+   the semantic-colour exception exists for. What it lacked was width: 1px at
+   4.2:1 against near-black is easy to lose. Only the width changes; Linear
+   already offsets the ring by 2px, and restating that would be a second
+   declaration painting the same pixels.
+
+   Text selection is the one piece of colour Linear does not set at all, so
+   the browser supplies its own blue. Onto the ladder with everything else.
+   -------------------------------------------------------------------------- */
+:focus-visible {
+  outline-width: 2px !important;
+}
+
+::selection {
+  background: rgb(255 255 255 / 20%);
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------------
+   11. Reduced motion
+
+   Measured rather than assumed: with prefers-reduced-motion: reduce set,
+   Linear stops 9 of its 112 running animations and keeps every transition.
+   The mockups type, the agent panel streams, the logo strip scrolls, and all
+   of it keeps moving for someone who asked it not to.
+
+   Verified in the render rather than in the declaration, because freezing an
+   animated demo can leave it mid-state: with this block the logo marquee and
+   every mockup hold a complete, sensible frame, and running animations go
+   from 103 to 0.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

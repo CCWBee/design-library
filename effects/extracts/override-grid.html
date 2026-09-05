@@ -1,0 +1,552 @@
+<!--
+  Override Grid
+  Localised from ThreeUI (https://github.com/MengTo/threeui) by Meng To, MIT License
+  Stripped/stubbed: Tailwind CDN scaffolding rewritten as plain CSS; Iconify icon tags
+  replaced with plain CSS shapes; GSAP/ScrollTrigger reveal replaced with a plain CSS
+  keyframe animation; remote Supabase background photo removed (kept a flat dark ground);
+  Google Fonts dropped in favour of the system monospace stack. Canvas block-wave animation
+  and telemetry text loops kept as the genuine effect, self-animating at rest.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Override Grid</title>
+<style>
+  :root {
+    --ground: #18181b;
+    --orange: #f97316;
+    --orange-dim: rgba(249,115,22,0.5);
+    --panel: #27272a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--ground);
+    color: var(--orange);
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Dither / noise overlay */
+  .noise {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    opacity: 0.06;
+    mix-blend-mode: screen;
+    background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox=%220 0 2 2%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect width=%221%22 height=%221%22 fill=%22%23f97316%22/%3E%3Crect x=%221%22 y=%221%22 width=%221%22 height=%221%22 fill=%22%23f97316%22/%3E%3C/svg%3E');
+    background-size: 2px 2px;
+  }
+
+  canvas#grid-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* Corner markers */
+  .corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: var(--orange-dim);
+    z-index: 10;
+  }
+  .corner.tl { top: 16px; left: 16px; border-top: 1px solid; border-left: 1px solid; }
+  .corner.tr { top: 16px; right: 16px; border-top: 1px solid; border-right: 1px solid; }
+  .corner.bl { bottom: 16px; left: 16px; border-bottom: 1px solid; border-left: 1px solid; }
+  .corner.br { bottom: 16px; right: 16px; border-bottom: 1px solid; border-right: 1px solid; }
+
+  /* Telemetry text */
+  .telemetry {
+    position: absolute;
+    z-index: 10;
+    font-size: 11px;
+    font-weight: 300;
+    opacity: 0.6;
+    letter-spacing: 0.15em;
+    line-height: 1.6;
+  }
+  .telemetry.top-left { top: 32px; left: 32px; display: flex; flex-direction: column; gap: 4px; }
+  .telemetry.bottom-right { bottom: 32px; right: 32px; text-align: right; }
+  @media (max-width: 640px) { .telemetry { display: none; } }
+
+  .err-line { color: #c2410c; animation: pulse 2s ease-in-out infinite; }
+  #typewriter { color: #fb923c; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  main {
+    position: relative;
+    z-index: 20;
+    width: 100%;
+    max-width: 64rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+  }
+  @media (min-width: 640px) { main { padding: 0 64px; } }
+
+  /* Container guide lines */
+  .guide-v {
+    position: absolute;
+    top: 48px;
+    bottom: 48px;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--orange-dim), transparent);
+    display: none;
+  }
+  .guide-v.left { left: 32px; }
+  .guide-v.right { right: 32px; }
+  .tick {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border: 1px solid rgba(249,115,22,0.8);
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .guide-v, .tick { display: block; }
+  }
+
+  /* Gradient-border wrapper */
+  .frame {
+    padding: 1px;
+    background: linear-gradient(to bottom right, rgba(253,186,116,1), rgba(234,88,12,0.7), rgba(124,45,18,0.4));
+    position: relative;
+    width: 100%;
+    box-shadow: 0 0 50px rgba(249,115,22,0.15);
+  }
+
+  .panel {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    background: var(--orange);
+    display: flex;
+    align-items: center;
+  }
+  @media (min-width: 640px) { .panel { height: 192px; } }
+
+  .tab-top {
+    position: absolute;
+    top: -24px;
+    left: 0;
+    height: 24px;
+    width: 96px;
+    background: var(--orange);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 400;
+    color: #27272a;
+    letter-spacing: 0.15em;
+    border-bottom: 1px solid #27272a;
+  }
+  .tab-top .dot { width: 6px; height: 6px; background: #27272a; }
+
+  .extrusion {
+    position: absolute;
+    right: 0;
+    height: 12px;
+    width: 40px;
+    background: var(--orange);
+  }
+  @media (min-width: 640px) { .extrusion { width: 64px; } }
+  .extrusion.top { top: -12px; }
+  .extrusion.bottom { bottom: -12px; }
+  .extrusion .notch { position: absolute; width: 4px; height: 4px; background: #27272a; right: 4px; }
+  .extrusion.top .notch { top: 4px; }
+  .extrusion.bottom .notch { bottom: 4px; }
+
+  .cutout-left {
+    position: absolute;
+    top: 50%;
+    left: -4px;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 16px;
+    background: #27272a;
+    border-right: 1px solid rgba(249,115,22,0.5);
+  }
+  .cutout-right {
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 24px;
+    background: #27272a;
+  }
+
+  .inner {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    padding: 0 16px;
+  }
+  @media (min-width: 640px) { .inner { padding: 0 32px; } }
+
+  .left-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (min-width: 640px) {
+    .left-section {
+      flex-direction: row;
+      align-items: center;
+      gap: 24px;
+      width: 50%;
+      border-right: 1px solid rgba(39,39,42,0.3);
+      padding-right: 24px;
+    }
+  }
+
+  .left-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.05);
+    animation: highlight 4s ease-in-out infinite alternate;
+  }
+  @keyframes highlight { 0% { opacity: 0; } 100% { opacity: 0.6; } }
+
+  .spinner {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border: 3px solid #27272a;
+    border-top-color: transparent;
+    border-radius: 50%;
+    position: relative;
+    z-index: 1;
+    animation: spin 4s linear infinite;
+  }
+  @media (min-width: 640px) { .spinner { width: 76px; height: 76px; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .heading {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+    padding-top: 4px;
+  }
+  .heading h1, .heading h2 {
+    color: #27272a;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+    line-height: 0.85;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  @media (min-width: 640px) { .heading h1, .heading h2 { font-size: 3rem; } }
+  .heading h1 { font-weight: 300; }
+  .heading h2 { font-weight: 100; margin-top: 4px; }
+
+  .reveal { display: block; animation: reveal-in 1s cubic-bezier(0.16,1,0.3,1) both; }
+  .reveal.delay { animation-delay: 0.15s; }
+  @keyframes reveal-in {
+    from { transform: translateY(120%); }
+    to { transform: translateY(0); }
+  }
+
+  .right-section {
+    display: none;
+    flex: 1;
+    position: relative;
+    align-items: center;
+    justify-content: flex-end;
+    padding-left: 24px;
+  }
+  @media (min-width: 640px) { .right-section { display: flex; } }
+
+  .crosshair-h {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 50%;
+    height: 1px;
+    background: rgba(39,39,42,0.2);
+    transform: translateY(-50%);
+  }
+  .crosshair-v {
+    position: absolute;
+    top: 32px;
+    bottom: 32px;
+    width: 1px;
+    background: rgba(39,39,42,0.2);
+  }
+  .crosshair-v.a { right: 128px; }
+  .crosshair-v.b { right: 48px; }
+
+  .blocks {
+    display: flex;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  @media (min-width: 640px) { .blocks { gap: 24px; } }
+  .block-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    height: fit-content;
+  }
+  .block-group.offset { margin-top: 32px; }
+  .cell {
+    width: 20px;
+    height: 20px;
+    background: #27272a;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+  }
+  .cell.blink { opacity: 0.2; animation: pulse 2s ease-in-out infinite; }
+  .cell.retry {
+    background: transparent;
+    border: 1px solid #27272a;
+    position: relative;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .cell.retry::before, .cell.retry::after { content: ""; position: absolute; background: #27272a; }
+  .cell.retry::before { left: 4px; right: 4px; top: 50%; height: 1px; }
+  .cell.retry::after { top: 4px; bottom: 4px; left: 50%; width: 1px; }
+  .spacer { width: 8px; }
+
+  .bottom-details {
+    position: absolute;
+    bottom: 8px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: #27272a;
+  }
+  .server-icon {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid #27272a;
+    border-radius: 2px;
+    opacity: 0.8;
+    flex-shrink: 0;
+  }
+  .bottom-details .lines { display: flex; flex-direction: column; }
+  .bottom-details .lines span {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+  .bottom-details .lines .l1 { opacity: 0.8; font-weight: 300; }
+  .bottom-details .lines .l2 { opacity: 0.6; font-weight: 100; }
+</style>
+</head>
+<body>
+
+  <div class="noise"></div>
+  <canvas id="grid-canvas" aria-hidden="true"></canvas>
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <div class="telemetry top-left">
+    <span>SYNC PHASE: <span id="log-frame">000000</span></span>
+    <span>SYS OVERRIDE SEQ: [ ACTIVE ]</span>
+    <span>ROUTE MAP: TRACING</span>
+    <span>CRIT ALERT:</span>
+    <span class="err-line">&gt; ERR TIMEOUT</span>
+    <span id="typewriter"></span>
+  </div>
+
+  <div class="telemetry bottom-right">
+    <span id="log-mem">REG ADDR: 0xFA48B2</span><br>
+    <span>STATE: OVERRIDING</span>
+  </div>
+
+  <main>
+    <div class="guide-v left"></div>
+    <div class="guide-v right"></div>
+    <div class="tick" style="top:25%; left:30px;"></div>
+    <div class="tick" style="bottom:25%; left:30px;"></div>
+    <div class="tick" style="top:33%; right:30px;"></div>
+    <div class="tick" style="bottom:33%; right:30px;"></div>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="tab-top">
+          <span>TIMEOUT</span>
+          <div class="dot"></div>
+        </div>
+
+        <div class="extrusion top"><div class="notch"></div></div>
+        <div class="extrusion bottom"><div class="notch"></div></div>
+
+        <div class="cutout-left"></div>
+        <div class="cutout-right"></div>
+
+        <div class="inner">
+          <div class="left-section">
+            <div class="spinner"></div>
+            <div class="heading">
+              <h1><span class="reveal">System</span></h1>
+              <h2><span class="reveal delay">Override</span></h2>
+            </div>
+          </div>
+
+          <div class="right-section">
+            <div class="crosshair-h"></div>
+            <div class="crosshair-v a"></div>
+            <div class="crosshair-v b"></div>
+
+            <div class="blocks">
+              <div class="block-group">
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+              </div>
+              <div class="block-group offset">
+                <div class="cell"></div>
+                <div class="cell blink"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+              </div>
+              <div class="spacer"></div>
+              <div class="block-group">
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell retry"></div>
+                <div class="cell"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-details">
+          <div class="server-icon"></div>
+          <div class="lines">
+            <span class="l1">Auth node // access denied</span>
+            <span class="l2">Executing bypass protocol...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Block-by-block wave animation on canvas
+    const canvas = document.getElementById('grid-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, time = 0;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      time += 0.04;
+
+      const blockSize = 48;
+      const blockGap = 2;
+      const pitch = blockSize + blockGap;
+      const cols = Math.ceil(width / pitch);
+      const rows = Math.ceil(height / pitch);
+
+      const centerX = cols / 2;
+      const centerY = rows / 2;
+
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const dist = Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerY, 2));
+          const wave = Math.sin(time - dist * 0.4);
+
+          if (wave > 0) {
+            const alpha = wave * 0.15;
+            ctx.fillStyle = `rgba(249, 115, 22, ${alpha})`;
+
+            const scale = wave * 0.7 + 0.3;
+            const size = blockSize * scale;
+            const offset = (pitch - size) / 2;
+
+            ctx.fillRect(i * pitch + offset, j * pitch + offset, size, size);
+          }
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    // Telemetry data updates
+    setInterval(() => {
+      const frameLog = document.getElementById('log-frame');
+      const memLog = document.getElementById('log-mem');
+      if (frameLog) frameLog.innerText = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+      if (memLog) {
+        const hex = Math.floor(Math.random() * 16777215).toString(16).toUpperCase();
+        memLog.innerText = `REG ADDR: 0x${hex}`;
+      }
+    }, 150);
+
+    // Typewriter loop
+    const typewriterElement = document.getElementById('typewriter');
+    if (typewriterElement) {
+      const phrases = ["> Initiating bypass...", "> Flushing registers...", "> Timeout: retrying..."];
+      let phraseIdx = 0;
+      let charIdx = 0;
+      let isDeleting = false;
+
+      function type() {
+        const currentPhrase = phrases[phraseIdx];
+        charIdx += isDeleting ? -1 : 1;
+
+        typewriterElement.innerText = currentPhrase.substring(0, charIdx) + "_";
+
+        let speed = isDeleting ? 30 : 60;
+
+        if (!isDeleting && charIdx === currentPhrase.length) {
+          speed = 2000;
+          isDeleting = true;
+        } else if (isDeleting && charIdx === 0) {
+          isDeleting = false;
+          phraseIdx = (phraseIdx + 1) % phrases.length;
+          speed = 500;
+        }
+
+        setTimeout(type, speed);
+      }
+      type();
+    }
+  </script>
+</body>
+</html>

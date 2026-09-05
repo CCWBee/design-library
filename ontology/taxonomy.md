@@ -87,6 +87,7 @@ Telling the user what happened or is happening.
 | type | min | gls | tac | shd |
 |---|---|---|---|---|
 | toast / snackbar | Y | Y | . | . |
+| confirmation tick (success mark + label + haptic) | . | Y | . | . |
 | badge / pill count | Y | Y | . | . |
 | tooltip | Y | Y | . | . |
 | progress bar | Y | Y | Y | Y |

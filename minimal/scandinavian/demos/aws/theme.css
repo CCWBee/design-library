@@ -1,0 +1,891 @@
+/* ==========================================================================
+   AWS — Cloud Services product catalog — Scandinavian override
+
+   The page's job is finding one service among 237. Four things get in the
+   way of that before the first product is visible:
+
+   1. Two stacked chrome bars — a dark navy utility strip over a white nav
+      row — spend the heaviest weight on the page's least-used controls
+      (language, contact, marketplace, support, account).
+   2. A 440px cyan-to-white gradient hero holds 280px of content and 160px
+      of empty colour, so the fold ends before the catalog begins.
+   3. Every catalog cell is locked to 300px because one card in the grid —
+      "Show 8 more" — is 300px tall and the rows are `1fr`. Items whose
+      content is ~190px carry 110px of nothing each.
+   4. Two near-black assistant panels float over the lower right at 16px,
+      louder than anything the page is actually about.
+
+   Target: one chrome band, a hero sized to what it says, a catalog whose
+   items are as tall as their content, and widgets on the same ink ladder as
+   the page. Every capability survives — the filter, the product search, six
+   nav menus, region and language, sign-in, create account, the assistant and
+   feedback widgets, and all 237 product links. Nothing is hidden.
+
+   This is override mode, so the ceiling is lower than a source redesign: the
+   card grid stays a card grid, the hero keeps its DOM order, and the catalog
+   still pages eight at a time.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Typography — promote the family the page already owns
+
+   `document.fonts` reports Amazon Ember Display *loaded* at 400 and 500 while
+   `body` is set in `Arial, sans-serif`. The Rigel components (nav, hero,
+   cards, footer) already paint in Ember Display; the older AEM layer, every
+   form control and the floating widgets fall through to Arial. Nothing in the
+   visible CSS says so.
+
+   So this is not a substitution. It is promoting a family the page already
+   ships over the fallback it was silently sharing the page with, which loses
+   one less identity than importing Inter would.
+
+   Weight ladder is 400/500. Ember Display also declares 700 and 900, and CSS
+   matching resolves an unavailable 600 *up* to 700 — so headings are set at
+   500, the heaviest weight this page actually loads.
+   -------------------------------------------------------------------------- */
+:root {
+  --sd-sans: "Amazon Ember Display", "Amazon Ember", "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
+
+  --sd-ink: #000;
+  --sd-ink-body: rgb(0 0 0 / 80%);
+  --sd-ink-2: rgb(0 0 0 / 64%);
+  /* 56% rather than the 40-50% metadata rung. Category labels, result counts
+     and card descriptions are the text you read to find a service; none of
+     them is optional on a lookup surface. */
+  --sd-ink-3: rgb(0 0 0 / 56%);
+  --sd-rule: rgb(0 0 0 / 10%);
+  --sd-rule-strong: rgb(0 0 0 / 18%);
+  --sd-fill: #f5f5f5;
+  --sd-flat: linear-gradient(0deg, rgb(0 0 0 / 6%), rgb(0 0 0 / 6%));
+}
+
+body,
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: var(--sd-sans) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Rigel tokens — neutral ramp
+
+   Rigel declares its theme on `:root, [data-eb-ce]` and again on
+   `[data-rg-mode="light"]`, and 92 elements on this page carry that
+   attribute — every one re-emits the resolved theme onto itself. A `:root`
+   override reports the new value and changes nothing inside them.
+
+   The ramp is a systematically derived navy, so correcting it is a judgment
+   call rather than an automatic fix: #232b37 (body ink) is 20 points of
+   channel spread and #161d26 (titles) is 16, both well past where ink reads
+   cool beside white. Only hue moves — every rung keeps its lightness, which
+   is what makes this safe to apply inside the dark subtrees too.
+   -------------------------------------------------------------------------- */
+:root,
+[data-eb-ce],
+[data-rg-mode],
+[data-rg-theme] {
+  --rg-color-base-gray-50: #fcfcfc !important;
+  --rg-color-base-gray-100: #f9f9f9 !important;
+  --rg-color-base-gray-150: #f6f6f6 !important;
+  --rg-color-base-gray-200: #f2f2f2 !important;
+  --rg-color-base-gray-250: #ebebeb !important;
+  --rg-color-base-gray-300: #dedede !important;
+  --rg-color-base-gray-350: #cccccc !important;
+  --rg-color-base-gray-400: #b4b4b4 !important;
+  --rg-color-base-gray-450: #a4a4a4 !important;
+  --rg-color-base-gray-500: #8c8c8c !important;
+  --rg-color-base-gray-550: #767676 !important;
+  --rg-color-base-gray-600: #6b6b6b !important;
+  --rg-color-base-gray-700: #3a3a3a !important;
+  --rg-color-base-gray-750: #2b2b2b !important;
+  --rg-color-base-gray-850: #1d1d1d !important;
+  --rg-color-base-gray-900: #191919 !important;
+  --rg-color-base-gray-950: #141414 !important;
+  --rg-color-base-gray-1000: #080808 !important;
+
+  /* Rigel ships the same ramp spelled both ways and components read both. */
+  --rg-color-base-grey-50: #fcfcfc !important;
+  --rg-color-base-grey-100: #f9f9f9 !important;
+  --rg-color-base-grey-150: #f6f6f6 !important;
+  --rg-color-base-grey-200: #f2f2f2 !important;
+  --rg-color-base-grey-250: #ebebeb !important;
+  --rg-color-base-grey-300: #dedede !important;
+  --rg-color-base-grey-350: #cccccc !important;
+  --rg-color-base-grey-400: #b4b4b4 !important;
+  --rg-color-base-grey-450: #a4a4a4 !important;
+  --rg-color-base-grey-500: #8c8c8c !important;
+  --rg-color-base-grey-550: #767676 !important;
+  --rg-color-base-grey-600: #6b6b6b !important;
+  --rg-color-base-grey-700: #3a3a3a !important;
+  --rg-color-base-grey-750: #2b2b2b !important;
+  --rg-color-base-grey-850: #1d1d1d !important;
+  --rg-color-base-grey-900: #191919 !important;
+  --rg-color-base-grey-950: #141414 !important;
+  --rg-color-base-grey-1000: #080808 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Rigel tokens — semantic
+
+   Most of these are never declared anywhere: the components read them as
+   `var(--rg-color-text-primary, #161D26)` and the hard fallback wins. A
+   published set of tokens the page never defines is a decoy — the way to
+   drive them is to declare them, not to retarget them. Every value below was
+   read out of the component CSS rather than out of the token dump.
+
+   Scoped to light mode. The four `[data-rg-mode="dark"]` subtrees keep their
+   own values; alpha black would disappear on them.
+   -------------------------------------------------------------------------- */
+:root,
+[data-eb-ce],
+[data-rg-mode="light"] {
+  /* Ink */
+  --rg-color-text-primary: var(--sd-ink) !important;
+  --rg-color-text-title: var(--sd-ink) !important;
+  --rg-color-text-heading: var(--sd-ink) !important;
+  --rg-color-text-utility: var(--sd-ink) !important;
+  --rg-color-text-subheading: var(--sd-ink-body) !important;
+  --rg-color-text-body: var(--sd-ink-body) !important;
+  --rg-color-text-secondary: var(--sd-ink-2) !important;
+  --rg-color-text-eyebrow: var(--sd-ink-2) !important;
+  --rg-color-text-faded: var(--sd-ink-3) !important;
+  --rg-color-text-disabled: rgb(0 0 0 / 30%) !important;
+  --rg-color-breadcrumb-link-text: var(--sd-ink-2) !important;
+
+  /* Links carry ink and the underline they already had. Visited stays its own
+     rung rather than collapsing into the default: on a 237-item catalog
+     "I already opened this one" is worth keeping. */
+  --rg-color-link-default: var(--sd-ink) !important;
+  --rg-color-link-alternate: var(--sd-ink) !important;
+  --rg-color-link-hover: var(--sd-ink) !important;
+  --rg-color-link-pressed: var(--sd-ink) !important;
+  --rg-color-link-selected: var(--sd-ink) !important;
+  --rg-color-link-focus: var(--sd-ink) !important;
+  --rg-color-link-visited: rgb(0 0 0 / 62%) !important;
+  --rg-color-link-inactive: rgb(0 0 0 / 30%) !important;
+  --rg-color-link-hover-inverted: #fff !important;
+
+  /* Focus was #006CE0 on a 2px outline. It stays 2px and stays the loudest
+     ring on the page; black on white is a stronger signal than the blue was,
+     and the state is not carried by hue anywhere else. */
+  --rg-color-focus-ring: var(--sd-ink) !important;
+
+  /* The `-inverted` family is not dark mode. It is what a light-mode subtree
+     uses when it paints an inverted surface — which is how the footer is
+     built, and why 36 of its links were still #a4a4ad after a light-mode
+     pass. Lightness is kept; only the cast is removed, expressed as white
+     alpha because that is what actually composites on a near-black panel. */
+  --rg-color-text-faded-inverted: rgb(255 255 255 / 62%) !important;
+  --rg-color-text-body-inverted: #f9f9f9 !important;
+  --rg-color-text-secondary-inverted: #f9f9f9 !important;
+  --rg-color-text-subheading-inverted: #f9f9f9 !important;
+
+  --rg-color-border-lowcontrast: rgb(0 0 0 / 12%) !important;
+  --rg-color-border-mediumcontrast: rgb(0 0 0 / 28%) !important;
+  --rg-color-border-highcontrast: var(--sd-ink) !important;
+  --rg-color-stroke-lowcontrast: rgb(0 0 0 / 12%) !important;
+  --rg-color-stroke-mediumcontrast: rgb(0 0 0 / 28%) !important;
+  --rg-color-stroke-highcontrast: var(--sd-ink) !important;
+
+  /* Surfaces. Opaque rather than alpha: the catalog card paints this behind a
+     ::before that carries a saturated gradient, so a translucent panel puts
+     the gradient back on screen. */
+  --rg-color-background-object: var(--sd-fill) !important;
+  --rg-color-background-object-hover: #ebebeb !important;
+  --rg-color-background-object-active: #dedede !important;
+  --rg-color-background-object-inverted: #1d1d1d !important;
+  --rg-color-background-page-inverted: #141414 !important;
+  --rg-color-background-invertedlowcontrast: #6b6b6b !important;
+  --rg-color-code-window: #f6f6f6 !important;
+  /* Pale blue behind informational chips. It marks nothing a reader acts on,
+     so it goes to the wash the cards already use. */
+  --rg-color-background-neutral: #ebebeb !important;
+  --rg-color-background-img-bg: #dedede !important;
+  --rg-color-background-video-bg: #dedede !important;
+  --rg-color-bg-gradient-pressed: rgb(235 235 235 / 90%) !important;
+
+  /* Buttons and list rows keep their lightness, lose their cast. */
+  --rg-color-btn-primary-bg: var(--sd-ink) !important;
+  --rg-color-btn-pressed: var(--sd-ink) !important;
+  --rg-color-btn-active: #ebebeb !important;
+  --rg-color-btn-visited-bg: #6b6b6b !important;
+  --rg-color-btn-disabled-bg: #f2f2f2 !important;
+  --rg-color-btn-disabled-text: rgb(0 0 0 / 30%) !important;
+  --rg-color-btn-tertiary-disabled-text: rgb(0 0 0 / 30%) !important;
+  --rg-color-listitem-hover-bg: #ebebeb !important;
+  --rg-color-listitem-pressed-bg: #dedede !important;
+  --rg-color-selector-hover-bg: #ebebeb !important;
+  --rg-color-selector-pressed-bg: #dedede !important;
+  --rg-color-badge-transparent-inverted: rgb(20 20 20 / 75%) !important;
+  --rg-color-badge-gradient-hover: rgb(0 0 0 / 22%) !important;
+  --rg-color-card-hover: #ebebeb !important;
+  --rg-color-card-press: #dedede !important;
+  --rg-color-closebtn-color: var(--sd-ink) !important;
+
+  /* Elevation. 25% at 24px blur under a floating panel was making the chat
+     launcher read as a modal. */
+  --rg-shadow-gray-elevation-1: 0 1px 4px rgb(0 0 0 / 8%) !important;
+  --rg-shadow-gray-elevation-2: 0 2px 8px rgb(0 0 0 / 10%) !important;
+
+  /* Left alone: --rg-color-status-error / warn / success / info and
+     --rg-color-background-positive / notice / negative. Those are the only
+     tokens on the page that carry state, and nothing else says it. */
+}
+
+/* --------------------------------------------------------------------------
+   3b. Rigel tokens — dark subtrees
+
+   Hue only. AWS's dark ladder works and the alpha percentages from the light
+   side do not carry across, so nothing is re-ranked here: #f9f9fb becomes
+   #f9f9f9, #a4a4ad becomes the white alpha that composites to the same
+   lightness on the panel it actually sits on. Status colours are untouched.
+   -------------------------------------------------------------------------- */
+[data-rg-mode="dark"] {
+  --rg-color-background-page: #141414 !important;
+  --rg-color-background-object: #2b2b2b !important;
+  --rg-color-background-object-hover: #3a3a3a !important;
+  --rg-color-background-object-active: #484848 !important;
+  --rg-color-background-glass: rgb(20 20 20 / 75%) !important;
+  --rg-color-background-neutral: rgb(255 255 255 / 10%) !important;
+  --rg-color-code-window: #3a3a3a !important;
+
+  --rg-color-text-secondary: #f9f9f9 !important;
+  --rg-color-text-subheading: #f9f9f9 !important;
+  --rg-color-text-body: #f9f9f9 !important;
+  --rg-color-text-faded: rgb(255 255 255 / 62%) !important;
+  --rg-color-text-disabled: rgb(255 255 255 / 36%) !important;
+  /* The footer is a dark subtree, but the light pills inside it read
+     `var(--rg-color-text-primary, #161D26)` and Rigel never declares that token
+     here — so the fallback painted, and the light-mode declaration above could
+     not reach past the `[data-rg-mode="dark"]` boundary. Every consumer of it in
+     a dark subtree is by definition sitting on a light surface, or it would
+     already be invisible, so pointing it at ink is safe. */
+  --rg-color-text-primary: var(--sd-ink) !important;
+
+  --rg-color-text-primary-inverted: var(--sd-ink) !important;
+  --rg-color-text-heading-inverted: var(--sd-ink) !important;
+  --rg-color-text-title-inverted: var(--sd-ink) !important;
+  --rg-color-text-eyebrow-inverted: var(--sd-ink) !important;
+  --rg-color-text-secondary-inverted: var(--sd-ink-2) !important;
+  --rg-color-text-body-inverted: var(--sd-ink-body) !important;
+  --rg-color-text-subheading-inverted: var(--sd-ink-body) !important;
+  --rg-color-text-faded-inverted: var(--sd-ink-3) !important;
+
+  --rg-color-link-default: #fff !important;
+  --rg-color-link-hover: #fff !important;
+  --rg-color-link-focus: #fff !important;
+  --rg-color-link-pressed: #fff !important;
+  --rg-color-link-selected: #fff !important;
+  --rg-color-link-visited: rgb(255 255 255 / 66%) !important;
+  --rg-color-link-inactive: rgb(255 255 255 / 44%) !important;
+  --rg-color-link-hover-inverted: var(--sd-ink) !important;
+  --rg-color-focus-ring: #fff !important;
+
+  /* Borders invert close to one for one; the shipped #424650 is heavier than
+     a hairline needs to be against a near-black panel. */
+  --rg-color-border-lowcontrast: rgb(255 255 255 / 14%) !important;
+  --rg-color-border-mediumcontrast: rgb(255 255 255 / 40%) !important;
+  --rg-color-border-highcontrast-inverted: var(--sd-ink) !important;
+  --rg-color-stroke-lowcontrast: rgb(255 255 255 / 14%) !important;
+  --rg-color-stroke-mediumcontrast: rgb(255 255 255 / 40%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Gradients — flattened, not desaturated
+
+   Rigel assigns each catalog card a theme (orange, fuchsia, indigo, violet…)
+   and paints a saturated 123deg gradient on its ::before. Desaturating those
+   would give every tile a different grey, which reads as an encoding that
+   does not exist. A single flat wash says what the original said, which was
+   nothing — while leaving hover and pressed with something to show, since
+   this is the only visible output those states have.
+   -------------------------------------------------------------------------- */
+:root,
+[data-eb-ce],
+[data-rg-mode],
+[data-rg-theme] {
+  --rg-gradient-a: var(--sd-flat) !important;
+  --rg-gradient-b: var(--sd-flat) !important;
+  --rg-gradient-c: var(--sd-flat) !important;
+  --rg-gradient-a-75: linear-gradient(0deg, rgb(0 0 0 / 5%), rgb(0 0 0 / 5%)) !important;
+  --rg-gradient-b-75: linear-gradient(0deg, rgb(0 0 0 / 5%), rgb(0 0 0 / 5%)) !important;
+  --rg-gradient-c-75: linear-gradient(0deg, rgb(0 0 0 / 5%), rgb(0 0 0 / 5%)) !important;
+  --rg-gradient-a-50: linear-gradient(0deg, rgb(0 0 0 / 4%), rgb(0 0 0 / 4%)) !important;
+  --rg-gradient-b-50: linear-gradient(0deg, rgb(0 0 0 / 4%), rgb(0 0 0 / 4%)) !important;
+  --rg-gradient-c-50: linear-gradient(0deg, rgb(0 0 0 / 4%), rgb(0 0 0 / 4%)) !important;
+  --rg-gradient-a-25: linear-gradient(0deg, rgb(0 0 0 / 2%), rgb(0 0 0 / 2%)) !important;
+  --rg-gradient-b-25: linear-gradient(0deg, rgb(0 0 0 / 2%), rgb(0 0 0 / 2%)) !important;
+  --rg-gradient-c-25: linear-gradient(0deg, rgb(0 0 0 / 2%), rgb(0 0 0 / 2%)) !important;
+  --rg-gradient-a-pressed: linear-gradient(0deg, rgb(0 0 0 / 12%), rgb(0 0 0 / 12%)) !important;
+  --rg-gradient-b-pressed: linear-gradient(0deg, rgb(0 0 0 / 12%), rgb(0 0 0 / 12%)) !important;
+  --rg-gradient-c-pressed: linear-gradient(0deg, rgb(0 0 0 / 12%), rgb(0 0 0 / 12%)) !important;
+
+  --rg-shadow-gradient-blue: var(--sd-flat) !important;
+  --rg-shadow-gradient-teal: var(--sd-flat) !important;
+  --rg-shadow-gradient-indigo: var(--sd-flat) !important;
+  --rg-shadow-gradient-violet: var(--sd-flat) !important;
+  --rg-shadow-gradient-purple: var(--sd-flat) !important;
+  --rg-shadow-gradient-fuchsia: var(--sd-flat) !important;
+  --rg-shadow-gradient-orange: var(--sd-flat) !important;
+
+  --rg-color-skeleton-genai-bar-bg: linear-gradient(
+    135deg,
+    rgb(0 0 0 / 5%),
+    rgb(0 0 0 / 9%)
+  ) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Hero — the gradient goes, the space it reserved does not
+
+   Two layers paint it: a 96deg purple/blue/cyan linear gradient and a white
+   radial wash over the top (that one is a token, `--rg-color-hero-bg`).
+   Neutralising only the first leaves the radial fading a grey into the
+   bottom-left, which is a gradient again — so both go.
+
+   The hero was 440px holding 280px of content. Deleting 160px of colour and
+   keeping the box would trade a gradient for a void, so the band closes to
+   what it says and takes the page's one light chapter fill, which separates
+   it from the catalog below without a rule.
+   -------------------------------------------------------------------------- */
+:root,
+[data-eb-ce],
+[data-rg-mode="light"] {
+  --rg-color-hero-bg: none !important;
+}
+
+#hero > div > div,
+#hero div[class*="rghr_5badf975"],
+#hero [data-rg-n="BackgroundGradient"] {
+  background-image: none !important;
+  background-color: rgb(0 0 0 / 3%) !important;
+}
+
+#hero div[class*="rghr_33ec368c"] {
+  background-image: none !important;
+  background-color: transparent !important;
+  padding-top: 40px !important;
+  padding-bottom: 44px !important;
+}
+
+#hero h1 {
+  font-size: clamp(32px, 3.1vw, 42px) !important;
+  font-weight: 500 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--sd-ink) !important;
+}
+
+#hero p {
+  font-size: 17px !important;
+  line-height: 1.55 !important;
+  color: var(--sd-ink-body) !important;
+  max-width: 36em !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Header — two bars become one band
+
+   The dark navy strip is the heaviest element on the page above the fold and
+   it carries the controls used least: language, contact, marketplace,
+   support, account. Flattening it onto the nav row's white leaves one band
+   under one hairline, and puts the utility links a rung below the navigation
+   rather than a whole surface above it.
+
+   The label colour is set by `.rggn_12eba964 { color: var(
+   --rg-color-text-primary-inverted, #FFF) !important }` at 0,2,0, which beats
+   any sane descendant selector. Rather than escalate specificity, the token
+   is redeclared on the bar itself — the component resolves the inherited
+   value, and the token stays #fff for the genuinely inverted surfaces
+   elsewhere on the page.
+   -------------------------------------------------------------------------- */
+[data-testid="utility-bar"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-bottom: 0 !important;
+}
+
+/* Declared on every descendant, not just the bar. Elements carrying
+   `data-rg-mode` re-emit the whole resolved theme onto themselves, and there
+   are several of those between the bar and its links — a declaration on the
+   bar alone is shadowed by the nearest one below it and reports the new value
+   while every label still paints white. */
+[data-testid="utility-bar"],
+[data-testid="utility-bar"] * {
+  --rg-color-text-primary-inverted: rgb(0 0 0 / 64%) !important;
+  --rg-color-text-utility-inverted: rgb(0 0 0 / 64%) !important;
+  --rg-color-link-hover-inverted: #000 !important;
+}
+
+[data-testid="utility-bar"] a:hover,
+[data-testid="utility-bar"] a:hover *,
+[data-testid="utility-bar"] button:hover,
+[data-testid="utility-bar"] button:hover * {
+  --rg-color-text-primary-inverted: #000 !important;
+}
+
+.m-global-header {
+  background: #fff !important;
+}
+
+/* One rule dividing chrome from content, and it is the one the nav already
+   drew from --rg-color-border-lowcontrast. Adding a second on the sticky
+   container put two hairlines a pixel apart — invisible in a screenshot,
+   obvious in the line report. */
+[data-testid="nav-bar"] {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+/* The account avatar shipped as a filled #0f141a disc, which on a white bar
+   is the heaviest mark in the row and belongs to its least-used control. */
+button.awsm-ik-navatar-icon,
+.awsm-ik-navatar-icon .avatar-fallback {
+  background: transparent !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  color: rgb(0 0 0 / 64%) !important;
+}
+
+/* Focusable-only skip link. It is an accessibility affordance, so it keeps
+   the prominence it shipped with; only the hue changes. */
+#aws-page-skip-to-main {
+  color: var(--sd-ink) !important;
+  background: #fff !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Catalog — the page's actual product
+
+   Two hundred and thirty-seven services, eight at a time, each in its own
+   #f3f3f7 rectangle at identical size and weight. That is the escalation
+   trigger verbatim — uniform cards of equal weight with no dominant element —
+   and on a surface whose whole job is scanning names, the box is the thing
+   competing with the name. The fill goes. What replaces it is the gutter the
+   grid already has, a hairline at the top of each item, and the type ladder.
+
+   One hairline per item rather than none: without it a three-column grid of
+   unboxed text blocks has no start edge, and the eye stops being able to tell
+   which description belongs to which name across a 40px gutter. Three
+   collinear runs per grid row is countable, and this is the dense-lookup case
+   the rule about countable rules exempts.
+
+   The 300px cell height came from "Show 8 more", which ships `height: 300px`
+   and, under `grid-auto-rows: 1fr`, set every row in the grid. Releasing that
+   one card is what buys the density back.
+   -------------------------------------------------------------------------- */
+div[class*="rgic_ea95ebd9"] {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 20px 0 !important;
+}
+
+/* `1fr` is kept deliberately. Rows equalise to the tallest item, which is now
+   an item rather than the pager, and that is what puts every arrow and plus
+   control in the grid on one baseline. Sizing rows to their own content is
+   ~30px tighter per row and lands the controls at three different heights. */
+div:has(> div > div > [data-rg-n="InteractiveCard"]) {
+  grid-auto-rows: 1fr !important;
+}
+
+[data-rg-n="InteractiveCard"][class],
+[data-rg-n="InteractiveCard"][class] > a > div {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* The fill was not on the card. Rigel paints it on the card's `::before` from
+   whichever themed gradient the item was assigned, so flattening those gradients
+   to a neutral wash — right for the hero and the resource rails — was what
+   turned 237 saturated tiles into 237 grey boxes. At rest there is now nothing
+   there; the wash stays available to hover and pressed, which is the only
+   visible output those states have. */
+[data-rg-n="InteractiveCard"][class]::before,
+[data-rg-n="InteractiveCard"] [data-rg-n="IconButton"][class]::before {
+  background-image: none !important;
+}
+
+[data-rg-n="InteractiveCard"][class] {
+  border-top: 1px solid var(--sd-rule) !important;
+}
+
+[data-rg-n="InteractiveCard"][class] > a > div {
+  padding: 14px 0 16px !important;
+  row-gap: 8px !important;
+  column-gap: 8px !important;
+}
+
+/* No resting fill means hover needs its own output. The item's own hairline
+   going to ink, plus the name underlining, says "this whole block is the
+   link" without putting a surface back. */
+[data-rg-n="InteractiveCard"][class]:hover {
+  border-top-color: var(--sd-ink) !important;
+}
+
+[data-rg-n="InteractiveCard"]:hover [data-rg-n="TitleText"] {
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 0.14em !important;
+}
+
+/* The action row is pinned by the component with `margin-top: auto`, so uniform
+   rows put every arrow and plus on one baseline. That alone is not enough here:
+   with the panel gone there is nothing to make a void read as intentional, and
+   descriptions running one to three lines left a one-line item with 108px
+   between its sentence and its controls — which puts the controls closer to the
+   next item than to their own.
+
+   So the description gets the three lines it may need instead of the row
+   absorbing the difference. Every item's text block is then the same height,
+   the pinned row has almost nothing left to push against, and the residual gap
+   is a fraction of the gutter. The 28px paragraph margin has to go first or it
+   sits under the min-height and puts the variance straight back. */
+[data-rg-n="InteractiveCard"] [data-rg-n="BodyText"] {
+  min-height: calc(3 * 20.3px + 4px) !important;
+}
+
+[data-rg-n="InteractiveCard"] [data-rg-n="BodyText"] p {
+  margin: 0 !important;
+}
+
+/* AWS App Mesh ships without a plus control — verified against the unthemed
+   page, not something this stylesheet removed. Its action row was therefore
+   32px against its neighbours' 40px, which floated its arrow 4px off theirs.
+   Reserving the control's box keeps the row level whether or not it is there. */
+[data-rg-n="InteractiveCard"] [data-rg-n="SpaceBetween"] {
+  min-height: 40px !important;
+  align-items: center !important;
+}
+
+/* A one-line description leaves ~49px between its sentence and its controls,
+   and that is fixed: the row is as tall as a three-line item, so the slack has
+   to land somewhere between the text and the pinned action row whether the
+   description reserves the lines or the row absorbs them. Measured both ways,
+   the distance is identical. What is adjustable is the gutter, which has to beat
+   that 49px or the controls read as belonging to the item below. At 40px it
+   lost. */
+div:has(> div > div > [data-rg-n="InteractiveCard"]) {
+  row-gap: 64px !important;
+}
+
+/* The grid drops to one column below 480px — measured, not assumed; at 480 it
+   is still two, and a first attempt at 500px applied this to a two-column
+   layout and made it ragged. With one column there is no neighbour to share a
+   baseline with, so the uniform row and the reserved third line stop being
+   alignment and become 75px of air per item. Rows size to their own content,
+   the description takes the lines it needs, and the gutter drops to what
+   separates one item from the next rather than what beats an internal void. */
+@media (max-width: 479px) {
+  div:has(> div > div > [data-rg-n="InteractiveCard"]) {
+    grid-auto-rows: auto !important;
+    row-gap: 28px !important;
+  }
+
+  [data-rg-n="InteractiveCard"] [data-rg-n="BodyText"] {
+    min-height: 0 !important;
+  }
+
+  [data-rg-n="InteractiveCard"] [data-rg-n="SpaceBetween"] {
+    padding-top: 12px !important;
+  }
+}
+
+/* The category chip was a translucent white pill on a light panel — a
+   boundary drawn inside a boundary. As an eyebrow it says the same thing and
+   reads as part of the item rather than as a control you can press.
+
+   Rigel sets badges and the result count in Amazon Ember Mono, at 0,3,0 — a
+   second family doing work that size, weight and ink rung already do here:
+   11px/500 at 56% against a 17px/500 title. It folds into the one sans, at a
+   real cost to a deliberate "utility text" register AWS ships site-wide.
+
+   The count is the one place mono was earning something — it changes as you
+   filter, and a fixed advance stops the row jittering. Tabular figures buy
+   that back without a second family. */
+[data-rg-n="Badge"][class][class],
+[data-rg-n="FunctionalText"][class][class],
+[data-rg-n="MetaAttribute"][class][class],
+[data-rg-n="ScrollableChips"] span[class][class] {
+  font-family: var(--sd-sans) !important;
+}
+
+[data-rg-n="ScrollableChips"] span[class] {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-rg-n="InteractiveCard"] [data-rg-n="Badge"],
+[data-rg-n="ClassicCard"] [data-rg-n="Badge"] {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--sd-ink-3) !important;
+}
+
+[data-rg-n="InteractiveCard"] [data-rg-n="TitleText"] {
+  font-size: 17px !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  color: var(--sd-ink) !important;
+}
+
+[data-rg-n="InteractiveCard"] [data-rg-n="BodyText"],
+[data-rg-n="InteractiveCard"] [data-rg-n="BodyText"] p {
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  color: var(--sd-ink-body) !important;
+}
+
+/* "Learn more" is hidden behind an overflow clip at rest and slides in on
+   hover; the arrow is what you see. It was 16px/500 against a 18px/500 title,
+   so on hover the card's least informative element arrived at nearly the
+   weight of its name. */
+[data-rg-n="AnimatedCTA"] [data-rg-n="UtilityText"] {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* The add-to-comparison control is the least-used thing in the card and was
+   its only filled white circle. A hairline keeps the target and the meaning
+   without outranking the product name. `border-box` because the component
+   sizes it from `--button-size: 32px` on height only, so an added border
+   widened a circle into an ellipse. */
+[data-rg-n="InteractiveCard"] [data-rg-n="IconButton"] {
+  box-sizing: border-box !important;
+  background: transparent !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  color: var(--sd-ink-2) !important;
+}
+
+[data-rg-n="InteractiveCard"] [data-rg-n="IconButton"]:hover {
+  background: rgb(0 0 0 / 6%) !important;
+  color: var(--sd-ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Filter and product search
+
+   Adjacent controls, mismatched: a 2px-bordered pill beside a field carrying
+   one bottom hairline. Matching height and ink makes them one group; the
+   radius follows each one's own component family, because a 1000px-wide pill
+   is not a field shape and the pill is the page's button system everywhere
+   else. The filter's border drops to a hairline so the row's least-used
+   control stops being its heaviest element.
+   -------------------------------------------------------------------------- */
+[data-rg-n="SearchableFilter"] form[class] {
+  background: rgb(0 0 0 / 4%) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  padding-left: 6px !important;
+  padding-right: 14px !important;
+}
+
+[data-rg-n="SearchableFilter"] input {
+  font-size: 15px !important;
+  color: var(--sd-ink-body) !important;
+  background: transparent !important;
+}
+
+[data-rg-n="SearchableFilter"] input::placeholder {
+  color: var(--sd-ink-3) !important;
+}
+
+[data-rg-n="SearchableFilter"] button[data-rg-n="Button"] {
+  box-sizing: border-box !important;
+  border-width: 1px !important;
+  border-color: var(--sd-rule-strong) !important;
+  background: transparent !important;
+  font-weight: 500 !important;
+}
+
+[data-rg-n="SearchableFilter"] button[data-rg-n="Button"]:hover {
+  background: rgb(0 0 0 / 5%) !important;
+  border-color: var(--sd-ink) !important;
+}
+
+/* The result count is the page's answer to what you just typed. It sat at the
+   same size and weight as the placeholder beside it. */
+[data-rg-n="ScrollableChips"] span[class] {
+  font-size: 13px !important;
+  color: var(--sd-ink-3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Assistant, feedback and chat — quieted, not hidden
+
+   Two 478x80 panels filled in near-black with 16px white text floated over
+   the lower right and outranked everything the page is about. They become
+   hairline cards on the page's ink ladder at the size of the text around
+   them. Both still open the assistant; the close buttons still close them.
+   -------------------------------------------------------------------------- */
+/* The stack shipped 478px wide starting at x=942 — the exact left edge of the
+   catalog's third column, so it spanned a whole column of products. It cannot
+   be made to cover nothing: it is fixed to the bottom-right corner and its
+   lower edge is pinned by the launcher beneath it, while the grid runs to a
+   120px margin. Narrowing it and flushing it right moves its left edge from
+   942 to 1120, which takes the strip it clips off the first card row from
+   378px wide to 200px, and leaves the first two columns clear at every scroll
+   position. The residual is named in the report rather than papered over. */
+[data-testid="notification-container"] {
+  width: 300px !important;
+  max-width: 300px !important;
+  left: auto !important;
+  right: 0 !important;
+}
+
+[data-testid="notification-bubble"] {
+  background: #fff !important;
+  color: var(--sd-ink-body) !important;
+  border: 1px solid var(--sd-rule-strong) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%) !important;
+  padding: 9px 11px !important;
+}
+
+[data-testid="notification-bubble"] * {
+  color: var(--sd-ink-body) !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+
+/* The count duplicates what the two open panels already say, so its hue was
+   not carrying state a reader would otherwise miss — and it was the loudest
+   pixel left on the page. Shape, position and number all stay. */
+[data-testid="notification-count"] {
+  background: var(--sd-ink) !important;
+  color: #fff !important;
+}
+
+[data-testid="feedback-button"] {
+  background: #fff !important;
+  border: 1px solid var(--sd-rule) !important;
+  color: var(--sd-ink-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Colour that survived a token pass because it was written literally
+   -------------------------------------------------------------------------- */
+/* Cloudscape's link blue reaches every anchor on the page through the console
+   design system. It is almost always covered by a child span, so it shows
+   only where an anchor holds its own text — the skip link, and card wrappers
+   under a screen reader. No `!important`: any component that means to set a
+   link colour should still win. */
+a {
+  color: var(--sd-ink-body);
+}
+
+/* A promotional banner borrows --rg-color-background-notice, which is also
+   the genuine notice state. Neutralised by class so the token survives for
+   anything that actually reports something. */
+div[class*="rgng_d42c9fb9"] {
+  background-color: #f2f2f2 !important;
+}
+
+/* --------------------------------------------------------------------------
+   10b. Infrastructure map
+
+   The globe's markers are a real encoding: filled disc = region available,
+   ringed disc = coming soon. The distinction is fill and ring, never hue, so
+   taking the navy out costs nothing and the legend still reads. These are
+   declared per mode inside the map's own subtree, which is why the base ramp
+   never reached them.
+   -------------------------------------------------------------------------- */
+[data-rg-mode="light"],
+[data-rg-mode="dark"] {
+  --rg-color-inner-colors: #2b2b2b !important;
+  --rg-color-outer-colors: #2b2b2b !important;
+  --rg-color-is-not-available-inner-colors: linear-gradient(#f2f2f2, #f2f2f2) !important;
+  --rg-color-selected-is-not-available-inner-colors: linear-gradient(
+    #f2f2f2,
+    #f2f2f2
+  ) !important;
+}
+
+/* The globe is an 800x800 <canvas>, painted by script, so no token or fill rule
+   reaches it — it stayed a saturated cyan sphere through the whole token pass
+   and was the loudest thing left on the page by a wide margin. A filter is the
+   only lever CSS has on canvas pixels, and it is safe here because nothing on
+   the globe is encoded by hue: land and ocean differ in lightness, and the
+   markers are near-black discs whose available/coming-soon distinction is fill
+   versus ring. This is the one place on the page where desaturation is doing
+   the work rather than a colour decision. */
+[data-rg-n="InteractiveMap"] canvas,
+div[class*="rgim_"] canvas {
+  filter: grayscale(1) !important;
+}
+
+/* The region list's status dots, 9 of them, at #72747e. Same encoding as the
+   globe's markers — filled or ringed — so the slate is carrying nothing. */
+div[class*="rgim_0b4e2a2e"] {
+  background-color: var(--sd-ink-2) !important;
+}
+
+/* #d1d6db written literally, so no token reaches it. It is the rule between
+   "Geographic Regions" and "Edge Locations" — two peer groups, so it stays;
+   only the blue-grey goes. */
+h3[class*="rgim_2b04aff0"] {
+  border-top-color: var(--sd-rule) !important;
+}
+
+/* The map's legend: a filled disc for "Available", a ringed one for "Coming
+   soon". Shape carries it, so the navy goes and the encoding survives. */
+div[class*="rgim_f91de1d2"] {
+  background-color: var(--sd-ink-body) !important;
+  border-color: var(--sd-ink-body) !important;
+}
+
+div[class*="rgim_f91de1d2"][class*="rgim_17f62b56"] {
+  background-color: transparent !important;
+}
+
+/* Scroll indicator under the resources rail, and the assistant's toggle
+   track — both shipped as #72747e / #ccccd1 slate. */
+div[class*="rgng_8caf18eb"] {
+  background-color: rgb(0 0 0 / 28%) !important;
+}
+
+label[class*="qrsr_dff5566e"] {
+  background-color: rgb(0 0 0 / 20%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Focus and selection
+   Rigel sets its own 2px ring from --rg-color-focus-ring, retargeted above.
+   This covers the AEM layer and the floating widgets, which have none.
+   -------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--sd-ink) !important;
+  outline-offset: 2px !important;
+}
+
+::selection {
+  background: rgb(0 0 0 / 12%);
+}
+
+/* --------------------------------------------------------------------------
+   12. Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

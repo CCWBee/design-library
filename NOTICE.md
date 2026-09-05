@@ -19,7 +19,8 @@ travel with the files.
   sources in `patterns/ai-native/` are used under the MIT licence in `patterns/ai-native/LICENSE`.
 - **scandinavian-design** by Eric Zakariasson
   (https://github.com/ericzakariasson/scandinavian-design). Adapted into `minimal/principles.md` with
-  credit.
+  credit; its demo restyle themes and verification scripts are bundled verbatim in
+  `minimal/scandinavian/`.
 
 Full provenance for every part is in `sources.md`.
 
