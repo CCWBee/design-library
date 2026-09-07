@@ -38,10 +38,13 @@ searchable preview grid of every asset and an ontology coverage matrix. Details 
   exhaustive original), `recipes.md` (copy-ready CSS).
 - `minimal/`: restraint as the baseline. `principles.md` (tokens, checklist, remediation order).
 - `effects/`: live GPU and canvas material. `catalogue.md` (the map into ~120 ThreeUI effects),
-  `extracts/` (self-contained, file://-runnable localised effects), `ATTRIBUTION.md`.
+  `extracts/` (self-contained, file://-runnable localised effects, plus the library's own: a
+  tide-driven water plane, an activation field, a liquid-metal wordmark, a composed signals field, a
+  condensation pane and a toy autoencoder), `ATTRIBUTION.md`.
 - `patterns/`: `ai-native.md` (generated, streaming, agent-driven surfaces; installing Beautiful UI
-  via its shadcn registry) and `interaction-feedback.md` (the polish bar for how controls answer,
-  across the visual, spatial, haptic, and sound feedback stack).
+  via its shadcn registry), `interaction-feedback.md` (the polish bar for how controls answer,
+  across the visual, spatial, haptic, and sound feedback stack) and `live-exhibits.md` (a page that
+  demonstrates instead of describing: exhibits you can poke, projects presented without a card grid).
 - `ontology/`: the by-intent index over all of the above. `taxonomy.md` and `assets.json` map every
   asset type against the four registers; `register-rules.md` is the synthesis engine, so any asset
   can be found if it exists or generated from the philosophy if it does not. This is how the skills

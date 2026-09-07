@@ -97,3 +97,19 @@ rescued from a temporary scratchpad; only its remote backdrop photo was swapped 
 
 **Originkit** (https://www.originkit.dev): 403 animated React components, client-rendered. NOT harvested: its free tier is metered (3 component copies a day, account required) with paid Pro and Studio tiers and a usage licence, not open source, so bulk copying would breach its terms. Reference only; copy individual components by hand within the free allowance if wanted.
 **21st.dev**: a community marketplace of thousands (2,043 buttons alone); scope to be decided, not harvested.
+
+## Added 6 September 2026: the portfolio harvest
+
+**Charles's portfolio pages** (`E:\claude-projects\portfolio-live`, own work, MIT, copyright 2026 Charles Bee).
+Five self-contained pages built on 22 August 2026 during an Ox Alpha model test: a tide-driven sea hero with three
+live exhibits, and four alternative directions (`latent`, `mercury`, `signals`, `quiet`). Their mechanisms were
+lifted into the library by workflow `wf_c3c5ad18-ed0` to the spec in `docs/specs/2026-09-06-portfolio-harvest.md`,
+each file built by one agent and gated by a separate reviewer: six extracts (`tide-water`, `activation-field`,
+`liquid-metal-wordmark`, `signals-field`, `condensation-pane`, `toy-autoencoder`) and two component exemplars
+(`components/rows-list-minimal`, `components/stat-tile-minimal`). Four of the six are adaptations of ThreeUI
+extracts already here (`dot-matrix`, `liquid-metal-button`, `warp-field`, `condensation`) and carry both notices
+(`effects/ATTRIBUTION.md`). The pattern they serve is `patterns/live-exhibits.md`. The pages themselves stay in
+their project folder with a design review (`portfolio-live/docs/design-review.md`); the faults it names (false
+claims, contrast, rules under headings, em dashes, a wrong tide model) were corrected in the extracts, not in the
+pages. The tide table in `tide-water.html` is fitted to the published St Helier extremes for 6 September 2026 and
+is not an authoritative constituent set.

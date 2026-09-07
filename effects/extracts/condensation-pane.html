@@ -1,0 +1,552 @@
+<!--
+  Condensation pane
+  A minimal light page whose only living element is a small dark pane of cold glass running the
+  condensation simulation. The page around the pane is the point: cool near-white ground, generous
+  space, one headline and one paragraph in system type, light and dark tokens.
+
+  Derived from ThreeUI `condensation` by Meng To, MIT (https://github.com/MengTo/threeui);
+  adaptation copyright 2026 Charles Bee, MIT. The library's own localisation of that effect is
+  effects/extracts/condensation.html; this file keeps its mechanism and reframes it.
+
+  Kept from the condensation extract: the cached droplet sprites, the grow, run, merge and splash
+  physics, the six-second cascade that sends the largest resting drops running, the visibility
+  pause. Kept from the portfolio retune: droplet density proportional to the pane's area
+  (max(22, min(64, area / 3400)) rather than the fullscreen floor of 80), so a small pane fogs and
+  does not swarm; a lifted specular highlight so droplets read in a still frame; faint coordinates
+  read through the glass; a pointer wipe that clears the fog and leaves running drops to fall.
+  Dropped: the option object and fullscreen host, the Google fonts, the index, biography, footer and
+  accent colour of the source page, and the one-sided white top edge on the pane.
+
+  Ontology cell: surfaces / panel (shader); media-hero / hero-composition (minimal).
+
+  Gotchas for a future reader:
+  - Reduced motion seeds the pane, runs ninety warm-up steps, draws one condensed frame and never
+    starts the animation loop. The wipe still works: pointermove applies it and redraws on demand.
+  - The coordinates behind the glass are pixels, not text nodes: draw() paints them onto the canvas
+    with fillText each frame, under the droplets. They sit well under 4.5:1 on purpose, the pane is
+    aria-hidden, and nothing the page says depends on reading them.
+  - The area-density rule is the reason the pane looks right. Copying the fullscreen extract's
+    floor of 80 drops into a 360 by 480 pane produces a swarm, not condensation.
+  - Under SwiftShader the device pixel ratio is 1, so drops are at their smallest. If they look
+    thin in a headless still, lift the sprite highlight rather than the drop count.
+-->
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Condensation pane</title>
+<style>
+  /* ---- Tokens: light is the base, dark redefines the same names ---- */
+  :root {
+    color-scheme: light dark;
+
+    /* cool-biased near-white, chosen rather than default grey */
+    --canvas:   #f4f5f8;
+
+    --ink-1:    rgb(23 27 34 / 92%);   /* primary text */
+    --ink-2:    rgb(23 27 34 / 68%);   /* supporting text */
+    --ink-3:    rgb(23 27 34 / 64%);   /* metadata, about 5.0:1 on the canvas (58% falls to 4.1:1) */
+
+    --line:     rgb(23 27 34 / 10%);   /* hairline control border */
+    --fill-hover: rgb(23 27 34 / 4%);
+    --ring:     rgb(23 27 34 / 80%);   /* focus-visible ring */
+
+    /* the glass itself is dark in both worlds */
+    --glass-0:  #16202e;
+    --glass-1:  #0b1119;
+    --glass-2:  #06090f;
+    --glass-edge: rgb(255 255 255 / 6%);
+    --glass-shadow: rgb(11 17 25 / 55%);
+
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px; --s-9: 144px;
+
+    --r-md: 8px; --r-lg: 14px;
+    --edge: clamp(24px, 6vw, 88px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:   #0e0e10;
+      --ink-1:    rgb(255 255 255 / 92%);
+      --ink-2:    rgb(255 255 255 / 68%);
+      --ink-3:    rgb(255 255 255 / 58%);
+      --line:     rgb(255 255 255 / 14%);
+      --fill-hover: rgb(255 255 255 / 6%);
+      --ring:     rgb(255 255 255 / 88%);
+      --glass-edge: rgb(255 255 255 / 10%);
+      --glass-shadow: rgb(0 0 0 / 70%);
+    }
+  }
+
+  /* Explicit toggle wins in both directions */
+  :root[data-theme="dark"] {
+    --canvas:   #0e0e10;
+    --ink-1:    rgb(255 255 255 / 92%);
+    --ink-2:    rgb(255 255 255 / 68%);
+    --ink-3:    rgb(255 255 255 / 58%);
+    --line:     rgb(255 255 255 / 14%);
+    --fill-hover: rgb(255 255 255 / 6%);
+    --ring:     rgb(255 255 255 / 88%);
+    --glass-edge: rgb(255 255 255 / 10%);
+    --glass-shadow: rgb(0 0 0 / 70%);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection { background: rgb(96 139 196 / 22%); }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: var(--edge);
+  }
+
+  /* ---- Top line: name of the file and one plain control ---- */
+  .topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--s-4);
+    padding-top: var(--s-5);
+    font-size: 0.85rem;
+    color: var(--ink-3);
+  }
+
+  .toggle {
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--s-1) var(--s-3);
+    cursor: pointer;
+    transition: background 160ms ease;
+  }
+  .toggle:hover { background: var(--fill-hover); }
+  .toggle:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+  /* ---- Hero: copy and the one living element ---- */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.95fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+    padding-top: clamp(48px, 10vh, 120px);
+    padding-bottom: var(--s-9);
+  }
+
+  .hero-copy { max-width: 40ch; }
+
+  .eyebrow {
+    font-size: 0.8rem;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin: 0;
+  }
+
+  .hero h1 {
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: var(--s-4) 0 0;
+  }
+
+  .hero .lead {
+    font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 40ch;
+    margin: var(--s-5) 0 0;
+  }
+
+  /* ---- The pane ---- */
+  .pane-holder {
+    justify-self: end;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .pane {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background:
+      radial-gradient(120% 90% at 50% 26%, var(--glass-0) 0%, var(--glass-1) 62%, var(--glass-2) 100%);
+    box-shadow:
+      0 22px 48px -30px var(--glass-shadow),
+      inset 0 0 0 1px var(--glass-edge);
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* The faint figures seen through the glass are painted by the script, not laid out here. */
+  .pane canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .pane-caption {
+    margin-top: var(--s-3);
+    font-size: 0.8rem;
+    color: var(--ink-3);
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+  }
+
+  /* ---- Responsive: copy first, pane beneath, both inside a short viewport ---- */
+  @media (max-width: 820px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      padding-top: clamp(32px, 6vh, 56px);
+      padding-bottom: var(--s-8);
+      gap: var(--s-5);
+    }
+    .hero .lead { margin-top: var(--s-4); }
+    .pane-holder { justify-self: start; max-width: 260px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toggle { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap topline">
+  <span>Condensation pane</span>
+  <button class="toggle" id="themeToggle" type="button">Theme: system</button>
+</div>
+
+<main>
+  <header class="wrap hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Surfaces · panel · shader</p>
+      <h1>One cold pane on a quiet page</h1>
+      <p class="lead">Almost everything here is still. The glass fogs, droplets gather, and now and then one grows heavy enough to run. Move the pointer across it to wipe the fog away.</p>
+    </div>
+
+    <div class="pane-holder">
+      <div class="pane" id="pane" aria-hidden="true">
+        <canvas id="glass"></canvas>
+      </div>
+      <div class="pane-caption">
+        <span>Canvas 2D, a few dozen droplets.</span>
+        <span>Move the pointer to wipe.</span>
+      </div>
+    </div>
+  </header>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var pane = document.getElementById("pane");
+  var canvas = document.getElementById("glass");
+  var context = canvas.getContext("2d");
+  if (!context) return;
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var width = 1, height = 1, dpr = 1, floorY = 1;
+  var maxDrops = 40;
+  var lastCascade = 0, simulatedNow = 0, lastFrame = 0;
+  var drops = [], splashes = [];
+  var sprites = new Map();
+
+  // wipe state, in device pixels
+  var wipe = { x: -1, y: -1, active: false };
+
+  function getSprite(radius) {
+    var r = Math.max(0.5, Math.round(radius * 2) / 2);
+    var cached = sprites.get(r);
+    if (cached) return cached;
+
+    var pad = Math.ceil(2 * dpr);
+    var size = Math.ceil(r * 2 + pad * 2);
+    var s = document.createElement("canvas");
+    s.width = size; s.height = size;
+    var sc = s.getContext("2d");
+    var c = size / 2;
+    var lit = r / (4.2 * dpr);
+
+    // body: cool condensation, lifted a touch so it reads in a still frame
+    sc.fillStyle = "rgba(150,182,222," + (0.20 + lit * 0.24) + ")";
+    sc.beginPath();
+    sc.arc(c, c, r, 0, Math.PI * 2);
+    sc.fill();
+
+    sc.strokeStyle = "rgba(108,146,196," + (0.40 + lit * 0.34) + ")";
+    sc.lineWidth = 0.9 * dpr;
+    sc.stroke();
+
+    // specular highlight, brighter so the droplet is visible at rest
+    sc.fillStyle = "rgba(238,246,255," + (0.42 + lit * 0.32) + ")";
+    sc.beginPath();
+    sc.arc(c - r * 0.32, c - r * 0.36, Math.max(0.45 * dpr, r * 0.26), 0, Math.PI * 2);
+    sc.fill();
+
+    sprites.set(r, s);
+    return s;
+  }
+
+  function seedDrop(headStart) {
+    headStart = headStart || 0;
+    var m = 6 * dpr;
+    drops.push({
+      x: m + Math.random() * Math.max(1, width - m * 2),
+      y: m + Math.random() * Math.max(1, floorY - m * 2),
+      r: (0.5 + headStart * 0.7) * dpr,
+      rMax: (1.9 + Math.random() * 2.6) * dpr,
+      grow: (0.0020 + Math.random() * 0.0030) * dpr,
+      running: false,
+      vy: 0
+    });
+  }
+
+  function resize() {
+    var b = pane.getBoundingClientRect();
+    if (b.width < 2 || b.height < 2) return;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = canvas.width = Math.max(1, Math.floor(b.width * dpr));
+    height = canvas.height = Math.max(1, Math.floor(b.height * dpr));
+    canvas.style.width = b.width + "px";
+    canvas.style.height = b.height + "px";
+    floorY = Math.max(1, height - 2 * dpr);
+
+    // density proportional to area, not a fixed floor: a small pane fogs, it does not swarm
+    var area = (width * height) / (dpr * dpr);
+    maxDrops = Math.max(22, Math.min(64, Math.round(area / 3400)));
+
+    drops = []; splashes = []; sprites.clear();
+    var seed = Math.round(maxDrops * 0.85);   // seed most of the budget so the still reads as fog
+    for (var i = 0; i < seed; i += 1) seedDrop(Math.random() * 3);
+  }
+
+  function applyWipe() {
+    if (!wipe.active) return;
+    var R = 26 * dpr;
+    for (var i = drops.length - 1; i >= 0; i -= 1) {
+      var d = drops[i];
+      var dx = d.x - wipe.x, dy = d.y - wipe.y;
+      if (dx * dx + dy * dy < R * R) {
+        if (d.running) continue;      // leave running droplets to fall
+        d.r *= 0.45;
+        if (d.r < 0.7 * dpr) { drops.splice(i, 1); }
+      }
+    }
+  }
+
+  function step(now, motion) {
+    if (drops.length < maxDrops && Math.random() < 0.30 * motion) seedDrop();
+
+    // now and then the two largest resting drops grow heavy and run
+    if (now - lastCascade > 6000) {
+      lastCascade = now;
+      drops.filter(function (d) { return !d.running; })
+        .sort(function (a, b) { return b.r - a.r; })
+        .slice(0, 2)
+        .forEach(function (d) { d.running = true; d.vy = 0.32 * dpr; });
+    }
+
+    for (var i = drops.length - 1; i >= 0; i -= 1) {
+      var d = drops[i];
+      if (!d.running) {
+        d.r += d.grow * motion;
+        if (d.r >= d.rMax) { d.running = true; d.vy = 0.28 * dpr; }
+        continue;
+      }
+      d.vy = Math.min(d.vy + 0.07 * dpr * motion, 5.0 * dpr);
+      d.y += d.vy * motion;
+
+      // a running drop swallows the resting drops in its path
+      for (var j = drops.length - 1; j >= 0; j -= 1) {
+        var o = drops[j];
+        if (o === d || o.running) continue;
+        var ox = Math.abs(o.x - d.x) < d.r + o.r + 1.5 * dpr;
+        var oy = o.y > d.y - d.r && o.y < d.y + d.vy + d.r;
+        if (ox && oy) {
+          d.r = Math.sqrt(d.r * d.r + o.r * o.r);
+          drops.splice(j, 1);
+          if (j < i) i -= 1;
+        }
+      }
+      if (d.y >= floorY) {
+        splashes.push({ x: d.x, y: floorY, r0: d.r, born: now });
+        drops.splice(i, 1);
+      }
+    }
+    splashes = splashes.filter(function (s) { return now - s.born < 720; });
+  }
+
+  // Faint figures seen through the cold glass: pixels under the droplets, not text nodes.
+  // Deliberately under 4.5:1; the pane is aria-hidden and nothing depends on reading them.
+  var behindFont = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  var behindLines = [
+    { text: "51.48° N · 0.00° W", size: 13.9, colour: "rgba(176,200,232,0.30)" },
+    { text: "11 °C · Dew point 10 °C", size: 11.6, colour: "rgba(176,200,232,0.22)" }
+  ];
+
+  function drawBehind() {
+    var gap = 6 * dpr;
+    var total = 0;
+    for (var i = 0; i < behindLines.length; i += 1) total += behindLines[i].size * dpr;
+    total += gap * (behindLines.length - 1);
+    var y = height / 2 - total / 2;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    for (var k = 0; k < behindLines.length; k += 1) {
+      var line = behindLines[k];
+      var px = line.size * dpr;
+      context.font = px + "px " + behindFont;
+      if ("letterSpacing" in context) context.letterSpacing = (0.10 * px) + "px";
+      context.fillStyle = line.colour;
+      context.fillText(line.text, width / 2, y + px / 2);
+      y += px + gap;
+    }
+    if ("letterSpacing" in context) context.letterSpacing = "0px";
+  }
+
+  function draw(now) {
+    context.clearRect(0, 0, width, height);
+    drawBehind();
+    for (var i = 0; i < drops.length; i += 1) {
+      var d = drops[i];
+      var sp = getSprite(d.r);
+      context.drawImage(sp, d.x - sp.width / 2, d.y - sp.height / 2);
+    }
+    for (var k = 0; k < splashes.length; k += 1) {
+      var s = splashes[k];
+      var p = (now - s.born) / 720;
+      if (p < 0 || p > 1) continue;
+      var rr = s.r0 + p * 15 * dpr;
+      context.strokeStyle = "rgba(120,152,200," + ((1 - p) * 0.5) + ")";
+      context.lineWidth = 1.1 * dpr;
+      context.beginPath();
+      context.ellipse(s.x, s.y, rr, rr * 0.34, 0, 0, Math.PI * 2);
+      context.stroke();
+    }
+  }
+
+  function render(now) {
+    var delta = lastFrame ? Math.min(50, now - lastFrame) : 16.67;
+    lastFrame = now;
+    simulatedNow += delta;
+    applyWipe();
+    step(simulatedNow, 1);
+    draw(simulatedNow);
+  }
+
+  var frame = 0, visible = true;
+
+  function tick(now) {
+    render(now);
+    frame = visible && !document.hidden ? requestAnimationFrame(tick) : 0;
+  }
+
+  // pointer wipe, with or without the animation loop
+  function setWipeFromEvent(e) {
+    var b = pane.getBoundingClientRect();
+    wipe.x = (e.clientX - b.left) * dpr;
+    wipe.y = (e.clientY - b.top) * dpr;
+    wipe.active = true;
+  }
+  pane.addEventListener("pointermove", function (e) {
+    setWipeFromEvent(e);
+    if (reduce) { applyWipe(); draw(simulatedNow); }  // static mode: redraw on demand
+  });
+  pane.addEventListener("pointerleave", function () { wipe.active = false; });
+
+  var resizeTimer = 0;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      resize();
+      settle(reduce ? 90 : 60);
+      draw(simulatedNow);
+    }, 120);
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (reduce) return;
+    visible = !document.hidden;
+    if (visible && !frame) frame = requestAnimationFrame(tick);
+    if (!visible && frame) { cancelAnimationFrame(frame); frame = 0; }
+  });
+
+  // let the pane condense before the first frame, so it never opens as bare pinpoints
+  function settle(steps) {
+    for (var w = 0; w < steps; w += 1) step(simulatedNow += 16, 1);
+  }
+
+  resize();
+  if (reduce) {
+    settle(90);
+    draw(simulatedNow);
+  } else {
+    settle(60);
+    frame = requestAnimationFrame(tick);
+  }
+})();
+</script>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("themeToggle");
+    var order = ["system", "light", "dark"];
+    var labels = { system: "Theme: system", light: "Theme: light", dark: "Theme: dark" };
+
+    var stored = null;
+    try { stored = localStorage.getItem("condensation-pane-theme"); } catch (e) {}
+    var state = order.indexOf(stored) >= 0 ? stored : "system";
+
+    function apply() {
+      if (state === "system") { root.removeAttribute("data-theme"); }
+      else { root.setAttribute("data-theme", state); }
+      btn.textContent = labels[state];
+      try { localStorage.setItem("condensation-pane-theme", state); } catch (e) {}
+    }
+
+    btn.addEventListener("click", function () {
+      state = order[(order.indexOf(state) + 1) % order.length];
+      apply();
+    });
+
+    apply();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!--
+  Activation field
+  Derived from ThreeUI `dot-matrix` (https://github.com/MengTo/threeui) by Meng To, MIT License;
+  adaptation copyright 2026 Charles Bee, MIT.
+
+  Kept from dot-matrix: the raw-WebGL full-viewport quad, the fragment-shader dot grid (fract and
+  floor of an aspect-scaled uv, a radius that grows with a slow pulse, a vignette so the field
+  recedes at the edges) and the eased pointer target.
+  Dropped: the pointer sliding the whole grid, the uniform pulse across every dot, the fixed cyan
+  ramp on every cell.
+  Added: per-cell identity by hash so only a sparse fraction breathes with any strength; the pointer
+  as an activation site with a gaussian falloff rather than a scroll offset; an idle drift of that
+  site before the first interaction so a still, a touch device or a headless shot is never a dead
+  grid; a pool of six scripted activation sites behind `window.ActivationField.activate(x, y,
+  strength, ms)` with `x` and `y` in 0..1 of the viewport, origin top left, `strength` 0..1 and
+  `ms` the life of the site (attack, hold, decay). The call returns a function that ends the site
+  early. Two controls beneath the hero show the API firing a region.
+
+  Gotchas: the shader works in an aspect-scaled uv space (x in 0..aspect, y in 0..1, y up), so
+  every coordinate handed to a uniform goes through toField(), which scales x by the current
+  aspect and flips y. The dot radius is floored so the smoothstep never inverts when activation
+  drives brightness past 1. Device pixel ratio is capped at 1.5: the grid is a per-pixel shader and
+  a retina full-screen quad at 2x or 3x is the difference between smooth and stuttering on a
+  laptop GPU. This file commits to one dark world on purpose (light dots on a near-black ground
+  is the whole effect) and paints every colour explicitly.
+
+  Reduced motion: one idle frame is drawn and no loop runs. A scripted activation still draws one
+  frame with its site lit and one more when it expires, so the controls stay meaningful without
+  continuous motion.
+-->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Activation field</title>
+<style>
+  :root {
+    color-scheme: dark;
+
+    --ground:   #06090e;
+    --ground-2: #0a0f16;
+    --ink-1:    rgb(231 236 243 / 96%);
+    --ink-2:    rgb(231 236 243 / 72%);
+    --ink-3:    rgb(231 236 243 / 56%);
+    --line:     rgb(180 205 230 / 16%);
+    --line-2:   rgb(180 205 230 / 28%);
+    --fill-2:   rgb(180 205 230 / 11%);
+    --signal:   #6fd3ee;
+    --ring:     rgb(231 236 243 / 88%);
+
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, Menlo, monospace;
+
+    --s-1: 4px; --s-2: 8px; --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+    --r: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink-1);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--signal); color: var(--ground); }
+
+  /* The field: one fixed canvas behind the whole page, so a control further down
+     still fires in the field the reader is looking at. */
+  #field {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .page { position: relative; z-index: 1; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 56px); }
+
+  /* Hero: title at the top, headline and readout at the foot. */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(24px, 4vh, 40px) 0 clamp(40px, 8vh, 80px);
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 45% at 88% 86%, rgb(6 9 14 / 84%) 0%, rgb(6 9 14 / 0%) 70%),
+      radial-gradient(110% 80% at 18% 82%, rgb(6 9 14 / 84%) 0%, rgb(6 9 14 / 40%) 42%, rgb(6 9 14 / 0%) 72%),
+      linear-gradient(180deg, rgb(6 9 14 / 50%) 0%, rgb(6 9 14 / 0%) 28%);
+  }
+  .hero > .wrap { position: relative; width: 100%; }
+
+  .masthead {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    letter-spacing: 0.01em;
+  }
+
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--s-5);
+    flex-wrap: wrap;
+  }
+  .foot > .copy { min-width: 0; max-width: 40rem; }
+
+  h1 {
+    font-size: clamp(2.5rem, 7vw, 5.75rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    text-wrap: balance;
+    max-width: 14ch;
+  }
+  .lede {
+    margin-top: var(--s-4);
+    max-width: 38rem;
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  /* Live readout: the numbers are the field's own state, so a colour that means
+     "live" is honest here and nowhere else on the page. */
+  .readout {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.9;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .readout dt { display: inline; }
+  .readout dd { display: inline; color: var(--signal); margin-left: var(--s-2); }
+  .readout div { text-align: right; }
+  .readout[data-state="unavailable"] dd { color: var(--ink-3); }
+
+  /* API section: sits over the same field with a light tint so type holds. */
+  .api {
+    position: relative;
+    padding: clamp(64px, 10vh, 120px) 0 clamp(80px, 12vh, 140px);
+    background: linear-gradient(180deg, rgb(6 9 14 / 0%) 0%, rgb(6 9 14 / 84%) 30%, rgb(6 9 14 / 84%) 100%);
+  }
+  .section-head {
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin-bottom: var(--s-3);
+  }
+  .api p { max-width: 40rem; color: var(--ink-2); }
+  .api p + p { margin-top: var(--s-3); }
+
+  .sig {
+    display: block;
+    margin-top: var(--s-4);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--ink-1);
+    overflow-x: auto;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    margin-top: var(--s-5);
+  }
+
+  /* One control geometry: hairline outline, 8px radius, 44px tall, tabular numerals.
+     The plate is opaque in every state so the 12px coordinate label never sits on the field. */
+  .site {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--ink-1);
+    background: var(--ground-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    min-height: 44px;
+    padding: var(--s-2) var(--s-3);
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--s-3);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 160ms ease, transform 120ms ease-out;
+  }
+  .site .label { font-weight: 500; }
+  .site .coord {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .site:hover { background: linear-gradient(var(--fill-2), var(--fill-2)) var(--ground-2); border-color: var(--line-2); }
+  .site:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .site:active { transform: translateY(1px); }
+  .site.is-firing { border-color: var(--signal); }
+  .site.is-firing .coord { color: var(--signal); }
+  .site:disabled { cursor: not-allowed; color: var(--ink-3); background: var(--ground-2); }
+
+  .note {
+    margin-top: var(--s-4);
+    font-size: 0.85rem;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 720px) {
+    .foot { flex-direction: column; align-items: flex-start; }
+    .readout div { text-align: left; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="field" aria-hidden="true"></canvas>
+
+<div class="page">
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="masthead">Activation field</p>
+    </div>
+    <div class="wrap">
+      <div class="foot">
+        <div class="copy">
+          <h1>Sparse features, lit where you point.</h1>
+          <p class="lede">Every dot is one feature with its own slow breath. Only a few breathe with any strength. The pointer is an activation site, and any element on the page can fire a region of its own through a small script call.</p>
+        </div>
+        <dl class="readout" id="readout" data-state="idle" aria-live="off">
+          <div><dt>field</dt><dd id="r-state">idle</dd></div>
+          <div><dt>sites</dt><dd id="r-sites">0</dd></div>
+          <div><dt>activation</dt><dd id="r-act">0.00</dd></div>
+          <div><dt>pointer</dt><dd id="r-xy">0.64, 0.42</dd></div>
+        </dl>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="api" aria-labelledby="api-head">
+      <div class="wrap">
+        <h2 class="section-head" id="api-head">Script API</h2>
+        <p>Call <code>ActivationField.activate(x, y, strength, ms)</code> with <code>x</code> and <code>y</code> in 0..1 of the viewport, origin top left, to light a region for a moment. Strength runs 0..1 and the site lives for <code>ms</code> milliseconds with a short attack and a long decay. The call returns a function that ends the site early. Up to six sites run at once; a seventh replaces the weakest.</p>
+        <code class="sig" id="sig">ActivationField.activate(0.82, 0.24, 1, 2400)</code>
+        <div class="controls">
+          <button class="site" type="button" data-x="0.82" data-y="0.24">
+            <span class="label">Feature 0421</span>
+            <span class="coord">0.82, 0.24</span>
+          </button>
+          <button class="site" type="button" data-x="0.30" data-y="0.70">
+            <span class="label">Feature 1180</span>
+            <span class="coord">0.30, 0.70</span>
+          </button>
+        </div>
+        <p class="note">Hover or focus a control to fire its region for 1400 ms; press to hold it for longer. Both go through the same call, and the readout above counts the sites as they live and expire.</p>
+      </div>
+    </section>
+  </main>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var MAX_SITES = 6;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var canvas = document.getElementById("field");
+  var readout = document.getElementById("readout");
+  var rState = document.getElementById("r-state");
+  var rSites = document.getElementById("r-sites");
+  var rAct = document.getElementById("r-act");
+  var rXY = document.getElementById("r-xy");
+
+  /* The API exists whether or not WebGL does, so callers never need to guard. */
+  var api = {
+    available: false,
+    activate: function () { return function () {}; }
+  };
+  window.ActivationField = api;
+
+  function unavailable() {
+    readout.setAttribute("data-state", "unavailable");
+    rState.textContent = "unavailable";
+    rSites.textContent = "0";
+    rAct.textContent = "0.00";
+    rXY.textContent = "0.00, 0.00";
+    wireControls();
+  }
+
+  var gl = canvas.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false }) ||
+           canvas.getContext("experimental-webgl", { antialias: true, alpha: true });
+  if (!gl) { unavailable(); return; }
+
+  var VERT = [
+    "attribute vec2 position;",
+    "void main() { gl_Position = vec4(position, 0.0, 1.0); }"
+  ].join("\n");
+
+  /* A grid of features. Each cell has an identity (hash) and a slow sparse breath.
+     Activation sites brighten cells near them: the pointer (or its idle drift) and up to
+     six scripted sites. Brightness grows the dot and warms its colour toward white. */
+  var FRAG = [
+    "precision highp float;",
+    "#define SITES " + MAX_SITES,
+    "uniform float uTime;",
+    "uniform vec2  uResolution;",
+    "uniform vec2  uPointer;",
+    "uniform float uPointerAct;",
+    "uniform vec2  uSites[SITES];",
+    "uniform float uSiteAct[SITES];",
+    "uniform float uGrid;",
+    "uniform float uOpacity;",
+    "float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }",
+    "void main() {",
+    "  vec2 uv = gl_FragCoord.xy / uResolution.xy;",
+    "  float aspect = uResolution.x / uResolution.y;",
+    "  uv.x *= aspect;",
+    "  vec2 cell = uv * uGrid;",
+    "  vec2 grid = fract(cell);",
+    "  vec2 id = floor(cell);",
+    "  float d = length(grid - 0.5);",
+    "  float rnd = hash(id);",
+    "  float phase = rnd * 6.2831853;",
+    "  float breath = sin(uTime * 0.55 + phase) * 0.5 + 0.5;",
+    "  float sparse = smoothstep(0.55, 1.0, rnd);",
+    "  float base = 0.08 + breath * (0.06 + sparse * 0.40);",
+    "  vec2 cc = (id + 0.5) / uGrid;",
+    "  float dp = length(cc - uPointer);",
+    "  float act = exp(-dp * dp * 26.0) * uPointerAct;",
+    "  for (int i = 0; i < SITES; i++) {",
+    "    float ds = length(cc - uSites[i]);",
+    "    act += exp(-ds * ds * 40.0) * uSiteAct[i];",
+    "  }",
+    "  float bright = base + act * (0.85 + breath * 0.4);",
+    "  float radius = clamp(0.07 + bright * 0.30, 0.075, 0.46);",
+    "  float dot = smoothstep(radius, radius - 0.055, d);",
+    "  vec2 centre = vec2(0.5 * aspect, 0.5);",
+    "  float vign = smoothstep(1.35, 0.15, length(uv - centre));",
+    "  vec3 cool = vec3(0.32, 0.60, 0.78);",
+    "  vec3 hot  = vec3(0.60, 0.88, 1.0);",
+    "  vec3 col = mix(cool, hot, clamp(act * 1.3, 0.0, 1.0));",
+    "  float a = dot * clamp(base * 2.2 + act, 0.0, 1.0) * vign * uOpacity;",
+    "  gl_FragColor = vec4(col, a);",
+    "}"
+  ].join("\n");
+
+  function compile(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+
+  var program;
+  try {
+    program = gl.createProgram();
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+  } catch (e) {
+    unavailable();
+    return;
+  }
+  gl.useProgram(program);
+
+  var quad = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+  var posLoc = gl.getAttribLocation(program, "position");
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  var U = {};
+  ["uTime", "uResolution", "uPointer", "uPointerAct", "uSites", "uSiteAct", "uGrid", "uOpacity"]
+    .forEach(function (n) { U[n] = gl.getUniformLocation(program, n); });
+
+  var aspect = 1;
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    var w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    aspect = canvas.width / canvas.height;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(U.uResolution, canvas.width, canvas.height);
+  }
+  resize();
+  gl.uniform1f(U.uGrid, 52.0);
+  gl.uniform1f(U.uOpacity, 0.75);
+
+  /* Page space (x right, y down, both 0..1) to shader space (x in 0..aspect, y up). */
+  function toField(nx, ny) { return { x: nx * aspect, y: 1 - ny }; }
+
+  /* ---- pointer site ---- */
+  var idle = { x: 0.64, y: 0.42 };
+  var pointer = { x: idle.x, y: idle.y };
+  var target = { x: idle.x, y: idle.y };
+  var pointerAct = 0.9, pointerActTarget = 0.9;
+  var interacted = false;
+
+  function onPointer(e) {
+    target.x = e.clientX / Math.max(1, window.innerWidth);
+    target.y = e.clientY / Math.max(1, window.innerHeight);
+    pointerActTarget = 1.0;
+    interacted = true;
+  }
+  window.addEventListener("pointermove", onPointer, { passive: true });
+  window.addEventListener("pointerdown", onPointer, { passive: true });
+
+  /* ---- scripted sites ---- */
+  var sites = [];
+  var siteXY = new Float32Array(MAX_SITES * 2);
+  var siteAct = new Float32Array(MAX_SITES);
+
+  function envelope(site, now) {
+    var t = now - site.start;
+    if (t < 0) return 0;
+    if (site.released) {
+      var r = (now - site.released) / 320;
+      return r >= 1 ? 0 : site.levelAtRelease * (1 - r * r);
+    }
+    var attack = Math.min(1, t / 140);
+    attack = attack * attack * (3 - 2 * attack);
+    var fallStart = site.ms * 0.55;
+    var fall = t <= fallStart ? 1 : 1 - Math.min(1, (t - fallStart) / (site.ms - fallStart));
+    return site.strength * attack * fall * fall;
+  }
+
+  function pruneSites(now) {
+    for (var i = sites.length - 1; i >= 0; i -= 1) {
+      var s = sites[i];
+      var dead = s.released ? now - s.released >= 320 : now - s.start >= s.ms;
+      if (dead) sites.splice(i, 1);
+    }
+  }
+
+  function activate(x, y, strength, ms) {
+    x = Math.min(1, Math.max(0, +x || 0));
+    y = Math.min(1, Math.max(0, +y || 0));
+    strength = strength == null ? 1 : Math.min(1, Math.max(0, +strength || 0));
+    ms = ms == null ? 1200 : Math.max(50, +ms || 1200);
+    var now = performance.now();
+    pruneSites(now);
+    if (sites.length >= MAX_SITES) {
+      var weakest = 0, level = Infinity;
+      for (var i = 0; i < sites.length; i += 1) {
+        var l = envelope(sites[i], now);
+        if (l < level) { level = l; weakest = i; }
+      }
+      sites.splice(weakest, 1);
+    }
+    var site = { x: x, y: y, strength: strength, ms: ms, start: now, released: 0, levelAtRelease: 0 };
+    sites.push(site);
+    var release = function () {
+      if (site.released) return;
+      var t = performance.now();
+      site.levelAtRelease = envelope(site, t);
+      site.released = t;
+      if (reduce) scheduleStill(340);
+    };
+    if (reduce) {
+      drawStill(now);
+      scheduleStill(ms + 20);
+    }
+    return release;
+  }
+  api.available = true;
+  api.activate = activate;
+
+  /* ---- frame ---- */
+  var startedAt = performance.now();
+
+  function draw(now) {
+    if (!interacted) {
+      var t = (now - startedAt) * 0.0004;
+      target.x = idle.x + Math.cos(t) * 0.10;
+      target.y = idle.y - Math.sin(t * 0.8) * 0.07;
+    }
+    pointer.x += (target.x - pointer.x) * 0.06;
+    pointer.y += (target.y - pointer.y) * 0.06;
+    pointerAct += (pointerActTarget - pointerAct) * 0.08;
+
+    pruneSites(now);
+    var total = pointerAct;
+    for (var i = 0; i < MAX_SITES; i += 1) {
+      var s = sites[i];
+      if (s) {
+        var f = toField(s.x, s.y);
+        siteXY[i * 2] = f.x; siteXY[i * 2 + 1] = f.y;
+        siteAct[i] = envelope(s, now);
+        total += siteAct[i];
+      } else {
+        siteXY[i * 2] = -10; siteXY[i * 2 + 1] = -10;
+        siteAct[i] = 0;
+      }
+    }
+
+    var p = toField(pointer.x, pointer.y);
+    gl.uniform1f(U.uTime, (now - startedAt) * 0.001);
+    gl.uniform2f(U.uPointer, p.x, p.y);
+    gl.uniform1f(U.uPointerAct, pointerAct);
+    gl.uniform2fv(U.uSites, siteXY);
+    gl.uniform1fv(U.uSiteAct, siteAct);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    var live = sites.length;
+    rState.textContent = reduce ? "still" : (live ? "firing" : (interacted ? "active" : "idle"));
+    readout.setAttribute("data-state", live ? "firing" : "idle");
+    rSites.textContent = String(live);
+    rAct.textContent = total.toFixed(2);
+    rXY.textContent = pointer.x.toFixed(2) + ", " + pointer.y.toFixed(2);
+  }
+
+  /* Reduced motion: no loop. drawStill paints one frame with the eased values snapped. */
+  var stillTimer = 0;
+  function drawStill(now) {
+    pointer.x = target.x; pointer.y = target.y; pointerAct = pointerActTarget;
+    draw(now);
+    /* draw() nudges the pointer toward its target; snap it back so a still is a still. */
+    pointer.x = target.x; pointer.y = target.y;
+  }
+  function scheduleStill(ms) {
+    clearTimeout(stillTimer);
+    stillTimer = setTimeout(function () { drawStill(performance.now()); }, ms);
+  }
+
+  var frame = 0, visible = !document.hidden;
+  function tick(now) {
+    draw(now);
+    frame = visible ? requestAnimationFrame(tick) : 0;
+  }
+
+  window.addEventListener("resize", function () {
+    resize();
+    if (reduce) drawStill(performance.now());
+  });
+  document.addEventListener("visibilitychange", function () {
+    visible = !document.hidden;
+    if (reduce) return;
+    if (visible && !frame) frame = requestAnimationFrame(tick);
+    if (!visible && frame) { cancelAnimationFrame(frame); frame = 0; }
+  });
+
+  if (reduce) {
+    interacted = true; /* no drift: the idle site stays put */
+    drawStill(performance.now());
+    window.addEventListener("pointermove", function () { drawStill(performance.now()); }, { passive: true });
+  } else {
+    frame = requestAnimationFrame(tick);
+  }
+
+  wireControls();
+
+  /* ---- the two sample controls ---- */
+  function wireControls() {
+    var sig = document.getElementById("sig");
+    var buttons = document.querySelectorAll(".site");
+    Array.prototype.forEach.call(buttons, function (btn) {
+      var x = parseFloat(btn.dataset.x), y = parseFloat(btn.dataset.y);
+      var hoverRelease = null, holdTimer = 0;
+
+      function show(strength, ms) {
+        sig.textContent = "ActivationField.activate(" + x.toFixed(2) + ", " + y.toFixed(2) + ", " + strength + ", " + ms + ")";
+      }
+      function enter() {
+        if (hoverRelease) return;
+        show(0.7, 1400);
+        hoverRelease = window.ActivationField.activate(x, y, 0.7, 1400);
+      }
+      function leave() {
+        if (hoverRelease) { hoverRelease(); hoverRelease = null; }
+      }
+      function press() {
+        show(1, 3000);
+        window.ActivationField.activate(x, y, 1, 3000);
+        btn.classList.add("is-firing");
+        clearTimeout(holdTimer);
+        holdTimer = setTimeout(function () { btn.classList.remove("is-firing"); }, 3000);
+      }
+
+      btn.addEventListener("pointerenter", enter);
+      btn.addEventListener("pointerleave", leave);
+      btn.addEventListener("focus", enter);
+      btn.addEventListener("blur", leave);
+      btn.addEventListener("click", press);
+    });
+  }
+})();
+</script>
+</body>
+</html>

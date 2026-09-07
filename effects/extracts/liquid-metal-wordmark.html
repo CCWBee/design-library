@@ -1,0 +1,734 @@
+<!--
+  Liquid metal wordmark
+  Derived from ThreeUI liquid-metal-button (https://github.com/MengTo/threeui) by Meng To, MIT License;
+  adaptation copyright 2026 Charles Bee, MIT. The house extract of the button is
+  liquid-metal-button.html beside this file; this page applies its dispersion shader to a word.
+
+  Kept from the button: the metal field (a family of parallel prismatic ribbons, one valley curve
+  repeated at a density that varies along x), the plateau sampled once per wavelength so every edge
+  fringes warm below and cool above, the pointer well that displaces the sample point so the sheet
+  bulges around the cursor, the faceted press ripple, the half-resolution softening blur that turns
+  the ribbons molten, the quarter-resolution bloom, and the power curve that restores contrast after
+  the blur.
+
+  Changed: the pill signed-distance mask is replaced by a text mask. The word is painted white on
+  an offscreen 2D canvas in a system serif and uploaded as a texture; the scene shader reads its red
+  channel as coverage and returns transparent outside the letters, so the blur and bloom only ever
+  see light that started inside a glyph. The letters carry a vertical silver body (a dark reflected
+  sky above, bright ground below) with the prismatic ribbon riding across it as a wavy horizon, and
+  the composite draws a crisp chrome rim from the gradient of the mask itself, with a highlight that
+  travels across the letters so the metal keeps reflowing at rest. A slow phantom pointer wanders
+  while nobody is touching the page and stops for good at the first real pointer.
+
+  Dropped: the button's travelling-rim pass, drop-shadow plate and occlusion, the label scrim, the
+  self-refraction lookup and the gradient-aligned filaments (see the gotcha), the hover gate that
+  let the metal go dark (the wordmark is always at least 88 per cent lit), and Google Fonts.
+
+  The word comes from data-text on the canvas (default "Liquid metal"). It is set on one line when
+  the host is wider than 1.25 to 1, otherwise split at its middle space onto two lines; the font
+  size is fitted by measurement so the widest line stays inside the host.
+
+  Gotcha, NaN in the blur chain. Two terms in the button shader produce NaN on some GPUs and the
+  softening blur then smears that NaN into solid black across the whole wordmark: atan(0, 0) at the
+  centre of a ripple, and the dFdx self-refraction of the field, whose derivative is undefined where
+  the mask cuts the field off at a letter edge. The self-refraction and its filaments were removed
+  rather than guarded. The ripple keeps a length floor, an offset inside atan and a clamp on the
+  exponent, and the scene output passes a finite check (a value outside plus or minus 1e30 becomes
+  0) before it is written. The dFdx that remains reads the mask coverage, which is bounded 0..1, and
+  is safe. Any change to this file must be re-tested on a discrete GPU, not only under SwiftShader,
+  which does not reproduce every GPU's handling of non-finite values.
+
+  This file commits to a dark world on purpose: the bloom adds light, and light needs a dark ground
+  to read as metal. Every colour is painted explicitly. Reduced motion freezes the clock, parks the
+  phantom pointer and draws one lit frame; a click, tap or Enter still throws a ripple.
+-->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liquid metal wordmark</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #08090c;
+    --ink: #eef0f5;
+    --ink-dim: rgba(238, 240, 245, 0.66);
+    --ink-faint: rgba(238, 240, 245, 0.58);
+    --focus: rgba(126, 166, 255, 0.92);
+    --pad: clamp(20px, 5vw, 64px);
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: Georgia, "Times New Roman", Times, serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .stage {
+    position: fixed;
+    inset: 0;
+    /* a soft ambient pool so the bloom has something to fall on */
+    background:
+      radial-gradient(60vmax 44vmax at 50% 44%, #12141a 0%, #0a0b0f 40%, #06070a 72%, var(--bg) 100%)
+      var(--bg);
+  }
+  .stage canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: manipulation;
+    outline: none;
+  }
+  .stage canvas:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: -4px;
+  }
+  /* styled silver fallback, shown only when WebGL2 is unavailable */
+  .fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 var(--pad);
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(48px, 13vw, 190px);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    background: linear-gradient(100deg, #c8ccd6, #ffffff 30%, #a7adba 55%, #eef1f6 80%, #c8ccd6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  body.nogl .fallback { display: flex; }
+  body.nogl canvas { display: none; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* one caption in system type, below the wordmark, legible in the still */
+  .caption {
+    position: fixed;
+    left: var(--pad);
+    right: var(--pad);
+    bottom: clamp(24px, 5vh, 52px);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-dim);
+    pointer-events: none;
+    user-select: none;
+  }
+  .caption b { font-weight: 500; color: var(--ink); }
+  .caption .state {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  @media (max-width: 560px) {
+    .caption { flex-direction: column; align-items: flex-start; gap: 6px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="fx" data-text="Liquid metal" tabindex="0" role="button"></canvas>
+  <div class="fallback" id="fallback" aria-hidden="true"></div>
+</div>
+<h1 class="sr-only" id="word"></h1>
+<p class="caption">
+  <span><b id="captionWord">Liquid metal</b> over live type. The pointer drags the sheet; a click or Enter throws a ripple.</span>
+  <span class="state" id="state">webgl2</span>
+</p>
+
+<script>
+(function () {
+"use strict";
+
+/* The word, once, for the mask, the fallback and the heading. */
+var cv = document.getElementById('fx');
+var TEXT = (cv.dataset.text || 'Liquid metal').trim() || 'Liquid metal';
+document.getElementById('fallback').textContent = TEXT;
+document.getElementById('word').textContent = TEXT;
+document.getElementById('captionWord').textContent = TEXT;
+cv.setAttribute('aria-label', TEXT + ' wordmark. Press Enter to throw a ripple.');
+var stateEl = document.getElementById('state');
+
+var gl = cv.getContext('webgl2', { alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: 'high-performance' });
+if (!gl) {
+  document.body.classList.add('nogl');
+  stateEl.textContent = 'css fallback';
+  var cap = document.querySelector('.caption span');
+  if (cap) {
+    cap.textContent = '';
+    var capB = document.createElement('b'); capB.textContent = TEXT;
+    cap.appendChild(capB);
+    cap.appendChild(document.createTextNode(' shown as a static chrome wordmark: this browser has no WebGL2.'));
+  }
+  return;
+}
+
+/* ---------------------------------------------------------------
+   Shaders. Field units: origin at the wordmark centre, +y down,
+   one unit is about the cap height (uS device pixels).
+   --------------------------------------------------------------- */
+var VERT = '#version 300 es\n' +
+  'in vec2 position; void main(){ gl_Position = vec4(position, 0., 1.); }';
+
+var HEAD = '#version 300 es\n' +
+'precision highp float;\n' +
+'out vec4 o;\n' +
+'uniform vec2  uC;        // wordmark centre, device px, y up\n' +
+'uniform float uS;        // field scale, device px\n' +
+'uniform float uT;        // seconds\n' +
+'uniform float uHover;    // 0..1 lift, never gates the metal off\n' +
+'uniform vec4  uRip[3];   // xy centre (field units, y down), z start, w live\n' +
+'uniform vec4  uRipK;     // speed, ring width, decay, amplitude\n' +
+'uniform vec4  uPtr;      // xy trailing cursor (field units), z strength, w speed\n' +
+'uniform vec4  uPtrK;     // radius, base amplitude, speed amplitude, unused\n' +
+'#define PI 3.14159265\n' +
+'\n' +
+'// Faceted expanding ring from each press. Guarded against NaN: a length floor,\n' +
+'// an offset inside atan and a clamp on the exponent keep every term finite,\n' +
+'// because one NaN here is smeared into solid black by the softening blur.\n' +
+'float ripple(vec2 p, float t){\n' +
+'  float sum = 0.;\n' +
+'  for(int i = 0; i < 3; i++){\n' +
+'    if(uRip[i].w < 0.5) continue;\n' +
+'    float age = t - uRip[i].z;\n' +
+'    if(age < 0. || age > 4.) continue;\n' +
+'    vec2 rp = p - uRip[i].xy;\n' +
+'    float rl = length(rp) + 1e-4;\n' +
+'    float ang = atan(rp.y, rp.x + 1e-4);\n' +
+'    float facet = 1. + 0.18 * cos(6. * ang + age * 2.1 + float(i) * 2.4);\n' +
+'    float x = clamp((rl - age * uRipK.x * facet) / max(uRipK.y, 1e-3), -40.0, 40.0);\n' +
+'    sum += exp(-pow(abs(x) + 1e-3, 1.15)) * exp(-age * uRipK.z);\n' +
+'  }\n' +
+'  return sum;\n' +
+'}\n' +
+'// finite scrub: NaN and Inf both fail the range test and become 0\n' +
+'float fin(float v){ return (v > -1e30 && v < 1e30) ? v : 0.0; }\n' +
+'vec3  fin3(vec3 v){ return vec3(fin(v.x), fin(v.y), fin(v.z)); }\n' +
+'// a soft well under the cursor; it trails the pointer and swells with speed\n' +
+'float pointerW(vec2 p){\n' +
+'  if(uPtr.z < 0.001) return 0.;\n' +
+'  float d = length(p - uPtr.xy) / uPtrK.x;\n' +
+'  return exp(-d * d) * uPtr.z;\n' +
+'}\n' +
+'// displacing the sample point, not the value, is what reads as liquid\n' +
+'vec2 pointerWarp(vec2 p){\n' +
+'  float w = pointerW(p);\n' +
+'  if(w <= 0.) return vec2(0.);\n' +
+'  return normalize(p - uPtr.xy + vec2(1e-5)) * w * (uPtrK.y + uPtrK.z * uPtr.w);\n' +
+'}\n';
+
+var FRAG_SCENE = HEAD +
+'uniform sampler2D uMask;\n' +
+'uniform vec2  uRes;\n' +
+'uniform float uP[21];\n' +
+'\n' +
+'float h21(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }\n' +
+'float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);\n' +
+'  float a = h21(i), b = h21(i + vec2(1, 0)), c = h21(i + vec2(0, 1)), d = h21(i + vec2(1, 1));\n' +
+'  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y) * 2. - 1.; }\n' +
+'float fbm(vec2 p, float g){ float s = 0., a = 1., n = 0.; for(int i = 0; i < 4; i++){ s += a * vn(p); n += a; p = p * 2.03 + 11.7; a *= g; } return s / n; }\n' +
+'// smooth one-dimensional wiggle that drifts slowly with time\n' +
+'float wig(float x, float t, float seed){\n' +
+'  return vn(vec2(x, t * 0.15 + seed)) * 0.6 + vn(vec2(x * 2.07 + 4., t * 0.105 + seed)) * 0.27 + vn(vec2(x * 4.30 - 7., t * 0.08 + seed)) * 0.13;\n' +
+'}\n' +
+'// The field is a family of parallel curves: one valley repeated up the\n' +
+'// letters, V = (y - valley(x)) * density(x). Level sets are translates of the\n' +
+'// same curve, so the ribbons stay laminar; the varying density crowds them\n' +
+'// into fine fringes at one end and opens them into a wash at the other.\n' +
+'float valleyAt(vec2 p, float t){ return wig(p.x * uP[0], t, 0.0) * uP[1]; }\n' +
+'float densAt  (vec2 p, float t){ return uP[2] * exp(uP[3] * wig(p.x * uP[4] + 9.0, t, 2.7)); }\n' +
+'float surface(vec2 p, float t){\n' +
+'  float V = (p.y - valleyAt(p, t)) * densAt(p, t);\n' +
+'  V += uP[5] * fbm(p * vec2(0.8, 1.7) * uP[6] + vec2(t * 0.05, -t * 0.03), uP[17]);\n' +
+'  return V - uP[7];\n' +
+'}\n' +
+'// one soft plateau per unit of V: warm turns on at the low edge, cool at the high\n' +
+'float tone(float v){ float u = fract(v); float e = uP[9], W = uP[10] * 0.5;\n' +
+'  return smoothstep(0.5 - W - e, 0.5 - W, u) * (1. - smoothstep(0.5 + W, 0.5 + W + e, u)); }\n' +
+'vec3 spec(float t){ return clamp(vec3(1.5) - abs(4. * t - vec3(3., 2., 1.)), 0., 1.); }\n' +
+'\n' +
+'void main(){\n' +
+'  vec2 uv = gl_FragCoord.xy / uRes;\n' +
+'  float cov = texture(uMask, uv).r;\n' +
+'  if(cov <= 0.002){ o = vec4(0.); return; }\n' +
+'\n' +
+'  vec2 d = gl_FragCoord.xy - uC;\n' +
+'  vec2 p = vec2(d.x, -d.y) / uS;\n' +
+'  vec2 q = p + pointerWarp(p);\n' +
+'\n' +
+'  float V = surface(q, uT);\n' +
+'  float rip  = ripple(p, uT);\n' +
+'  float well = pointerW(p);\n' +
+'  V += rip * uRipK.w;\n' +
+'\n' +
+'  // dispersion is not linear in wavelength: the blue end bends more (Cauchy),\n' +
+'  // so the sample offsets are skewed the same way\n' +
+'  const int N = 21;\n' +
+'  float mid = 1. - pow(0.5, uP[12]);\n' +
+'  vec3 col = vec3(0.), wsum = vec3(0.);\n' +
+'  for(int i = 0; i < N; i++){\n' +
+'    float k = float(i) / float(N - 1);\n' +
+'    vec3 w = spec(k);\n' +
+'    col  += w * tone(V + ((1. - pow(1. - k, uP[12])) - mid) * uP[11]);\n' +
+'    wsum += w;\n' +
+'  }\n' +
+'  col /= wsum;\n' +
+'  col = pow(col, vec3(uP[15]));\n' +
+'\n' +
+'  // Chrome body. Every part of a letter needs a tone to read as poured metal,\n' +
+'  // so the glyph carries a vertical silver gradient (dark reflected sky above,\n' +
+'  // bright ground below) and the prismatic ribbon rides on top as a wavy\n' +
+'  // horizon that tilts and drifts with the valley curve.\n' +
+'  float vg  = smoothstep(-0.85, 0.95, q.y - valleyAt(q, uT) * 0.5);\n' +
+'  vec3 sky  = vec3(0.16, 0.19, 0.27);\n' +
+'  vec3 grnd = vec3(0.76, 0.80, 0.88);\n' +
+'  vec3 base = mix(sky, grnd, vg);\n' +
+'  base += vec3(0.95, 0.97, 1.0) * uP[19] * smoothstep(0.32, 0.5, vg) * (1. - smoothstep(0.5, 0.7, vg));\n' +
+'\n' +
+'  vec3 metal = base + col * uP[16];\n' +
+'  metal *= (1. + rip * 0.9 + well * 0.5);\n' +
+'  metal *= (0.88 + 0.12 * uHover);\n' +
+'\n' +
+'  // final scrub before the blur chain\n' +
+'  metal = clamp(fin3(metal), vec3(0.0), vec3(12.0));\n' +
+'  o = vec4(metal * cov, cov);\n' +
+'}';
+
+/* Half-resolution box down. Taps sit a quarter of a destination texel out so
+   a 2x reduction lands on the four source texel centres. */
+var FRAG_DOWN = '#version 300 es\n' +
+'precision highp float;\n' +
+'out vec4 o;\n' +
+'uniform sampler2D uTex;\n' +
+'uniform vec2 uDstTexel;\n' +
+'void main(){\n' +
+'  vec2 uv = gl_FragCoord.xy * uDstTexel;\n' +
+'  vec2 e = uDstTexel * 0.25;\n' +
+'  vec4 s = texture(uTex, uv + vec2(-e.x, -e.y)) + texture(uTex, uv + vec2(e.x, -e.y))\n' +
+'         + texture(uTex, uv + vec2(-e.x,  e.y)) + texture(uTex, uv + vec2(e.x,  e.y));\n' +
+'  o = s * 0.25;\n' +
+'}';
+
+var FRAG_BLUR = '#version 300 es\n' +
+'precision highp float;\n' +
+'out vec4 o;\n' +
+'uniform sampler2D uTex; uniform vec2 uTexel; uniform vec2 uDir; uniform float uR;\n' +
+'void main(){\n' +
+'  vec2 uv = gl_FragCoord.xy * uTexel;\n' +
+'  vec2 st = uTexel * uDir * uR;\n' +
+'  vec4 s = texture(uTex, uv) * 0.1964;\n' +
+'  s += (texture(uTex, uv + st * 1.4118) + texture(uTex, uv - st * 1.4118)) * 0.2969;\n' +
+'  s += (texture(uTex, uv + st * 3.2941) + texture(uTex, uv - st * 3.2941)) * 0.0944;\n' +
+'  s += (texture(uTex, uv + st * 5.1765) + texture(uTex, uv - st * 5.1765)) * 0.0104;\n' +
+'  o = s;\n' +
+'}';
+
+var FRAG_COMP = HEAD +
+'uniform sampler2D uSoft, uGlow, uMask;\n' +
+'uniform vec2  uRes;\n' +
+'uniform float uGlowGain, uPunch, uEdge;\n' +
+'void main(){\n' +
+'  vec2 uv = gl_FragCoord.xy / uRes;\n' +
+'  vec4 m = texture(uSoft, uv);\n' +
+'  float cov = texture(uMask, uv).r;\n' +
+'\n' +
+'  // normalised blur, then a power curve to put the contrast back after it\n' +
+'  vec3 metal = pow(max(m.rgb / max(m.a, 1e-3), 0.), vec3(uPunch)) * cov;\n' +
+'\n' +
+'  // crisp chrome rim from the mask gradient (cov is bounded, so dFdx is safe),\n' +
+'  // with a highlight travelling across the letters\n' +
+'  float g = length(vec2(dFdx(cov), dFdy(cov)));\n' +
+'  float edgeBand = cov * (1. - cov);\n' +
+'  float glint = 0.55 + 0.45 * sin((uv.x * 2.4 + uv.y * 1.1) * 6.2831 - uT * 0.9);\n' +
+'  float rim = clamp(g * uRes.y * 0.9, 0., 1.) * (0.35 + 0.65 * edgeBand * 4.);\n' +
+'  vec3 edgeCol = mix(vec3(0.82, 0.86, 0.95), vec3(1.05, 1.02, 0.98), glint);\n' +
+'  vec3 core = metal + edgeCol * rim * uEdge * (0.5 + 0.5 * glint);\n' +
+'\n' +
+'  vec3 glow = texture(uGlow, uv).rgb;\n' +
+'  vec3 rgb = core + glow * uGlowGain;\n' +
+'\n' +
+'  // premultiplied: the ambient pool is CSS beneath, this layer adds light on top\n' +
+'  float a = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0., 1.);\n' +
+'  o = vec4(min(rgb, vec3(1.6)), a);\n' +
+'}';
+
+function sh(type, src) {
+  var s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) + '\n' + src);
+  return s;
+}
+function prog(fs) {
+  var p = gl.createProgram();
+  gl.attachShader(p, sh(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+  gl.bindAttribLocation(p, 0, 'position');
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  var u = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (var i = 0; i < n; i++) {
+    var info = gl.getActiveUniform(p, i);
+    u[info.name.replace('[0]', '')] = gl.getUniformLocation(p, info.name);
+  }
+  return { p: p, u: u };
+}
+var pScene = prog(FRAG_SCENE), pDown = prog(FRAG_DOWN), pBlur = prog(FRAG_BLUR), pComp = prog(FRAG_COMP);
+
+var vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+var vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+var hasFloat = !!gl.getExtension('EXT_color_buffer_half_float');
+function makeTarget() {
+  var tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  var fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  return { tex: tex, fbo: fbo, w: 0, h: 0 };
+}
+function sizeTarget(t, w, h) {
+  if (t.w === w && t.h === h) return;
+  t.w = w; t.h = h;
+  gl.bindTexture(gl.TEXTURE_2D, t.tex);
+  if (hasFloat) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+  else          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+}
+var T_core = makeTarget(), T_s1 = makeTarget(), T_s2 = makeTarget(), T_a = makeTarget(), T_b = makeTarget();
+
+/* ---------------------------------------------------------------
+   Text mask: the word painted white on an offscreen 2D canvas in a
+   system serif, fitted by measurement, uploaded as the coverage texture.
+   --------------------------------------------------------------- */
+var maskCv = document.createElement('canvas');
+var mctx = maskCv.getContext('2d');
+var maskTex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, maskTex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+var MASK_FONT = 'Georgia, "Times New Roman", Times, serif';
+var W = 0, H = 0, DPR = 1, CXpx = 0, CYpx = 0, FieldS = 120;
+
+/* Split at the space nearest the middle of the string; a single word stays whole. */
+function splitLines(text) {
+  var mid = text.length / 2, best = -1, bestDist = Infinity;
+  for (var i = 0; i < text.length; i++) {
+    if (text.charAt(i) !== ' ') continue;
+    var dist = Math.abs(i - mid);
+    if (dist < bestDist) { bestDist = dist; best = i; }
+  }
+  if (best < 0) return [text];
+  return [text.slice(0, best).trim(), text.slice(best + 1).trim()].filter(function (s) { return s.length; });
+}
+
+function paintMask() {
+  if (!W || !H) return;
+  maskCv.width = W; maskCv.height = H;
+  mctx.clearRect(0, 0, W, H);
+  mctx.fillStyle = '#fff';
+  mctx.textAlign = 'center';
+  mctx.textBaseline = 'middle';
+  if ('letterSpacing' in mctx) mctx.letterSpacing = '-0.01em';
+  var oneLine = W / H > 1.25;
+  var lines = oneLine ? [TEXT] : splitLines(TEXT);
+  var cy = H * 0.455;
+  // shrink from a start size until the widest line fits, re-measuring each step
+  var fit = function (words, startFrac, maxFrac) {
+    var fs = Math.floor(H * startFrac), maxW = W * maxFrac, guard = 0;
+    var widest = function () {
+      mctx.font = '700 ' + fs + 'px ' + MASK_FONT;
+      return Math.max.apply(null, words.map(function (t) { return mctx.measureText(t).width; }));
+    };
+    while (widest() > maxW && fs > 8 && guard++ < 80) fs = Math.floor(fs * 0.94);
+    return fs;
+  };
+  var fs = lines.length === 1 ? fit(lines, 0.30, 0.84) : fit(lines, 0.17, 0.78);
+  mctx.font = '700 ' + fs + 'px ' + MASK_FONT;
+  if (lines.length === 1) {
+    mctx.fillText(lines[0], W / 2, cy);
+  } else {
+    var gap = fs * 1.02;
+    mctx.fillText(lines[0], W / 2, cy - gap * 0.5);
+    mctx.fillText(lines[1], W / 2, cy + gap * 0.5);
+  }
+  FieldS = fs * 0.60;
+  CXpx = W / 2; CYpx = H - cy;
+  gl.bindTexture(gl.TEXTURE_2D, maskTex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCv);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+}
+
+var needResize = true;
+function resize() {
+  var r = cv.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var w = Math.max(2, Math.round(r.width * DPR));
+  var h = Math.max(2, Math.round(r.height * DPR));
+  if (w !== W || h !== H) { W = w; H = h; cv.width = W; cv.height = H; }
+  sizeTarget(T_core, W, H);
+  var hw = Math.max(2, Math.ceil(W / 2)), hh = Math.max(2, Math.ceil(H / 2));
+  sizeTarget(T_s1, hw, hh); sizeTarget(T_s2, hw, hh);
+  var DOWN = 4, dw = Math.max(2, Math.ceil(W / DOWN)), dh = Math.max(2, Math.ceil(H / DOWN));
+  sizeTarget(T_a, dw, dh); sizeTarget(T_b, dw, dh);
+  paintMask();
+  needResize = false;
+  drawn = null;
+}
+new ResizeObserver(function () { needResize = true; }).observe(cv);
+window.addEventListener('resize', function () { needResize = true; });
+
+function drawTo(t) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, t ? t.fbo : null);
+  gl.viewport(0, 0, t ? t.w : W, t ? t.h : H);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+/* ---------------------------------------------------------------
+   Tunables. Distances in field units (about one cap height), seconds.
+   --------------------------------------------------------------- */
+var P = {
+  valFreq: 0.55,  // 0  x frequency of the valley curve
+  valAmp:  0.36,  // 1  valley depth
+  dens:    1.5,   // 2  bands per field unit (up from the button, for thin strokes)
+  densVar: 1.1,   // 3  density swing along x, exponential
+  densFreq: 0.34, // 4  x frequency of the density variation
+  wobAmp:  0.10,  // 5  organic two-dimensional wobble
+  wobFreq: 1.3,   // 6  its frequency
+  lift:    0.05,  // 7  phase offset of the band family
+  refract: 0.14,  // 8  unused here; the self-refraction path was removed
+  edge:    0.06,  // 9  softness of the plateau edges
+  width:   0.40,  // 10 plateau width, fraction of a band period
+  disp:    0.46,  // 11 spectral dispersion, band periods
+  skew:    1.5,   // 12 dispersion skew, above 1 spreads the blue end
+  fineAmp: 0.0,   // 13 unused here
+  fineFreq: 9.0,  // 14 unused here
+  gamma:   1.0,   // 15 tone gamma
+  gain:    0.85,  // 16 fringe gain over the silver body
+  octGain: 0.32,  // 17 fbm octave gain, low keeps the wobble big
+  litLo:   0.30,  // 18 unused here
+  litHi:   0.55,  // 19 hot chrome band strength under the horizon
+  dim:     0.44   // 20 unused here
+};
+var PKEYS = Object.keys(P);
+var uArr = new Float32Array(PKEYS.length);
+var R = { speed: 1.9, width: 0.22, decay: 1.35, amp: 1.2, ptrRad: 0.9, ptrAmp: 0.30, ptrFast: 0.42, ptrLag: 0.0016, ptrVref: 5.0 };
+var C = { glow: 0.65, glowR: 1.2, soften: 0.09, punch: 1.08, edge: 0.95 };
+
+var RIP = [0, 1, 2].map(function () { return { x: 0, y: 0, t: -99, on: 0 }; });
+var ripArr = new Float32Array(12), ripNext = 0;
+var ptr = { x: 0, y: 0 }, ptrS = { x: 0, y: 0 }, ptrAmt = 0, ptrSpeed = 0;
+var hover = 0, hoverTarget = 0, clock = 0, last = performance.now();
+var engaged = false, focused = false, drawn = null;
+var calm = matchMedia('(prefers-reduced-motion: reduce)');
+
+function addRipple(x, y) {
+  /* A ripple is motion. Under reduced motion the clock is frozen, so a ripple
+     stamped with r.t = clock would never age past the expiry check and would
+     stick lit for ever; suppress it entirely instead, which also honours the
+     setting. */
+  if (calm.matches) return;
+  var r = RIP[ripNext]; ripNext = (ripNext + 1) % 3;
+  r.x = x; r.y = y; r.t = clock; r.on = 1;
+  drawn = null;
+}
+function localPt(e) {
+  var b = cv.getBoundingClientRect(), s = FieldS / DPR;
+  return [(e.clientX - (b.left + b.width / 2)) / s, (e.clientY - (b.top + b.height / 2)) / s];
+}
+
+/* Phantom pointer: the metal reflows gently with nobody touching it. Parked
+   under reduced motion, stopped for good at the first real pointer. */
+var auto = {
+  running: true, timer: 0,
+  stop: function () { if (!this.running) return; this.running = false; clearTimeout(this.timer); }
+};
+(function wander() {
+  if (!auto.running) return;
+  if (calm.matches) { ptr.x = 0; ptr.y = 0; auto.timer = setTimeout(wander, 1200); return; }
+  var ar = W && H ? W / H : 3;
+  ptr.x = (Math.random() * 2 - 1) * ar * 0.42;
+  ptr.y = (Math.random() * 2 - 1) * 0.5;
+  if (Math.random() < 0.28) addRipple(ptr.x, ptr.y);
+  auto.timer = setTimeout(wander, 2200 + Math.random() * 2200);
+})();
+
+function frame(now) {
+  var dt = Math.min((now - last) / 1000, 1 / 20); last = now;
+  if (!calm.matches) clock += dt;
+
+  hoverTarget = (engaged || focused || auto.running) ? 1 : 0;
+  hover += (hoverTarget - hover) * (1 - Math.pow(0.001, dt));
+  if (Math.abs(hoverTarget - hover) < 0.0008) hover = hoverTarget;
+
+  var ripLive = false;
+  for (var i = 0; i < 3; i++) {
+    var r = RIP[i];
+    if (r.on && clock - r.t > 4) r.on = 0;
+    if (r.on) ripLive = true;
+    ripArr[i * 4] = r.x; ripArr[i * 4 + 1] = r.y; ripArr[i * 4 + 2] = r.t; ripArr[i * 4 + 3] = r.on;
+  }
+
+  var lag = 1 - Math.pow(R.ptrLag, dt);
+  var dx = (ptr.x - ptrS.x) * lag, dy = (ptr.y - ptrS.y) * lag;
+  ptrS.x += dx; ptrS.y += dy;
+  var inst = Math.min(Math.hypot(dx, dy) / Math.max(dt, 1e-3) / R.ptrVref, 1);
+  ptrSpeed += (inst - ptrSpeed) * (1 - Math.pow(inst > ptrSpeed ? 0.001 : 0.02, dt));
+  var wantWell = (engaged || auto.running) ? 1 : 0;
+  ptrAmt += (wantWell - ptrAmt) * (1 - Math.pow(0.004, dt));
+  if (Math.abs(wantWell - ptrAmt) < 0.002) ptrAmt = wantWell;
+
+  if (needResize) resize();
+
+  // Under reduced motion with nothing in flight the frame is static: draw it
+  // once and skip until something changes.
+  var sig = (calm.matches && !ripLive) ? [hover, ptrAmt, ptrS.x, ptrS.y, W, H].join('|') : null;
+  if (sig !== null && sig === drawn) { requestAnimationFrame(frame); return; }
+  drawn = sig;
+
+  for (var k = 0; k < uArr.length; k++) uArr[k] = P[PKEYS[k]];
+  gl.disable(gl.BLEND);
+
+  // 1. metal, masked to the word
+  gl.useProgram(pScene.p);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, maskTex);
+  gl.uniform1i(pScene.u.uMask, 0);
+  gl.uniform2f(pScene.u.uRes, W, H);
+  gl.uniform2f(pScene.u.uC, CXpx, CYpx);
+  gl.uniform1f(pScene.u.uS, FieldS);
+  gl.uniform1f(pScene.u.uT, clock);
+  gl.uniform1f(pScene.u.uHover, hover);
+  gl.uniform4fv(pScene.u.uRip, ripArr);
+  gl.uniform4f(pScene.u.uRipK, R.speed, R.width, R.decay, R.amp);
+  gl.uniform4f(pScene.u.uPtr, ptrS.x, ptrS.y, ptrAmt, ptrSpeed);
+  gl.uniform4f(pScene.u.uPtrK, R.ptrRad, R.ptrAmp, R.ptrFast, 0);
+  gl.uniform1fv(pScene.u.uP, uArr);
+  drawTo(T_core);
+
+  // 2. soften: half resolution, then a separable gaussian split into passes
+  gl.useProgram(pDown.p);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, T_core.tex);
+  gl.uniform1i(pDown.u.uTex, 0);
+  gl.uniform2f(pDown.u.uDstTexel, 1 / T_s1.w, 1 / T_s1.h);
+  drawTo(T_s1);
+
+  gl.useProgram(pBlur.p);
+  gl.uniform1i(pBlur.u.uTex, 0);
+  gl.uniform2f(pBlur.u.uTexel, 1 / T_s1.w, 1 / T_s1.h);
+  var sigTex = C.soften * FieldS * 0.5;
+  if (sigTex > 0.1) {
+    var iters = Math.min(4, Math.max(1, Math.ceil(sigTex / 3.0)));
+    gl.uniform1f(pBlur.u.uR, sigTex / Math.sqrt(iters) / 1.95);
+    for (var j = 0; j < iters; j++) {
+      gl.bindTexture(gl.TEXTURE_2D, T_s1.tex); gl.uniform2f(pBlur.u.uDir, 1, 0); drawTo(T_s2);
+      gl.bindTexture(gl.TEXTURE_2D, T_s2.tex); gl.uniform2f(pBlur.u.uDir, 0, 1); drawTo(T_s1);
+    }
+  }
+
+  // 3. bloom at quarter resolution
+  gl.useProgram(pDown.p);
+  gl.bindTexture(gl.TEXTURE_2D, T_s1.tex);
+  gl.uniform2f(pDown.u.uDstTexel, 1 / T_a.w, 1 / T_a.h);
+  drawTo(T_a);
+  gl.useProgram(pBlur.p);
+  gl.uniform1i(pBlur.u.uTex, 0);
+  gl.uniform2f(pBlur.u.uTexel, 1 / T_a.w, 1 / T_a.h);
+  var radii = [1.0, 2.4, 5.0, 8.5];
+  for (var m = 0; m < radii.length; m++) {
+    gl.uniform1f(pBlur.u.uR, radii[m] * C.glowR);
+    gl.bindTexture(gl.TEXTURE_2D, T_a.tex); gl.uniform2f(pBlur.u.uDir, 1, 0); drawTo(T_b);
+    gl.bindTexture(gl.TEXTURE_2D, T_b.tex); gl.uniform2f(pBlur.u.uDir, 0, 1); drawTo(T_a);
+  }
+
+  // 4. composite to the screen
+  gl.useProgram(pComp.p);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, T_s1.tex);  gl.uniform1i(pComp.u.uSoft, 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, T_a.tex);   gl.uniform1i(pComp.u.uGlow, 1);
+  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, maskTex);   gl.uniform1i(pComp.u.uMask, 2);
+  gl.uniform2f(pComp.u.uRes, W, H);
+  gl.uniform2f(pComp.u.uC, CXpx, CYpx);
+  gl.uniform1f(pComp.u.uS, FieldS);
+  gl.uniform1f(pComp.u.uT, clock);
+  gl.uniform4fv(pComp.u.uRip, ripArr);
+  gl.uniform4f(pComp.u.uRipK, R.speed, R.width, R.decay, R.amp);
+  gl.uniform1f(pComp.u.uGlowGain, C.glow);
+  gl.uniform1f(pComp.u.uPunch, C.punch);
+  gl.uniform1f(pComp.u.uEdge, C.edge);
+  drawTo(null);
+
+  requestAnimationFrame(frame);
+}
+
+/* ---------------------------------------------------------------
+   Interaction: mouse drags the sheet, click or tap throws a ripple,
+   keyboard focus lights the metal and Enter or Space ripples from the centre.
+   --------------------------------------------------------------- */
+cv.addEventListener('pointerenter', function (e) {
+  if (e.pointerType !== 'mouse') return;
+  auto.stop();
+  var pt = localPt(e); ptr.x = pt[0]; ptr.y = pt[1];
+  ptrS.x = ptr.x; ptrS.y = ptr.y; ptrSpeed = 0; engaged = true;
+});
+cv.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') engaged = false; });
+window.addEventListener('pointermove', function (e) {
+  if (!engaged) return;
+  var pt = localPt(e); ptr.x = pt[0]; ptr.y = pt[1];
+}, { passive: true });
+cv.addEventListener('pointerdown', function (e) {
+  auto.stop();
+  var pt = localPt(e); ptr.x = pt[0]; ptr.y = pt[1];
+  engaged = true;
+  addRipple(ptr.x, ptr.y);
+});
+window.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') engaged = false; });
+window.addEventListener('pointercancel', function () { engaged = false; });
+cv.addEventListener('focus', function () { focused = cv.matches(':focus-visible'); drawn = null; });
+cv.addEventListener('blur', function () { focused = false; drawn = null; });
+cv.addEventListener('keydown', function (e) {
+  if ((e.key !== 'Enter' && e.key !== ' ') || e.repeat) return;
+  e.preventDefault();
+  auto.stop();
+  addRipple(0, 0);
+});
+calm.addEventListener('change', function () { drawn = null; });
+
+resize();
+stateEl.textContent = hasFloat ? 'webgl2 · rgba16f' : 'webgl2 · rgba8';
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -70,3 +70,19 @@ drop everything the MIT licence does not cover or that breaks offline use:
 
 If an extract is ever published or shipped, keep its header comment intact; MIT requires the
 copyright and permission notice to travel with the code.
+
+## The library's own extracts (MIT, Charles Bee)
+
+Added 6 September 2026 from the portfolio pages in `E:\claude-projects\portfolio-live` (see
+`../sources.md`, "the portfolio harvest"). Original work, copyright 2026 Charles Bee, under the
+repository's MIT licence (`../LICENSE`): `tide-water.html`, `toy-autoencoder.html`,
+`components/rows-list-minimal.html`, `components/stat-tile-minimal.html`.
+
+Four more are adaptations of ThreeUI extracts already in this folder, so they carry both the ThreeUI
+notice above and the adaptation copyright, and each header names what it kept from the original:
+`activation-field.html` (from `dot-matrix.html`), `liquid-metal-wordmark.html` (from
+`liquid-metal-button.html`), `signals-field.html` (from `warp-field.html`, and it loads the vendored
+`three.min.js`), `condensation-pane.html` (from `condensation.html`).
+
+None of these carries fonts, remote media or a network request; each uses a system font stack and
+runs from disk.

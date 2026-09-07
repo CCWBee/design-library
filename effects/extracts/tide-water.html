@@ -1,0 +1,423 @@
+<!--
+  Tide water (full-viewport WebGL water whose swell follows the tide)
+  Original work, copyright 2026 Charles Bee, MIT License.
+
+  Kept: a height field of seven directional sines (four swell layers plus three high-frequency chop
+  terms); normals by finite difference across the whole height field; diffuse plus a tight specular
+  and a tighter glint; pointer ripples as ring uniforms with age decay; a swell uniform in 0..1;
+  a client-side harmonic tide module for St Helier with a readout of height, rising or falling,
+  next low and next high.
+  Dropped: the portfolio's fonts, copy, chrome and exhibits; the unused normalised phase helper;
+  the pulsing status dot on the readout.
+
+  Driving the swell. By default the swell comes from the tide model: the predicted height above
+  chart datum is mapped from 3.5..10 m onto 0..1. Set data-swell="0.7" (any 0..1 value) on the
+  canvas to override it with other live data; the attribute is observed, so writing it at any time
+  takes effect on the next frame. Remove the attribute to return to the tide.
+
+  Gotchas.
+  The normals must be finite-differenced across the full height field, chop and ripples included.
+  Normals from the low-frequency layers alone render as fog patches, not water.
+  The tide model sums ten constituents (M2, S2, N2, K2, L2, K1, O1, Q1, P1, MSf) with their
+  equilibrium arguments (Meeus fundamentals, Doodson arguments) and Schureman nodal factors. Its
+  amplitude and phase table is fitted, not published: amplitudes from the known St Helier spring and
+  neap ranges, phases fitted to the published extremes for 6 September 2026, within about 20 minutes
+  and 0.35 m on that day, and drifting over the spring-neap cycle. Replace the table from an
+  authoritative source before calling it the real tide. Not for navigation. The harness that derived
+  this table (the astronomy plus a grid search against the published extremes) is kept at
+  ../../docs/tide-water-fit.mjs; run it with node to re-fit against a fresh set of published times. The portfolio page this
+  came from summed constituents without the equilibrium argument and with an unsourced table, and
+  ran about two hours late against the published tables.
+  The first frame is drawn synchronously before the animation loop starts, so a screenshot taken
+  at load and the reduced-motion still both show water.
+  This file commits to one dark world on purpose and paints every colour explicitly: there is no
+  light palette because the surface is the sea at night.
+-->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tide water</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --stage:   #0b0f13;
+    --stage-lift: #142029;
+    --ink-1:   rgb(240 238 230 / 94%);
+    --ink-2:   rgb(240 238 230 / 72%);
+    --ink-3:   rgb(240 238 230 / 60%);
+    --ring:    rgb(240 238 230 / 90%);
+    --s-2: 8px; --s-3: 16px; --s-4: 24px; --s-6: 48px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--stage) radial-gradient(ellipse at 50% 20%, var(--stage-lift) 0%, var(--stage) 70%) no-repeat;
+    color: var(--ink-1);
+    overflow: hidden;
+  }
+  .sea {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .headline {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 0 var(--s-4);
+    text-align: center;
+    pointer-events: none;
+  }
+  .headline h1 {
+    font-size: clamp(34px, 7vw, 92px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+    max-width: 14ch;
+    text-wrap: balance;
+    text-shadow: 0 2px 28px rgb(11 15 19 / 80%);
+  }
+  .headline p {
+    margin-top: var(--s-3);
+    font-size: 15px;
+    color: var(--ink-2);
+    max-width: 44ch;
+    text-shadow: 0 1px 16px rgb(11 15 19 / 90%);
+  }
+  .readout {
+    position: fixed;
+    left: clamp(16px, 4vw, 40px);
+    bottom: clamp(16px, 4vh, 36px);
+    max-width: calc(100vw - 2 * clamp(16px, 4vw, 40px));
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    user-select: none;
+  }
+  .readout b { font-weight: 500; color: var(--ink-1); }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    .sea { cursor: default; }
+  }
+</style>
+</head>
+<body>
+<canvas class="sea" id="sea" aria-hidden="true"></canvas>
+<div class="headline">
+  <div>
+    <h1>A surface that follows the sea</h1>
+    <p>The swell behind this line is scaled by a harmonic tide model for St Helier, computed on this page and refreshed each minute.</p>
+  </div>
+</div>
+<div class="readout">
+  St Helier tide <b id="tide-height">…</b> m, <b id="tide-dir">…</b><br>
+  next low <b id="tide-low">…</b>, next high <b id="tide-high">…</b><br>
+  fitted model, approximate, not for navigation
+</div>
+<script>
+(function () {
+  "use strict";
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* Tide: St Helier harmonic prediction, client-side.
+     height = MSL + sum of f * A * cos(V + u - g). V is the equilibrium argument built from the
+     moon's and sun's mean longitudes (Meeus fundamentals, Doodson arguments), f and u are the
+     Schureman nodal corrections, g is the Greenwich phase lag in degrees, all times UT.
+     The table is fitted, not published: amplitudes from the known St Helier spring and neap
+     ranges, phases fitted to the published extremes for 6 September 2026 (within about 20 minutes
+     and 0.35 m on that day). It drifts over the spring-neap cycle. Replace it from an authoritative
+     source before calling the result the real tide. Not for navigation. */
+  var TIDE = (function () {
+    var D2R = Math.PI / 180;
+    function norm(x) { return ((x % 360) + 360) % 360; }
+
+    /* name, amplitude (m), Greenwich phase lag (deg) */
+    var TABLE = [
+      ["M2", 3.43, 186], ["S2", 1.38, 236], ["N2", 0.70, 161], ["K2", 0.39, 236], ["L2", 0.10, 211],
+      ["K1", 0.07, 90], ["O1", 0.20, 20], ["Q1", 0.06, 350], ["P1", 0.02, 90], ["MSf", 0.05, 0]
+    ];
+    var MSL = 6.1; /* mean sea level above chart datum, m */
+
+    /* Fundamental arguments, T in Julian centuries from J2000.0 (2000-01-01 12:00 UT) */
+    function args(ms) {
+      var T = (ms / 86400000 - 10957.5) / 36525;
+      var s = norm(218.3164477 + 481267.88123421 * T); /* moon mean longitude */
+      var h = norm(280.46646 + 36000.76983 * T);       /* sun mean longitude */
+      var p = norm(83.3532465 + 4069.0137287 * T);     /* lunar perigee */
+      var N = norm(125.0445479 - 1934.1362891 * T);    /* lunar node */
+      var theta = norm(15 * ((ms % 86400000) / 3600000)); /* hour angle of the mean sun */
+      return { s: s, h: h, p: p, N: N * D2R, theta: theta, tau: norm(theta - s + h) };
+    }
+
+    /* Nodal factors f and phase corrections u (degrees), Schureman */
+    function fM(N) { return 1.0004 - 0.0373 * Math.cos(N) + 0.0002 * Math.cos(2 * N); }
+    function uM(N) { return -2.14 * Math.sin(N); }
+    function fK2(N) { return 1.0241 + 0.2863 * Math.cos(N) + 0.0083 * Math.cos(2 * N); }
+    function uK2(N) { return -17.74 * Math.sin(N) + 0.68 * Math.sin(2 * N); }
+    function fK1(N) { return 1.0060 + 0.1150 * Math.cos(N) - 0.0088 * Math.cos(2 * N); }
+    function uK1(N) { return -8.86 * Math.sin(N) + 0.68 * Math.sin(2 * N); }
+    function fO1(N) { return 1.0089 + 0.1871 * Math.cos(N) - 0.0147 * Math.cos(2 * N); }
+    function uO1(N) { return 10.80 * Math.sin(N) - 1.34 * Math.sin(2 * N); }
+
+    /* Equilibrium argument V plus [f, u] per constituent */
+    var ARG = {
+      M2:  function (a) { return [2 * a.tau, fM(a.N), uM(a.N)]; },
+      S2:  function (a) { return [2 * a.theta, 1, 0]; },
+      N2:  function (a) { return [2 * a.tau - a.s + a.p, fM(a.N), uM(a.N)]; },
+      K2:  function (a) { return [2 * a.theta + 2 * a.h, fK2(a.N), uK2(a.N)]; },
+      L2:  function (a) { return [2 * a.tau + a.s - a.p + 180, fM(a.N), uM(a.N)]; },
+      K1:  function (a) { return [a.theta + a.h + 90, fK1(a.N), uK1(a.N)]; },
+      O1:  function (a) { return [a.tau - a.s - 90, fO1(a.N), uO1(a.N)]; },
+      Q1:  function (a) { return [a.tau - 2 * a.s + a.p - 90, fO1(a.N), uO1(a.N)]; },
+      P1:  function (a) { return [a.theta - a.h - 90, 1, 0]; },
+      MSf: function (a) { return [2 * a.s - 2 * a.h, 1, 0]; }
+    };
+
+    function heightAt(ms) {
+      var a = args(ms);
+      var h = MSL;
+      for (var i = 0; i < TABLE.length; i += 1) {
+        var c = TABLE[i];
+        var r = ARG[c[0]](a);
+        h += r[1] * c[1] * Math.cos((r[0] + r[2] - c[2]) * D2R);
+      }
+      return h;
+    }
+
+    function nextExtremes(nowMs) {
+      var step = 60000; /* one-minute grid over the next 27 hours */
+      var prev = heightAt(nowMs - step), cur = heightAt(nowMs);
+      var nextHigh = null, nextLow = null;
+      for (var t = nowMs + step; t <= nowMs + 27 * 3600000; t += step) {
+        var next = heightAt(t);
+        if (!nextHigh && cur > prev && cur > next) nextHigh = t - step;
+        if (!nextLow && cur < prev && cur < next) nextLow = t - step;
+        if (nextHigh && nextLow) break;
+        prev = cur; cur = next;
+      }
+      return { nextHigh: nextHigh, nextLow: nextLow };
+    }
+
+    function fmtTime(ms) {
+      return new Date(ms).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    var elHeight = document.getElementById("tide-height");
+    var elDir = document.getElementById("tide-dir");
+    var elLow = document.getElementById("tide-low");
+    var elHigh = document.getElementById("tide-high");
+
+    function update() {
+      var now = Date.now();
+      var h = heightAt(now);
+      var ext = nextExtremes(now);
+      elHeight.textContent = h.toFixed(2);
+      elDir.textContent = heightAt(now + 600000) >= h ? "rising" : "falling";
+      elLow.textContent = ext.nextLow ? fmtTime(ext.nextLow) : "…";
+      elHigh.textContent = ext.nextHigh ? fmtTime(ext.nextHigh) : "…";
+    }
+    update();
+    setInterval(update, 60000);
+
+    /* 0..1 across the typical St Helier range, 3.5 m to 10 m above chart datum */
+    function swell() {
+      var n = (heightAt(Date.now()) - 3.5) / 6.5;
+      return Math.max(0, Math.min(1, n));
+    }
+    return { heightAt: heightAt, swell: swell };
+  })();
+
+  /* Water: a WebGL plane, ripples from the pointer, swell from the tide or data-swell. */
+  var canvas = document.getElementById("sea");
+  var gl = canvas.getContext("webgl", { antialias: true });
+  if (!gl) return; /* the body gradient stands in and the readout still runs */
+
+  var VERT = [
+    "attribute vec2 a_pos;",
+    "varying vec2 v_uv;",
+    "void main(){ v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos, 0.0, 1.0); }"
+  ].join("\n");
+
+  var FRAG = [
+    "precision highp float;",
+    "varying vec2 v_uv;",
+    "uniform vec2 u_res;",
+    "uniform float u_time;",
+    "uniform float u_swell;",
+    "uniform vec3 u_ripples[12];",
+    "uniform int u_nripples;",
+    "",
+    "float base(vec2 p, float t){",
+    "  float h = 0.0;",
+    "  h += sin(dot(p, normalize(vec2(1.0, 0.25))) * 6.0 + t * 1.1) * 0.030;",
+    "  h += sin(dot(p, normalize(vec2(0.7, 0.5))) * 11.0 + t * 1.6) * 0.016;",
+    "  h += sin(dot(p, normalize(vec2(-0.3, 0.8))) * 18.0 + t * 2.2) * 0.009;",
+    "  h += sin(dot(p, normalize(vec2(1.0, -0.4))) * 27.0 + t * 2.9 + 3.1) * 0.005;",
+    "  h += sin(dot(p, normalize(vec2(0.9, 0.15))) * 55.0 - t * 3.4) * 0.004;",
+    "  h += sin(dot(p, normalize(vec2(-0.6, 0.7))) * 90.0 + t * 4.2) * 0.0022;",
+    "  h += sin(dot(p, normalize(vec2(0.2, 1.0))) * 140.0 - t * 5.0) * 0.0013;",
+    "  return h * (0.45 + 0.55 * u_swell);",
+    "}",
+    "",
+    "float height(vec2 p, float t){",
+    "  float h = base(p, t);",
+    "  for(int i = 0; i < 12; i++){",
+    "    if(i >= u_nripples) break;",
+    "    vec3 r = u_ripples[i];",
+    "    float age = t - r.z;",
+    "    if(age < 0.0 || age > 4.0) continue;",
+    "    vec2 rp = r.xy; rp.x *= u_res.x / u_res.y;",
+    "    float d = length(p - rp);",
+    "    float radius = age * 0.35;",
+    "    float band = exp(-pow((d - radius) * 22.0, 2.0));",
+    "    float decay = exp(-age * 1.1);",
+    "    h += sin((d - radius) * 60.0) * band * decay * 0.035;",
+    "  }",
+    "  return h;",
+    "}",
+    "",
+    "void main(){",
+    "  vec2 uv = v_uv;",
+    "  vec2 p = uv; p.x *= u_res.x / u_res.y;",
+    "  float t = u_time;",
+    "  float e = 0.0025;",
+    "  float hx = height(p + vec2(e, 0.0), t) - height(p - vec2(e, 0.0), t);",
+    "  float hy = height(p + vec2(0.0, e), t) - height(p - vec2(0.0, e), t);",
+    "  vec3 n = normalize(vec3(-hx * 260.0, 1.0, -hy * 260.0));",
+    "  vec3 lightDir = normalize(vec3(0.35, 0.75, 0.55));",
+    "  float diff = max(dot(n, lightDir), 0.0);",
+    "  vec3 halfV = normalize(lightDir + vec3(0.0, 0.0, 1.0));",
+    "  float spec = pow(max(dot(n, halfV), 0.0), 240.0);",
+    "  float glint = pow(max(dot(n, halfV), 0.0), 900.0);",
+    "  vec3 deep  = vec3(0.040, 0.066, 0.086);",
+    "  vec3 mid   = vec3(0.105, 0.155, 0.190);",
+    "  vec3 crest = vec3(0.86, 0.88, 0.86);",
+    "  vec3 warm  = vec3(1.0, 0.62, 0.30);",
+    "  vec3 col = mix(deep, mid, clamp(diff * 1.5, 0.0, 1.0));",
+    "  col += crest * spec * 0.35;",
+    "  col += warm * spec * 0.55;",
+    "  col += warm * glint * 1.4;",
+    "  float vig = smoothstep(0.0, 0.45, uv.y);",
+    "  col = mix(col * 0.6, col, vig);",
+    "  gl_FragColor = vec4(col, 1.0);",
+    "}"
+  ].join("\n");
+
+  function compile(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  var prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  var loc = gl.getAttribLocation(prog, "a_pos");
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  var uRes = gl.getUniformLocation(prog, "u_res");
+  var uTime = gl.getUniformLocation(prog, "u_time");
+  var uSwell = gl.getUniformLocation(prog, "u_swell");
+  var uRipples = gl.getUniformLocation(prog, "u_ripples");
+  var uNRipples = gl.getUniformLocation(prog, "u_nripples");
+
+  var MAX_RIPPLES = 12;
+  var rippleData = new Float32Array(MAX_RIPPLES * 3);
+  var ripples = [];
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+    var h = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w; canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+
+  /* data-swell on the canvas overrides the tide with any 0..1 value */
+  function swellNow() {
+    var raw = canvas.getAttribute("data-swell");
+    if (raw !== null) {
+      var v = parseFloat(raw);
+      if (isFinite(v)) return Math.max(0, Math.min(1, v));
+    }
+    return TIDE.swell();
+  }
+
+  var lastRipple = 0;
+  function addRipple(x, y) {
+    var now = performance.now() / 1000;
+    if (now - lastRipple < 0.04) return;
+    lastRipple = now;
+    var rect = canvas.getBoundingClientRect();
+    ripples.push([(x - rect.left) / rect.width, 1 - (y - rect.top) / rect.height, now]);
+    if (ripples.length > MAX_RIPPLES) ripples.shift();
+  }
+
+  function draw(seconds) {
+    resize();
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, seconds);
+    gl.uniform1f(uSwell, swellNow());
+    rippleData.fill(0);
+    ripples = ripples.filter(function (r) { return seconds - r[2] < 4; });
+    for (var i = 0; i < ripples.length; i += 1) {
+      rippleData[i * 3] = ripples[i][0];
+      rippleData[i * 3 + 1] = ripples[i][1];
+      rippleData[i * 3 + 2] = ripples[i][2];
+    }
+    gl.uniform3fv(uRipples, rippleData);
+    gl.uniform1i(uNRipples, ripples.length);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  var frame = 0;
+  function tick(nowMs) {
+    draw(nowMs / 1000);
+    frame = document.hidden ? 0 : requestAnimationFrame(tick);
+  }
+
+  if (reduced) {
+    /* One static frame; redrawn only when the viewport or the swell changes. */
+    var STILL = 12.7;
+    var still = function () { draw(STILL); };
+    still();
+    window.addEventListener("resize", still);
+    new MutationObserver(still).observe(canvas, { attributes: true, attributeFilter: ["data-swell"] });
+    return;
+  }
+
+  canvas.addEventListener("pointermove", function (e) { addRipple(e.clientX, e.clientY); });
+  canvas.addEventListener("pointerdown", function (e) {
+    addRipple(e.clientX, e.clientY);
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && frame) { cancelAnimationFrame(frame); frame = 0; }
+    if (!document.hidden && !frame) frame = requestAnimationFrame(tick);
+  });
+
+  draw(performance.now() / 1000); /* first paint before the loop, so a still at load shows water */
+  frame = requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

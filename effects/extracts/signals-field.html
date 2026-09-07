@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<!--
+  Signals Field. A composed preset of the warp field: streaks approach from the edge of the
+  viewport, never cross the centre, and fade from head to tail. The pointer leans the whole field
+  a little toward the cursor.
+
+  Derived from ThreeUI `warp-field` (https://github.com/MengTo/threeui) by Meng To, MIT License;
+  adaptation copyright 2026 Charles Bee, MIT. Three.js r149 (MIT) vendored as three.min.js beside
+  this file. No fonts, no network, no analytics; runs from disk over file://.
+
+  Kept from warp-field: the line-segment streaks with per-vertex colour, additive blending, the
+  exponential fog, the perspective camera at the origin and the recycle-at-the-camera loop.
+  Changed: the drifting debris tiles are removed; speed is 2.2 rather than 15; streaks are a
+  desaturated slate-white with a rare warm one (about one in twelve); each streak fades from its
+  head to its tail; a minimum spawn radius of 150 keeps the centre dark; the pointer eases the
+  group's rotation and offset so the field leans toward the cursor.
+
+  This file commits to a dark world on purpose: additive streaks only read on a dark ground, so
+  there is no light theme and every colour is painted explicitly. The type layer sits in the dark
+  centre under a radial scrim and is legible in a still frame, not only in motion.
+
+  Reduced motion: one frame is rendered and the loop and pointer listener are never started.
+
+  Gotcha: the streak material's `opacity` is a Three.js material alpha, not the CSS property; the
+  type layer uses alpha ink throughout. Do not set `scene.background` to transparent and rely on
+  the body colour alone, the fog colour and the ground must match or the far streaks tint the edge.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Signals Field</title>
+<style>
+  :root {
+    color-scheme: dark;
+    /* one dark world, painted explicitly */
+    --bg: #05070d;
+    --ink: rgba(228, 233, 242, 0.94);
+    --ink-mid: rgba(176, 188, 207, 0.84);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* the field */
+  .signals-field {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  .signals-field canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* a dark plate at the vanishing point so the headline reads in the still */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(
+      58% 52% at 50% 50%,
+      rgba(5, 7, 13, 0.78) 0%,
+      rgba(5, 7, 13, 0.36) 42%,
+      rgba(5, 7, 13, 0) 72%
+    );
+  }
+
+  /* the type layer: centred because the field converges on the centre of the viewport */
+  .hero {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .hero-inner { max-width: 44rem; }
+  .hero h1 {
+    max-width: 16ch;    /* measured in the headline's own size: two lines at the top of the clamp */
+    margin: 0 auto;
+    font-size: clamp(2.2rem, 7vw, 4.8rem);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .hero p {
+    max-width: 40ch;
+    margin: 20px auto 0;
+    font-size: clamp(1rem, 1.4vw, 1.15rem);
+    color: var(--ink-mid);
+    text-wrap: pretty;
+  }
+
+  .label {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    z-index: 2;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--ink-mid);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="signals-field" aria-hidden="true">
+    <canvas id="field"></canvas>
+  </div>
+  <div class="scrim" aria-hidden="true"></div>
+
+  <main class="hero">
+    <div class="hero-inner">
+      <h1>Nothing crosses the centre</h1>
+      <p>Streaks approach from the edge at a steady pace and fade from head to tail. Move the pointer and the whole field leans a little toward it.</p>
+    </div>
+  </main>
+  <p class="label">Signals field</p>
+
+  <script src="three.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      var OPTIONS = {
+        streaks: 480,
+        speed: 2.2,            /* warp-field ships at 15; this preset is calm */
+        minRadius: 150,        /* keeps the centre dark */
+        radiusSpread: 720,
+        lengthMin: 24,
+        lengthSpread: 60,      /* shorter streaks read as steadier */
+        warmShare: 0.08,       /* the rare warm signal */
+        headAlpha: 1.0,
+        tailAlpha: 0.15,
+        streakOpacity: 0.62,   /* material alpha, not the CSS property */
+        fov: 72,
+        far: -2200,
+        near: 260,
+        leanEase: 0.04
+      };
+
+      var reduceMotion = window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      var canvas = document.getElementById("field");
+      if (!window.THREE) return;
+
+      var BG = 0x05070d;
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(BG);
+      scene.fog = new THREE.FogExp2(BG, 0.00085);
+
+      var camera = new THREE.PerspectiveCamera(OPTIONS.fov, 1, 0.1, 2400);
+      camera.position.z = 0;
+
+      var renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        powerPreference: "high-performance"
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      var group = new THREE.Group();
+      scene.add(group);
+
+      /* streaks: line segments travelling toward the camera */
+      var count = OPTIONS.streaks;
+      var geometry = new THREE.BufferGeometry();
+      var positions = new Float32Array(count * 6);
+      var colours = new Float32Array(count * 6);
+
+      /* desaturated slate-white, with one warm colour kept rare */
+      var cool = [
+        new THREE.Color(0x9fb0cc),
+        new THREE.Color(0xc4d0e4),
+        new THREE.Color(0x7f90ad),
+        new THREE.Color(0xe3e9f4)
+      ];
+      var warm = new THREE.Color(0xf4b451);
+
+      function seed(i, spread) {
+        var angle = Math.random() * Math.PI * 2;
+        var radius = Math.random() * OPTIONS.radiusSpread + OPTIONS.minRadius;
+        var x = Math.cos(angle) * radius;
+        var y = Math.sin(angle) * radius;
+        var z = spread
+          ? (Math.random() - 0.5) * 2200
+          : OPTIONS.far + Math.random() * 400;
+        var length = Math.random() * OPTIONS.lengthSpread + OPTIONS.lengthMin;
+        positions[i * 6] = x; positions[i * 6 + 1] = y; positions[i * 6 + 2] = z;
+        positions[i * 6 + 3] = x; positions[i * 6 + 4] = y; positions[i * 6 + 5] = z + length;
+        var c = (Math.random() < OPTIONS.warmShare) ? warm : cool[(Math.random() * cool.length) | 0];
+        /* the tail is the far vertex, the head the near one: fade along the streak */
+        var tail = OPTIONS.tailAlpha, head = OPTIONS.headAlpha;
+        colours[i * 6] = c.r * tail; colours[i * 6 + 1] = c.g * tail; colours[i * 6 + 2] = c.b * tail;
+        colours[i * 6 + 3] = c.r * head; colours[i * 6 + 4] = c.g * head; colours[i * 6 + 5] = c.b * head;
+      }
+      for (var i = 0; i < count; i += 1) seed(i, true);
+
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute("color", new THREE.BufferAttribute(colours, 3));
+      var material = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: OPTIONS.streakOpacity,
+        blending: THREE.AdditiveBlending
+      });
+      var streaks = new THREE.LineSegments(geometry, material);
+      group.add(streaks);
+
+      /* pointer: the whole field leans a little toward the cursor */
+      var targetX = 0, targetY = 0, currentX = 0, currentY = 0;
+      if (!reduceMotion) {
+        window.addEventListener("pointermove", function (e) {
+          if (e.pointerType === "touch") return;
+          targetX = e.clientX / window.innerWidth - 0.5;
+          targetY = e.clientY / window.innerHeight - 0.5;
+        }, { passive: true });
+      }
+
+      function resize() {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        camera.aspect = w / Math.max(1, h);
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h, false);
+      }
+
+      function step() {
+        var p = streaks.geometry.attributes.position.array;
+        for (var k = 0; k < count; k += 1) {
+          p[k * 6 + 2] += OPTIONS.speed;
+          p[k * 6 + 5] += OPTIONS.speed;
+          if (p[k * 6 + 2] > OPTIONS.near) {
+            var length = p[k * 6 + 5] - p[k * 6 + 2];
+            p[k * 6 + 2] = OPTIONS.far;
+            p[k * 6 + 5] = OPTIONS.far + length;
+          }
+        }
+        streaks.geometry.attributes.position.needsUpdate = true;
+
+        currentX += (targetX - currentX) * OPTIONS.leanEase;
+        currentY += (targetY - currentY) * OPTIONS.leanEase;
+        group.rotation.y = currentX * 0.10;
+        group.rotation.x = -currentY * 0.06;
+        group.position.x = currentX * 26;
+        group.position.y = -currentY * 20;
+
+        renderer.render(scene, camera);
+      }
+
+      var frame = 0;
+      var running = false;
+      function tick() {
+        if (!running) return;
+        step();
+        frame = requestAnimationFrame(tick);
+      }
+      function start() {
+        if (running || reduceMotion) return;
+        running = true;
+        frame = requestAnimationFrame(tick);
+      }
+      function stop() {
+        running = false;
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+      }
+
+      window.addEventListener("resize", function () {
+        resize();
+        if (reduceMotion) step();
+      });
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) stop(); else start();
+      });
+
+      resize();
+      step();      /* one frame always: covers reduced motion and the still */
+      start();
+    })();
+  </script>
+</body>
+</html>

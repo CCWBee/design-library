@@ -646,7 +646,10 @@
        "status": "n/a"
       },
       "shader": {
-       "status": "synth"
+       "status": "example",
+       "files": [
+        "../effects/extracts/condensation-pane.html"
+       ]
       }
      }
     },
@@ -920,7 +923,10 @@
      "type": "rows-list",
      "cells": {
       "minimal": {
-       "status": "synth"
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/rows-list-minimal.html"
+       ]
       },
       "glass": {
        "status": "synth"
@@ -971,7 +977,10 @@
      "type": "stat-tile",
      "cells": {
       "minimal": {
-       "status": "synth"
+       "status": "exemplar",
+       "files": [
+        "../effects/extracts/components/stat-tile-minimal.html"
+       ]
       },
       "glass": {
        "status": "synth"
@@ -984,7 +993,8 @@
        "files": [
         "../effects/extracts/data-pixel-arc.html",
         "../effects/extracts/maccess-elements.html",
-        "../effects/extracts/performance-gauges.html"
+        "../effects/extracts/performance-gauges.html",
+        "../effects/extracts/toy-autoencoder.html"
        ],
        "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
       }
@@ -1032,7 +1042,8 @@
        "files": [
         "../effects/extracts/aura-ui-fluid.html",
         "../effects/extracts/flow-field.html",
-        "../effects/extracts/flux-vortex.html"
+        "../effects/extracts/flux-vortex.html",
+        "../effects/extracts/tide-water.html"
        ],
        "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
       }
@@ -1077,7 +1088,9 @@
         "../effects/extracts/constellation-field.html",
         "../effects/extracts/particle-drift.html",
         "../effects/extracts/ribbon-field.html",
-        "../effects/extracts/warp-field.html"
+        "../effects/extracts/warp-field.html",
+        "../effects/extracts/activation-field.html",
+        "../effects/extracts/signals-field.html"
        ],
        "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
       }
@@ -1158,7 +1171,10 @@
      "type": "hero-composition",
      "cells": {
       "minimal": {
-       "status": "synth"
+       "status": "example",
+       "files": [
+        "../effects/extracts/condensation-pane.html"
+       ]
       },
       "glass": {
        "status": "synth"
@@ -1167,7 +1183,13 @@
        "status": "n/a"
       },
       "shader": {
-       "status": "synth"
+       "status": "example",
+       "files": [
+        "../effects/extracts/tide-water.html",
+        "../effects/extracts/activation-field.html",
+        "../effects/extracts/liquid-metal-wordmark.html",
+        "../effects/extracts/signals-field.html"
+       ]
       }
      }
     }
@@ -1377,7 +1399,8 @@
        "status": "example",
        "files": [
         "../effects/extracts/audio-wordmark.html",
-        "../effects/extracts/glassblown-neon.html"
+        "../effects/extracts/glassblown-neon.html",
+        "../effects/extracts/liquid-metal-wordmark.html"
        ],
        "note": "more in ../effects/extracts/, see ../effects/catalogue.md"
       }

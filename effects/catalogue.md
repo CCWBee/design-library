@@ -29,6 +29,7 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | lumina-weavers-cloth | Kinetic woven cloth, rippling textile sheet | Three.js | Hard | src/shaders/neuform-isolated/sources/lumina-weavers-cloth.html |
 | amber-halftone | Amber halftone bento hero, dotted duotone material | Three.js | Hard | src/shaders/neuform-isolated/sources/amber-halftone.html |
 | gradient-collection | Grainy animated gradient swatches (grainient) | Canvas2D | Clean | src/shaders/neuform-isolated/sources/gradient-collection.html |
+| ● condensation-pane | A minimal light page whose one living detail is a small dark condensation pane: area-proportional droplets, coordinates read through the glass, pointer wipe. Own adaptation of condensation | Canvas2D | Clean | extracts/condensation-pane.html (from the portfolio page `quiet`) |
 
 ## Orbs and spheres
 
@@ -94,6 +95,9 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | vanguard-dimensional | Dimensional architecture field, layered planes | Three.js | Vendorable (gfont) | src/shaders/neuform-isolated/sources/vanguard-dimensional.html |
 | constellation-field (Lumira) | Analytics constellation, linked point cloud | Canvas2D | Hard | src/shaders/neuform-isolated/sources/constellation-field.html |
 | portal-field-aeon | AEON portal, depth tunnel hero | Three.js | Vendorable (gfont) | src/shaders/neuform-isolated/sources/portal-field.html |
+| ● tide-water | Water plane with finite-difference normals and chop, pointer ripples, swell driven by a harmonic tide model or any 0..1 value via data-swell. Own work | WebGL | Clean | extracts/tide-water.html (from the portfolio tide page) |
+| ● activation-field | Sparse dot field that fires around the pointer and around any point a page element asks for (ActivationField.activate). Own adaptation of dot-matrix | WebGL | Clean | extracts/activation-field.html (from the portfolio page `latent`) |
+| ● signals-field | Warp field as a composed preset: no debris, slow desaturated streaks, dark centre for type, pointer lean. Own adaptation of warp-field | Three.js | Clean | extracts/signals-field.html (from the portfolio page `signals`) |
 
 ## Buttons and CTAs
 
@@ -133,6 +137,7 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | kinetic-lathe-certificate | Kinetic lathe-turned certificate type | Canvas2D | Vendorable (gfont) | src/shaders/neuform-isolated/sources/kinetic-lathe-certificate.html |
 | creator-studio-intro | Keynote motion-study title sequence | Canvas2D | Clean | src/shaders/neuform-isolated/sources/creator-studio-intro.html |
 | epilude-footer | Oversized animated footer wordmark | Canvas2D | Clean | src/shaders/neuform-isolated/sources/epilude-footer.html |
+| ● liquid-metal-wordmark | A word painted as an alpha mask and filled with the chrome dispersion shader; pointer warp, rest drift, CSS silver fallback; text from data-text. Own adaptation of liquid-metal-button | WebGL2 | Clean | extracts/liquid-metal-wordmark.html (from the portfolio page `mercury`) |
 
 ## Scenes and landscapes
 
@@ -168,10 +173,13 @@ Family folders under `src/shaders/` are the React components used in the app; ma
 | sections | Page section layouts collection | CSS | Clean | src/shaders/sections/ |
 | landing-pages | Full landing-page recipes, embedded via iframe | CSS | Clean | src/shaders/landing-pages/ |
 | quantera-trading-background | Trading hero background, ticker motion | Three.js | Vendorable (gfont) | src/shaders/quantera-trading-background/ (sources/quantera-trading-hero.html) |
+| ● toy-autoencoder | A 24 to 64 to 24 sparse autoencoder training in vanilla JS, hidden units as a live grid with step, loss and active-unit readouts. Own work | Canvas2D | Clean | extracts/toy-autoencoder.html (from the portfolio tide page) |
 
 ## Localised extracts
 
 Eight effects are localised into `./extracts/` this run as self-contained, file://-runnable copies (marked `●` above): liquid-form, glassmorphism-cta, glassblown-neon, liquid-metal-button, condensation, energy-orb, aura-ui-fluid, warp-field. Each lives at `./extracts/<name>/`. The clone stays the raw mine; extracts are the working, self-contained copies.
+
+Added 6 September 2026 from the portfolio pages in `E:\claude-projects\portfolio-live` (own work, MIT, Charles Bee; four are adaptations of ThreeUI extracts and say so in their headers): tide-water, activation-field, liquid-metal-wordmark, signals-field, condensation-pane, toy-autoencoder, and two component exemplars in `./extracts/components/`, rows-list-minimal and stat-tile-minimal. The spec is `../docs/specs/2026-09-06-portfolio-harvest.md`; the pattern they serve is `../patterns/live-exhibits.md`.
 
 ## Licence
 

@@ -1,0 +1,893 @@
+<!--
+  Rows list · minimal register · data family
+  Original work, copyright 2026 Charles Bee, MIT.
+
+  A component exemplar: four ways to set a list of records with no line between the rows.
+  Ontology cell: data / rows-list / minimal. Self-contained, runs over file:// with no build,
+  no server and no network request. System font stack only.
+
+  Lineage (mechanisms lifted from four portfolio variants of 22 August 2026, copy left behind):
+    Index list        from "latent":  a monospace index, an activation bar that scales in on
+                      hover and focus, and a stored coordinate the row fires into a host field
+                      through window.ActivationField.activate(x, y, strength, ms) when one exists.
+    Resolving log     from "signals": a corner-bracket marker that pulls in when the row resolves,
+                      a key-value column with a four-bar signal meter, and metadata that decodes
+                      from glyphs to text once, on first intersection, over a fixed number of
+                      frames. The name never scrambles.
+    Editorial index   from "quiet":   a small numeral, a serif title, one sentence, a metadata
+                      line; hover indents the row and colours the numeral.
+    Typographic index from "mercury": a large numeral, a big name, a dry line, a status word;
+                      hover shifts the name's weight.
+  Dropped: the web fonts, the letter-spaced uppercase mono, the border rule under every row, the
+  three dark colour worlds, the sheen sweep and reveal strip, the re-scramble on hover, and every
+  line of personal copy. Sample content is four neutral records set four ways.
+
+  Gotchas for the next reader:
+    The metadata ink (--ink-3) sits at 56% black on white, not the 44% used by card-minimal.html:
+      44% measures about 3.3:1 and fails the 4.5:1 bar for text under 24px; 56% measures 4.96:1.
+    The decode picks each glyph from a hash of (character index, frame), not Math.random, so two
+      renders of the same row produce the same still. Reduced motion, and a browser with no
+      IntersectionObserver, resolve every row to its final text at load. A full-page capture
+      that paints beyond the viewport without scrolling never intersects the log rows, so it
+      shows them unresolved (open corners, glyph metadata); scroll them into view, or use the
+      harness's --eval to scroll and wait, to photograph the decoded state.
+    The one status dot in the file sits on the log's last row, whose status is measured by the
+      page itself (seconds since load), so it reports state rather than a claim.
+    Windows 10 Segoe UI has discrete weights, so the weight shift snaps rather than tweens; that
+      is fine, and the transition is removed under reduced motion anyway.
+    The 100vh hero at the top is the gallery preview (house shape). Its rows are plain divs, so
+      nothing focusable sits inside an aria-hidden region; one row is frozen in the hover state so
+      a still shows the activation bar.
+-->
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rows list · minimal</title>
+<style>
+  /* ---- Tokens: light is the base, dark redefines the same names ---- */
+  :root {
+    color-scheme: light dark;
+
+    --canvas:        #ffffff;
+    --sheet:         #ffffff;
+    --sunk:          rgb(0 0 0 / 4%);
+
+    --ink-1:         rgb(0 0 0 / 92%);   /* primary text */
+    --ink-2:         rgb(0 0 0 / 66%);   /* supporting text */
+    --ink-3:         rgb(0 0 0 / 56%);   /* metadata, 4.96:1 on white */
+
+    --line:          rgb(0 0 0 / 10%);   /* hairline, used only on the theme control */
+    --line-strong:   rgb(0 0 0 / 18%);
+    --bar-off:       rgb(0 0 0 / 16%);   /* an unlit meter bar */
+    --fill-hover:    rgb(0 0 0 / 4%);
+    --fill-press:    rgb(0 0 0 / 9%);
+
+    --ring:          rgb(0 0 0 / 80%);   /* focus-visible ring */
+
+    --accent:        #2f57be;            /* the one state colour: live, and a hovered numeral */
+
+    --serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+
+    --r-md: 8px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:      #0e0e10;
+      --sheet:       #161618;
+      --sunk:        rgb(255 255 255 / 4%);
+
+      --ink-1:       rgb(255 255 255 / 92%);
+      --ink-2:       rgb(255 255 255 / 70%);
+      --ink-3:       rgb(255 255 255 / 54%);   /* 6.0:1 on the dark canvas */
+
+      --line:        rgb(255 255 255 / 14%);
+      --line-strong: rgb(255 255 255 / 24%);
+      --bar-off:     rgb(255 255 255 / 20%);
+      --fill-hover:  rgb(255 255 255 / 6%);
+      --fill-press:  rgb(255 255 255 / 11%);
+
+      --ring:        rgb(255 255 255 / 88%);
+
+      --accent:      #7ea6ff;
+    }
+  }
+
+  /* Explicit toggle wins in both directions */
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --canvas:      #0e0e10;
+    --sheet:       #161618;
+    --sunk:        rgb(255 255 255 / 4%);
+    --ink-1:       rgb(255 255 255 / 92%);
+    --ink-2:       rgb(255 255 255 / 70%);
+    --ink-3:       rgb(255 255 255 / 54%);
+    --line:        rgb(255 255 255 / 14%);
+    --line-strong: rgb(255 255 255 / 24%);
+    --bar-off:     rgb(255 255 255 / 20%);
+    --fill-hover:  rgb(255 255 255 / 6%);
+    --fill-press:  rgb(255 255 255 / 11%);
+    --ring:        rgb(255 255 255 / 88%);
+    --accent:      #7ea6ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--s-7) var(--s-5) var(--s-8);
+  }
+
+  /* ---- Spec sheet header ---- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    flex-wrap: wrap;
+  }
+
+  .masthead h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .masthead .cell {
+    color: var(--ink-3);
+    font-size: 0.85rem;
+    margin-top: var(--s-2);
+  }
+
+  .lede {
+    color: var(--ink-2);
+    max-width: 40rem;
+    margin: var(--s-4) 0 0;
+  }
+
+  /* Plain theme toggle, no chrome beyond a hairline control */
+  .toggle {
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: var(--sheet);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease;
+  }
+  .toggle:hover { background: var(--fill-hover); border-color: var(--line-strong); }
+  .toggle:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* ---- Section rhythm: whitespace carries the chapters, no rules ---- */
+  section { margin-top: var(--s-8); }
+
+  .section-head {
+    font-size: 0.8rem;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin: 0 0 var(--s-4);
+  }
+
+  /* Each specimen labelled beneath, bound to its list by a small gap */
+  .specimen { display: flex; flex-direction: column; }
+  .specimen > .label {
+    margin-top: var(--s-3);
+    font-size: 0.8rem;
+    color: var(--ink-3);
+  }
+  .specimen > .note {
+    font-size: 0.78rem;
+    color: var(--ink-3);
+    margin-top: 2px;
+    max-width: 48rem;
+  }
+
+  .states {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
+    gap: var(--s-5) var(--s-6);
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* ============================================================
+     THE COMPONENT: rows list, minimal register, data family
+     Rows separated by space and relative distance, never by a
+     line. The hover fill bleeds one inset beyond the text so the
+     row reads as a region without ever drawing an edge. Metadata
+     recedes by colour and weight; numerals are tabular.
+     ============================================================ */
+  .rows {
+    list-style: none;
+    margin: 0 calc(-1 * var(--s-3));
+    padding: 0;
+  }
+  .rows > li + li { margin-top: var(--s-1); }
+
+  .row {
+    /* reset for the button form; a div takes the same shape */
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    text-align: left;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    display: grid;
+    align-items: baseline;
+    gap: var(--s-1) var(--s-4);
+    padding: var(--s-3);
+    border-radius: var(--r-md);
+    position: relative;
+    cursor: pointer;
+    transition: background 160ms ease;
+  }
+  .row > * { min-width: 0; }
+
+  .row:hover, .row.is-hover { background: var(--fill-hover); }
+  .row:focus-visible, .row.is-focus {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+  .row:active, .row.is-active { background: var(--fill-press); transition: none; }
+
+  .row:disabled, .row[aria-disabled="true"] {
+    cursor: not-allowed;
+    background: none;
+  }
+
+  .row .name {
+    display: block;
+    color: var(--ink-1);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+  .row .line {
+    display: block;
+    color: var(--ink-2);
+    font-size: 0.9rem;
+    max-width: 60ch;
+    margin-top: 2px;
+  }
+  .row .meta {
+    color: var(--ink-3);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Disabled ink drops to the metadata rung by alpha, never the opacity property */
+  .row:disabled .name, .row[aria-disabled="true"] .name,
+  .row:disabled .line, .row[aria-disabled="true"] .line,
+  .row:disabled .title, .row[aria-disabled="true"] .title { color: var(--ink-3); }
+
+  /* ---- 1. Index list ---- */
+  .row--index { grid-template-columns: 5ch 1fr auto; }
+  .row--index .idx {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    transition: color 160ms ease;
+  }
+  .row--index .meta { white-space: nowrap; text-align: right; }
+  /* the activation bar: a short mark at the row's edge, lit on hover and focus */
+  .row--index::before {
+    content: "";
+    position: absolute;
+    left: var(--s-1);
+    top: calc(var(--s-3) + 0.3rem);
+    width: 2px;
+    height: 1rem;
+    border-radius: 1px;
+    background: var(--ink-1);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .row--index:hover::before, .row--index.is-hover::before,
+  .row--index:focus-visible::before, .row--index.is-focus::before,
+  .row--index:active::before, .row--index.is-active::before { transform: scaleY(1); }
+  .row--index:hover .idx, .row--index.is-hover .idx,
+  .row--index:focus-visible .idx, .row--index.is-focus .idx { color: var(--ink-1); }
+  .row--index:disabled::before, .row--index[aria-disabled="true"]::before { display: none; }
+  .row--index:disabled .idx, .row--index[aria-disabled="true"] .idx { color: var(--ink-3); }
+
+  /* ---- 2. Resolving log ---- */
+  .row--log {
+    grid-template-columns: 1.5rem 1fr 15rem;
+    align-items: start;
+  }
+  /* corner-bracket marker: open corners pull in and darken when the row resolves */
+  .bracket {
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.2rem;
+  }
+  .bracket i {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border: 1.5px solid var(--ink-3);
+    transition: inset 400ms cubic-bezier(0.2, 0.7, 0.2, 1), border-color 400ms ease;
+  }
+  .bracket .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .bracket .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .bracket .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .bracket .br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .is-resolved .bracket i { border-color: var(--ink-1); }
+  .is-resolved .bracket .tl { top: 3px; left: 3px; }
+  .is-resolved .bracket .tr { top: 3px; right: 3px; }
+  .is-resolved .bracket .bl { bottom: 3px; left: 3px; }
+  .is-resolved .bracket .br { bottom: 3px; right: 3px; }
+
+  /* key-value column; values in mono so a decoding string keeps its width */
+  .kv {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--s-1) var(--s-3);
+    align-items: baseline;
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
+  }
+  .kv .k { color: var(--ink-3); }
+  .kv .v {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .kv .v.live { color: var(--accent); }
+  /* the one status dot in the file: on the row the page measures itself */
+  .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: 0.05em;
+    margin-right: 6px;
+  }
+  /* four-bar signal meter, sized to its tallest bar */
+  .meter {
+    display: inline-flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 13px;
+    vertical-align: -1px;
+  }
+  .meter i {
+    display: block;
+    width: 3px;
+    background: var(--bar-off);
+    transition: background 400ms ease;
+  }
+  .meter i:nth-child(1) { height: 4px; }
+  .meter i:nth-child(2) { height: 7px; }
+  .meter i:nth-child(3) { height: 10px; }
+  .meter i:nth-child(4) { height: 13px; }
+  .is-resolved .meter i.on { background: var(--ink-1); }
+
+  /* ---- 3. Editorial index ---- */
+  .row--editorial { grid-template-columns: 3ch 1fr; }
+  .row--editorial .num {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    padding-top: 0.45rem;
+    transition: color 200ms ease;
+  }
+  .row--editorial .main {
+    transition: transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .row--editorial .title {
+    display: block;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.4rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink-1);
+  }
+  .row--editorial .line { margin-top: var(--s-2); }
+  .row--editorial .meta { display: block; margin-top: var(--s-2); }
+  .row--editorial:hover .main, .row--editorial.is-hover .main,
+  .row--editorial:focus-visible .main, .row--editorial.is-focus .main { transform: translateX(6px); }
+  .row--editorial:hover .num, .row--editorial.is-hover .num,
+  .row--editorial:focus-visible .num, .row--editorial.is-focus .num { color: var(--accent); }
+  .row--editorial:disabled .main, .row--editorial[aria-disabled="true"] .main { transform: none; }
+  .row--editorial:disabled .num, .row--editorial[aria-disabled="true"] .num { color: var(--ink-3); }
+
+  /* ---- 4. Typographic index ---- */
+  .row--type {
+    grid-template-columns: 4rem 1fr auto;
+    align-items: baseline;
+  }
+  .row--type .num {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    line-height: 1;
+  }
+  .row--type .name {
+    font-size: clamp(1.6rem, 3.4vw, 2.25rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    transition: font-weight 200ms ease;
+  }
+  .row--type .line { margin-top: var(--s-2); }
+  .row--type .status {
+    color: var(--ink-3);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    justify-self: end;
+  }
+  .row--type:hover .name, .row--type.is-hover .name,
+  .row--type:focus-visible .name, .row--type.is-focus .name { font-weight: 700; }
+  .row--type:disabled .name, .row--type[aria-disabled="true"] .name { font-weight: 500; }
+
+  /* ---- Narrow: every treatment collapses to one working column ---- */
+  @media (max-width: 720px) {
+    .row--index { grid-template-columns: 5ch 1fr; }
+    .row--index .meta { grid-column: 2; white-space: normal; text-align: left; }
+    .row--log { grid-template-columns: 1.5rem 1fr; }
+    .row--log .kv { grid-column: 2; margin-top: var(--s-2); }
+    .row--type { grid-template-columns: 3rem 1fr; }
+    .row--type .status { grid-column: 2; justify-self: start; }
+    .states { grid-template-columns: 1fr; }
+  }
+  .states .row--log { grid-template-columns: 1.5rem 1fr 9rem; }
+
+  /* ---- Hero: gallery preview, primary instance only ---- */
+  .hero {
+    min-height: 100vh;
+    background: var(--canvas);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-6) var(--s-5);
+  }
+  .hero .rows { width: 100%; max-width: 44rem; margin: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row, .toggle, .row--index .idx, .row--editorial .num, .bracket i, .meter i {
+      transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    }
+    .row--index::before, .row--editorial .main, .row--type .name { transition: none; }
+    .row--editorial:hover .main, .row--editorial:focus-visible .main { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero" aria-hidden="true">
+  <ol class="rows">
+    <li><div class="row row--index">
+      <span class="idx">0007</span>
+      <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August, taken twice a day from the east pier.</span></span>
+      <span class="meta">Survey · 2026</span>
+    </div></li>
+    <li><div class="row row--index is-hover">
+      <span class="idx">0421</span>
+      <span class="main"><span class="name">Rain gauge</span><span class="line">Daily totals since March from a garden gauge, read at nine each morning.</span></span>
+      <span class="meta">Series · continuing</span>
+    </div></li>
+    <li><div class="row row--index">
+      <span class="idx">1180</span>
+      <span class="main"><span class="name">Shelf catalogue</span><span class="line">412 records by shelf, sleeve and pressing, kept in one text file.</span></span>
+      <span class="meta">Archive · 2024</span>
+    </div></li>
+    <li><div class="row row--index">
+      <span class="idx">2909</span>
+      <span class="main"><span class="name">Cold glass</span><span class="line">A condensation simulation in a small pane, droplet count scaled to its area.</span></span>
+      <span class="meta">Study · 2026</span>
+    </div></li>
+  </ol>
+</section>
+
+<main class="page">
+
+  <header class="masthead">
+    <div>
+      <h1>Rows list</h1>
+      <div class="cell">data · rows-list · minimal</div>
+    </div>
+    <button class="toggle" id="themeToggle" type="button" aria-live="polite">Theme: system</button>
+  </header>
+
+  <p class="lede">
+    Four records, set four ways. Rows are separated by space and the distance between them, not by
+    lines; the hover fill bleeds one inset past the text so a row reads as a region without an edge.
+    Metadata recedes by colour and weight, numerals are tabular, and each row is one control that
+    hovers, takes a visible focus ring, presses and disables.
+  </p>
+
+  <!-- 1. INDEX LIST -->
+  <section>
+    <h2 class="section-head">Index list</h2>
+    <div class="specimen">
+      <ol class="rows" id="index">
+        <li><button class="row row--index" type="button" data-x="0.18" data-y="0.30">
+          <span class="idx">0007</span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August, taken twice a day from the east pier.</span></span>
+          <span class="meta">Survey · 2026</span>
+        </button></li>
+        <li><button class="row row--index" type="button" data-x="0.82" data-y="0.24">
+          <span class="idx">0421</span>
+          <span class="main"><span class="name">Rain gauge</span><span class="line">Daily totals since March from a garden gauge, read at nine each morning.</span></span>
+          <span class="meta">Series · continuing</span>
+        </button></li>
+        <li><button class="row row--index" type="button" data-x="0.30" data-y="0.72">
+          <span class="idx">1180</span>
+          <span class="main"><span class="name">Shelf catalogue</span><span class="line">412 records by shelf, sleeve and pressing, kept in one text file.</span></span>
+          <span class="meta">Archive · 2024</span>
+        </button></li>
+        <li><button class="row row--index" type="button" data-x="0.68" data-y="0.66">
+          <span class="idx">2909</span>
+          <span class="main"><span class="name">Cold glass</span><span class="line">A condensation simulation in a small pane, droplet count scaled to its area.</span></span>
+          <span class="meta">Study · 2026</span>
+        </button></li>
+      </ol>
+      <span class="label">Mono index, name, one line, a metadata word or two</span>
+      <span class="note">Hover or tab to a row and the activation bar lights. Each row stores a coordinate in data-x and data-y (0 to 1); when window.ActivationField exists on the page, the row calls activate(x, y, 1, 600) so a host field can fire at that point.</span>
+    </div>
+  </section>
+
+  <!-- 2. RESOLVING LOG -->
+  <section>
+    <h2 class="section-head">Resolving log</h2>
+    <div class="specimen">
+      <ol class="rows" id="log">
+        <li><button class="row row--log" type="button">
+          <span class="bracket" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August, taken twice a day from the east pier.</span></span>
+          <span class="kv">
+            <span class="k">Class</span><span class="v" data-decode>survey</span>
+            <span class="k">Status</span><span class="v" data-decode>filed</span>
+            <span class="k">Signal</span><span class="v"><span class="sr-only">3 of 4</span><span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+          </span>
+        </button></li>
+        <li><button class="row row--log" type="button">
+          <span class="bracket" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+          <span class="main"><span class="name">Rain gauge</span><span class="line">Daily totals since March from a garden gauge, read at nine each morning.</span></span>
+          <span class="kv">
+            <span class="k">Class</span><span class="v" data-decode>series</span>
+            <span class="k">Status</span><span class="v" data-decode>continuing</span>
+            <span class="k">Signal</span><span class="v"><span class="sr-only">2 of 4</span><span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+          </span>
+        </button></li>
+        <li><button class="row row--log" type="button">
+          <span class="bracket" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+          <span class="main"><span class="name">Shelf catalogue</span><span class="line">412 records by shelf, sleeve and pressing, kept in one text file.</span></span>
+          <span class="kv">
+            <span class="k">Class</span><span class="v" data-decode>archive</span>
+            <span class="k">Status</span><span class="v" data-decode>withdrawn</span>
+            <span class="k">Signal</span><span class="v"><span class="sr-only">1 of 4</span><span class="meter" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span></span>
+          </span>
+        </button></li>
+        <li><button class="row row--log" type="button">
+          <span class="bracket" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+          <span class="main"><span class="name">This page</span><span class="line">The document you are reading. Its status is measured by the page, not claimed.</span></span>
+          <span class="kv">
+            <span class="k">Class</span><span class="v" data-decode>exemplar</span>
+            <span class="k">Status</span><span class="v live"><span class="dot" aria-hidden="true"></span>Live</span>
+            <span class="k">Open for</span><span class="v" data-live="uptime">0 s</span>
+            <span class="k">Signal</span><span class="v"><span class="sr-only">4 of 4</span><span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+          </span>
+        </button></li>
+      </ol>
+      <span class="label">Corner-bracket marker, name, one line, a key-value column with a signal meter</span>
+      <span class="note">Class and status decode from glyphs to text once, the first time a row enters view, over eighteen frames; the name never scrambles, and the corners pull in as the meter lights. Under reduced motion every row arrives resolved. The last row carries the file's one status dot: its reading is taken by the page itself.</span>
+    </div>
+  </section>
+
+  <!-- 3. EDITORIAL INDEX -->
+  <section>
+    <h2 class="section-head">Editorial index</h2>
+    <div class="specimen">
+      <ol class="rows">
+        <li><button class="row row--editorial" type="button">
+          <span class="num">01</span>
+          <span class="main"><span class="title">Harbour survey</span><span class="line">Tidal readings for the week of 18 August, taken twice a day from the east pier.</span><span class="meta">Survey · August 2026 · 14 readings</span></span>
+        </button></li>
+        <li><button class="row row--editorial" type="button">
+          <span class="num">02</span>
+          <span class="main"><span class="title">Rain gauge</span><span class="line">Daily totals since March from a garden gauge, read at nine each morning.</span><span class="meta">Series · continuing · 188 readings</span></span>
+        </button></li>
+        <li><button class="row row--editorial" type="button">
+          <span class="num">03</span>
+          <span class="main"><span class="title">Shelf catalogue</span><span class="line">412 records by shelf, sleeve and pressing, kept in one text file.</span><span class="meta">Archive · 2024 · 412 entries</span></span>
+        </button></li>
+        <li><button class="row row--editorial" type="button">
+          <span class="num">04</span>
+          <span class="main"><span class="title">Cold glass</span><span class="line">A condensation simulation in a small pane, droplet count scaled to its area.</span><span class="meta">Study · 2026 · one file</span></span>
+        </button></li>
+      </ol>
+      <span class="label">Numeral, serif title, one sentence, a small metadata line</span>
+      <span class="note">Hover indents the row by 6px and colours the numeral. The accent appears here and on the live row only, so it keeps meaning state.</span>
+    </div>
+  </section>
+
+  <!-- 4. TYPOGRAPHIC INDEX -->
+  <section>
+    <h2 class="section-head">Typographic index</h2>
+    <div class="specimen">
+      <ol class="rows">
+        <li><button class="row row--type" type="button">
+          <span class="num">01</span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August, taken twice a day from the east pier.</span></span>
+          <span class="status">Filed</span>
+        </button></li>
+        <li><button class="row row--type" type="button">
+          <span class="num">02</span>
+          <span class="main"><span class="name">Rain gauge</span><span class="line">Daily totals since March from a garden gauge, read at nine each morning.</span></span>
+          <span class="status">Continuing</span>
+        </button></li>
+        <li><button class="row row--type" type="button" disabled aria-disabled="true">
+          <span class="num">03</span>
+          <span class="main"><span class="name">Shelf catalogue</span><span class="line">412 records by shelf, sleeve and pressing, kept in one text file.</span></span>
+          <span class="status">Withdrawn</span>
+        </button></li>
+        <li><button class="row row--type" type="button">
+          <span class="num">04</span>
+          <span class="main"><span class="name">Cold glass</span><span class="line">A condensation simulation in a small pane, droplet count scaled to its area.</span></span>
+          <span class="status">Draft</span>
+        </button></li>
+      </ol>
+      <span class="label">Large numeral, big name, a dry line, a status word</span>
+      <span class="note">Hover shifts the name from medium to bold. The withdrawn row is disabled: its ink drops to the metadata rung and nothing shifts.</span>
+    </div>
+  </section>
+
+  <!-- STATES: one index row in each forced state, plus the log's two -->
+  <section>
+    <h2 class="section-head">States</h2>
+    <div class="states">
+
+      <div class="specimen">
+        <ol class="rows"><li><button class="row row--index" type="button">
+          <span class="idx">0007</span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August.</span></span>
+          <span class="meta">Survey · 2026</span>
+        </button></li></ol>
+        <span class="label">Default</span>
+      </div>
+
+      <div class="specimen">
+        <ol class="rows"><li><button class="row row--index is-hover" type="button">
+          <span class="idx">0007</span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August.</span></span>
+          <span class="meta">Survey · 2026</span>
+        </button></li></ol>
+        <span class="label">Hover</span>
+        <span class="note">Fill lifts one rung, bar lights, index darkens.</span>
+      </div>
+
+      <div class="specimen">
+        <ol class="rows"><li><button class="row row--index is-focus" type="button">
+          <span class="idx">0007</span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August.</span></span>
+          <span class="meta">Survey · 2026</span>
+        </button></li></ol>
+        <span class="label">Focus-visible</span>
+        <span class="note">Ring sits inside the fill's bounds. Tab through the live lists to see the real one.</span>
+      </div>
+
+      <div class="specimen">
+        <ol class="rows"><li><button class="row row--index is-active" type="button">
+          <span class="idx">0007</span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August.</span></span>
+          <span class="meta">Survey · 2026</span>
+        </button></li></ol>
+        <span class="label">Pressed</span>
+        <span class="note">Fill deepens, no movement.</span>
+      </div>
+
+      <div class="specimen">
+        <ol class="rows"><li><button class="row row--index" type="button" disabled aria-disabled="true">
+          <span class="idx">0007</span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August.</span></span>
+          <span class="meta">Survey · 2026</span>
+        </button></li></ol>
+        <span class="label">Disabled</span>
+        <span class="note">Ink drops to the metadata rung by alpha, not the opacity property; no fill, no bar.</span>
+      </div>
+
+      <div class="specimen">
+        <ol class="rows"><li><button class="row row--log" type="button">
+          <span class="bracket" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August.</span></span>
+          <span class="kv">
+            <span class="k">Class</span><span class="v">0f#a1c</span>
+            <span class="k">Signal</span><span class="v"><span class="sr-only">pending</span><span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+          </span>
+        </button></li></ol>
+        <span class="label">Unresolved</span>
+        <span class="note">Corners open, meter unlit, metadata still glyphs.</span>
+      </div>
+
+      <div class="specimen">
+        <ol class="rows"><li><button class="row row--log is-resolved" type="button">
+          <span class="bracket" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+          <span class="main"><span class="name">Harbour survey</span><span class="line">Tidal readings for the week of 18 August.</span></span>
+          <span class="kv">
+            <span class="k">Class</span><span class="v">survey</span>
+            <span class="k">Signal</span><span class="v"><span class="sr-only">3 of 4</span><span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+          </span>
+        </button></li></ol>
+        <span class="label">Resolved</span>
+        <span class="note">Corners pulled in and darkened, meter lit to strength, text decoded.</span>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+  (function () {
+    "use strict";
+
+    /* ---- Theme toggle, as the other minimal exemplars ---- */
+    var root = document.documentElement;
+    var btn = document.getElementById("themeToggle");
+    var order = ["system", "light", "dark"];
+    var labels = { system: "Theme: system", light: "Theme: light", dark: "Theme: dark" };
+
+    var stored = null;
+    try { stored = localStorage.getItem("rows-list-minimal-theme"); } catch (e) {}
+    var state = order.indexOf(stored) >= 0 ? stored : "system";
+
+    function apply() {
+      if (state === "system") { root.removeAttribute("data-theme"); }
+      else { root.setAttribute("data-theme", state); }
+      btn.textContent = labels[state];
+      try { localStorage.setItem("rows-list-minimal-theme", state); } catch (e) {}
+    }
+    btn.addEventListener("click", function () {
+      state = order[(order.indexOf(state) + 1) % order.length];
+      apply();
+    });
+    apply();
+
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* ---- 1. Index list: fire the row's coordinate into a host field, if one exists ----
+       The bar itself is CSS. This is the hook the Latent page used to light a project's own
+       point in the activation field behind it; it is a no-op on a page with no field. */
+    function fire(el) {
+      var field = window.ActivationField;
+      if (!field || typeof field.activate !== "function") return;
+      var x = parseFloat(el.getAttribute("data-x"));
+      var y = parseFloat(el.getAttribute("data-y"));
+      if (isNaN(x) || isNaN(y)) return;
+      field.activate(x, y, 1, 600);
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("#index .row--index"), function (el) {
+      el.addEventListener("pointerenter", function () { if (!el.disabled) fire(el); });
+      el.addEventListener("focus", function () { if (!el.disabled) fire(el); });
+    });
+
+    /* ---- 2. Resolving log: decode metadata once, on first intersection ----
+       Deterministic in both frame count and glyph choice: the glyph at character c on frame f
+       is a hash of (c, f), so two renders produce the same still. Spaces and the middle dot
+       are never masked. Names are not in the set of decoded fields and never scramble. */
+    var GLYPHS = "0123456789abcdef#/<>";
+    var TOTAL = 18;
+
+    function glyph(c, f) {
+      var h = ((c * 73 + f * 151 + 19) * 2654435761) >>> 0;
+      return GLYPHS.charAt(h % GLYPHS.length);
+    }
+    function render(finalText, f) {
+      var reveal = Math.floor((f / TOTAL) * finalText.length);
+      var out = "";
+      for (var c = 0; c < finalText.length; c += 1) {
+        var ch = finalText.charAt(c);
+        out += (c < reveal || ch === " " || ch === "·") ? ch : glyph(c, f);
+      }
+      return out;
+    }
+    function decode(el, done) {
+      var finalText = el.getAttribute("data-final");
+      var f = 0;
+      function step() {
+        f += 1;
+        if (f < TOTAL) {
+          el.textContent = render(finalText, f);
+          requestAnimationFrame(step);
+        } else {
+          el.textContent = finalText;
+          if (done) done();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    var logRows = Array.prototype.slice.call(document.querySelectorAll("#log .row--log"));
+    var canObserve = "IntersectionObserver" in window;
+    var animate = !reduce && canObserve;
+
+    logRows.forEach(function (row) {
+      Array.prototype.forEach.call(row.querySelectorAll("[data-decode]"), function (el) {
+        el.setAttribute("data-final", el.textContent);
+        if (animate) el.textContent = render(el.textContent, 0);
+      });
+    });
+
+    function resolve(row) {
+      if (row.classList.contains("is-resolved")) return;
+      row.classList.add("is-resolved");
+      var fields = row.querySelectorAll("[data-decode]");
+      Array.prototype.forEach.call(fields, function (el, i) {
+        if (!animate) { el.textContent = el.getAttribute("data-final"); return; }
+        setTimeout(function () { decode(el); }, i * 60);
+      });
+    }
+
+    if (animate) {
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) { resolve(en.target); obs.unobserve(en.target); }
+        });
+      }, { threshold: 0.4 });
+      logRows.forEach(function (row) {
+        obs.observe(row);
+        row.addEventListener("focus", function () { resolve(row); obs.unobserve(row); });
+      });
+    } else {
+      logRows.forEach(resolve);
+    }
+
+    /* ---- The one live reading: seconds since the page loaded ---- */
+    var up = document.querySelector("[data-live='uptime']");
+    if (up) {
+      var t0 = performance.now();
+      var tick = function () { up.textContent = Math.floor((performance.now() - t0) / 1000) + " s"; };
+      tick();
+      setInterval(tick, 1000);
+    }
+  })();
+</script>
+</body>
+</html>
