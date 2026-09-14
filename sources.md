@@ -113,3 +113,15 @@ their project folder with a design review (`portfolio-live/docs/design-review.md
 claims, contrast, rules under headings, em dashes, a wrong tide model) were corrected in the extracts, not in the
 pages. The tide table in `tide-water.html` is fitted to the published St Helier extremes for 6 September 2026 and
 is not an authoritative constituent set.
+
+## Update 14 September 2026: Beautiful UI component 21 (pending)
+
+Turbo's founder emailed that Beautiful UI is now 21 components, with a new "Agent Screen" (component
+21), and that the library moved to its own domain `beautifului.dev` (the domain we already harvest
+from, so no change there). Checked the same day: the shadcn registry index at `/r/registry.json` still
+lists the 27 items we already hold (the 20 components plus the 7 primitives), and while "Agent Screen"
+is a section on the site (`#agent-screen`), its registry item `/r/agent-screen.json` returns 404. There
+is no published literal source to harvest yet. Recorded as pending: re-check
+`https://www.beautifului.dev/r/agent-screen.json`, and when it returns 200 harvest it verbatim into
+`patterns/ai-native/` the same way as the other twenty. Do not reconstruct it from the compiled site
+payload. The `/harness` page is a demo composition of these primitives, not a registry item.
