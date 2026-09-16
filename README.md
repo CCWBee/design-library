@@ -25,6 +25,10 @@ python E:\claude-projects\design\gallery\serve.py
 A local page at http://127.0.0.1:8770 that scans these folders live, so it never goes stale: a
 searchable preview grid of every asset and an ontology coverage matrix. Details in `gallery/README.md`.
 
+`tools/qa/` is the workspace's headless-Chrome screenshot tool and CSS token scanner, the mechanical
+half of verifying a render. Usage and the hard-coded gotchas are in `tools/qa/README.md`; the
+`visual-verify` skill is what fires on screenshot work.
+
 ## Start here
 
 - `philosophy/taste.md`: the taste bar, the one test (every element earns its place), the register

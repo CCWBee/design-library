@@ -39,7 +39,7 @@ anything under `gallery/`, and `apple/README.md`.
 | AI-native primitives | `patterns/ai-native/primitives/*.{tsx,css}` | `ai-native` | `tsx` / `css` | false |
 | Scandinavian code | `minimal/scandinavian/**/*.{css,js}` | `scandinavian` | `css` / `js` | false |
 | Scandinavian pages | `minimal/scandinavian/**/*.html` | `scandinavian` | `html` | true |
-| Docs | `**/*.md` (exclude `gallery/`) | `docs` | `md` | false |
+| Docs | `**/*.md` (exclude `gallery/` and `tools/`) | `docs` | `md` | false |
 
 Item shape:
 

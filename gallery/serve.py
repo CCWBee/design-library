@@ -111,6 +111,8 @@ def is_skipped(rel_posix: str, name: str) -> bool:
         return True
     if rel_posix.startswith("effects/transitions/skill/"):
         return True  # snippet docs for the transitions skill, not library reference docs
+    if rel_posix == "tools" or rel_posix.startswith("tools/"):
+        return True  # the QA harness is tooling, not a library asset or reference doc
     return False
 
 
