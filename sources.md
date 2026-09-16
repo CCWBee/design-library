@@ -76,10 +76,10 @@ MIT License (its Terms page: "released under the MIT License"). The 32 free tran
 `effects/transitions/`, plus its agent skill with the copy-ready snippet per transition
 (`effects/transitions/skill/`). The repository also holds 11 landing-page stubs for paid Pro transitions;
 those carry no code and were not taken. Clone kept at
-`E:\claude-projects	ransitions-dev` as the raw mine. Published.
+`E:\claude-projects\transitions-dev` as the raw mine. Published.
 
 **thinking-orbs** (https://github.com/Jakubantalik/thinking-orbs, Jakub Antalik, MIT). Nine canvas orb states
-for agent interfaces; the upstream of ThreeUI's brand-orbs. Clone at `E:\claude-projects	hinking-orbs`; engine
+for agent interfaces; the upstream of ThreeUI's brand-orbs. Clone at `E:\claude-projects\thinking-orbs`; engine
 ported to vanilla as `effects/extracts/thinking-orbs.js` with one demo per state (`orb-<state>.html`). Published.
 
 **Aceternity UI** (https://ui.aceternity.com). 109 components fetched verbatim from its shadcn registry into
