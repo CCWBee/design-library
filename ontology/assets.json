@@ -1,5 +1,6 @@
 {
- "$schema_note": "By-intent map over the design library. status: example=a verified file realises this cell; exemplar=a purpose-built reference; synth=generate on demand via ../ontology/register-rules.md; n/a=not a meaningful combination. State (size/hover/focus/disabled/loading/theme) is NOT a cell axis; each realised asset implements it internally.",
+ "$usage_contract": "register-rules.md#composition-before-component-selection",
+ "$schema_note": "By-intent map over the design library. status: example=a verified file realises this cell; exemplar=a purpose-built reference; synth=generate on demand via ../ontology/register-rules.md; n/a=not a meaningful combination. State (size/hover/focus/disabled/loading/theme) is NOT a cell axis; each realised asset implements it internally. Before selecting a cell, read $usage_contract. Cell status describes reference availability, not screen composition, production readiness or accessibility certification.",
  "registers": [
   "minimal",
   "glass",

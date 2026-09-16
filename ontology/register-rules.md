@@ -5,6 +5,43 @@ work. To build an empty cell, take the family block below, add the type's own sp
 structure from the nearest filled cell, and apply the taste bar (`../philosophy/taste.md`). The four
 registers, once, at the top; then the per-family deltas.
 
+## Composition before component selection
+
+Added 13 September 2026 after the Jersey food prototype review. Apply this section before the register recipes below. An ontology cell identifies a reusable mechanism; it does not certify the screen assembled from it. Project design contracts set their own palette, density and domain rules. The Jersey white canvas and food-photo restrictions are project decisions, not defaults for every project.
+
+Classify the work in this order:
+
+| Level | Question to answer | Completion evidence |
+| --- | --- | --- |
+| User task | What is the person trying to do on this visit? | One named task and its next useful action |
+| Screen composition | What must they see first, and what follows? | Module order and viewport budget, before selecting components |
+| Content and capability | Is this real content, loading, an empty result, a failure, or an unbuilt capability? | State classification using the rules below; missing API work has an owner in the existing build plan |
+| Component mechanism | Which family/type/register implements this interaction? | Exact reference file opened, mechanism retained or adapted, one project implementation registered |
+| Verification | Does the assembled screen support the task? | Rendered representative content, interaction checks and a separate visual judgement |
+
+### Content states and unbuilt capabilities
+
+- **Loading:** reserve the geometry of expected content, then replace it when the request resolves.
+- **Empty result:** the feature exists and returns no matches or no records. Explain the useful next step, such as clearing a filter.
+- **Failure or uncertainty:** explain the consequence and recovery. Keep consequential uncertainty visible, including unknown payment outcome, missing allergy information or stale tracking.
+- **Unbuilt capability:** record it in the implementation plan. Omit an optional module that cannot yet work. If it is essential to the task, implement the dependency within scope or mark that flow incomplete. A panel explaining absent tables or routes does not fulfil the feature.
+- **Missing media:** use an honest fallback. A known absent image need not occupy the same large composition as a pending image download. Keep useful content visible and record photography as incomplete where it carries the product. Project image authenticity rules still apply.
+- **Demonstration:** keep a concise, persistent disclosure where needed; put developer controls and implementation inventory behind a separate disclosure or on the review page. Sample content must remain distinguishable from live content.
+
+### How to apply the family recipes
+
+Use native semantics with intentional presentation: a short exclusive choice may use radios styled as a segmented control; a search field states the scope it actually searches. A missing search API calls for a dependency decision, not a new product principle that browsing should have no search.
+
+Image-led lists, repeated menu items and consistent grids are valid when they help comparison. The card-wall warning concerns decorative equal-weight containers that conceal hierarchy, not repeated domain records. Functional filter chips and selected states are controls; decorative eyebrow labels are a different category. Headings, prices, metadata and actions should remain distinguishable after cosmetic effects are removed.
+
+Adapt source mechanisms, not example themes. Read the referenced implementation and licence, reuse or extend the project's registered component, retokenise to the project, and verify keyboard, focus, loading, error and theme states. A catalogue file marked `example` or `exemplar` is reference availability, not proof of production accessibility or visual fitness.
+
+### Acceptance before calling the design complete
+
+Render a realistic populated screen at the agreed narrow and wide viewports, then its empty/loading/error cases. Check whether the principal content and next action are visible without scrolling past developer controls or repeated explanation. Validate density with representative variety and long content; one sparse fixture proves only that fixture. Check fixed navigation, safe areas, keyboard access and overlays in the complete page.
+
+Report functional, geometry, accessibility and visual results separately. No overflow, valid tokens and a successful interaction do not establish visual quality. If essential content or a primary capability is absent, say which part of the intended experience remains unverified. Record the actual reference files used and the mechanism adapted in the project's existing design document.
+
 ## The four registers, in general
 
 - **Minimal.** Alpha-black ink and fills, not `opacity`. Hairline borders (`rgb(0 0 0 / 10%)`), radii

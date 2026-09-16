@@ -1,5 +1,7 @@
 # Taxonomy
 
+Before choosing a family or register, apply [Composition before component selection](register-rules.md#composition-before-component-selection). This tree classifies component mechanisms, not finished screen layouts. Content states and unbuilt capabilities are classified there; an unbuilt feature is not automatically an empty-state component.
+
 The type tree, grouped into ten families, with a meaningful-cell grid per family. A grid marks which
 registers make sense for each type: `Y` meaningful, `.` not a real thing. `minimal` is meaningful for
 essentially everything, so treat a blank there as `Y`. See `register-rules.md` for how each `Y`
